@@ -39,6 +39,8 @@ class GitHelper:
                 cwd=self.repo_path,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=check
             )
             return result.stdout.strip()
@@ -70,7 +72,9 @@ class GitHelper:
                 ["git", "clone", repo_url, str(repo_path)],
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
+                encoding="utf-8",
+                errors="replace"
             )
             logger.info("Repository cloned successfully")
             return True

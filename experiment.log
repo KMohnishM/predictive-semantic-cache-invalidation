@@ -2766,3 +2766,1141 @@ PROPOSED_PREDICTIVE:
 2026-06-25 12:14:08,412 - __main__ - INFO - ================================================================================
 2026-06-25 12:14:08,412 - __main__ - INFO - Results saved to results
 2026-06-25 12:14:08,412 - __main__ - INFO - Logs saved to experiment.log
+2026-06-25 16:45:04,835 - __main__ - INFO - ================================================================================
+2026-06-25 16:45:04,838 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 16:45:04,839 - __main__ - INFO - ================================================================================
+2026-06-25 16:45:04,840 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 16:45:04,846 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 16:45:04,847 - __main__ - INFO - Initializing components...
+2026-06-25 16:45:04,853 - __main__ - INFO - Setup complete
+2026-06-25 16:45:04,853 - __main__ - INFO - ================================================================================
+2026-06-25 16:45:04,854 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 16:45:04,854 - __main__ - INFO - ================================================================================
+2026-06-25 16:45:04,855 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 16:45:05,071 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 16:45:05,072 - __main__ - INFO - Total commits: 5
+2026-06-25 16:45:05,072 - __main__ - INFO - Training commits: 3
+2026-06-25 16:45:05,072 - __main__ - INFO - Test commits: 2
+2026-06-25 16:45:05,073 - __main__ - INFO - ================================================================================
+2026-06-25 16:45:05,073 - __main__ - INFO - BUILDING DATASET
+2026-06-25 16:45:05,073 - __main__ - INFO - ================================================================================
+2026-06-25 16:45:05,074 - __main__ - INFO - 
+Processing commit 1/5 (0fff1dba)...
+2026-06-25 16:45:20,111 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 16:45:20,123 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 16:45:20,123 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 16:45:29,192 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 16:45:29,192 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 16:46:33,230 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 16:46:33,331 - __main__ - INFO - 
+Processing commit 2/5 (70e0956f)...
+2026-06-25 16:46:41,910 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 16:47:51,621 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 16:47:51,622 - __main__ - INFO - Computing drifts and features between 0fff1dba and 70e0956f...
+2026-06-25 16:48:02,910 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 16:48:02,911 - __main__ - INFO -   Modified entities: 19
+2026-06-25 16:48:03,012 - __main__ - INFO - 
+Processing commit 3/5 (77a9a587)...
+2026-06-25 16:48:13,495 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 16:48:49,178 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 16:48:49,179 - __main__ - INFO - Computing drifts and features between 70e0956f and 77a9a587...
+2026-06-25 16:48:54,868 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 16:48:54,868 - __main__ - INFO -   Modified entities: 0
+2026-06-25 16:48:54,968 - __main__ - INFO - 
+Processing commit 4/5 (d2f014ca)...
+2026-06-25 16:49:00,048 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 16:49:25,067 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 16:49:25,067 - __main__ - INFO - Computing drifts and features between 77a9a587 and d2f014ca...
+2026-06-25 16:49:42,053 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 16:49:42,053 - __main__ - INFO -   Modified entities: 149
+2026-06-25 16:49:42,155 - __main__ - INFO - 
+Processing commit 5/5 (76138401)...
+2026-06-25 16:49:46,826 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 16:50:59,234 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 16:50:59,234 - __main__ - INFO - Computing drifts and features between d2f014ca and 76138401...
+2026-06-25 16:51:10,930 - __main__ - INFO -   Computed drifts for 697 entities
+2026-06-25 16:51:10,930 - __main__ - INFO -   Modified entities: 0
+2026-06-25 16:51:11,031 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data
+2026-06-25 16:51:11,032 - __main__ - INFO - ================================================================================
+2026-06-25 16:51:11,032 - __main__ - INFO - TRAINING MODEL
+2026-06-25 16:51:11,032 - __main__ - INFO - ================================================================================
+2026-06-25 16:51:11,042 - __main__ - INFO - Training on 696 entities with 696 drift values
+2026-06-25 16:51:11,050 - predictor - INFO - Train set: 487 entities
+2026-06-25 16:51:11,050 - predictor - INFO - Test set: 209 entities
+2026-06-25 16:51:11,051 - predictor - INFO - Training random_forest regression model...
+2026-06-25 16:51:11,479 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 16:51:11,480 - predictor - INFO - Training R²: 0.3808
+2026-06-25 16:51:11,481 - predictor - INFO - Evaluating model on test data...
+2026-06-25 16:51:11,559 - predictor - INFO - Test MSE: 0.000000
+2026-06-25 16:51:11,559 - predictor - INFO - Test RMSE: 0.000000
+2026-06-25 16:51:11,560 - predictor - INFO - Test R²: -0.0717
+2026-06-25 16:51:11,560 - predictor - INFO - Test MAE: 0.000000
+2026-06-25 16:51:11,652 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 16:51:11,652 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 16:51:11,653 - __main__ - INFO - Test metrics: {'test_mse': 5.576632253384489e-15, 'test_rmse': np.float64(7.467685219252676e-08), 'test_r2': -0.07173468775884695, 'test_mae': np.float64(6.203592378502974e-08)}
+2026-06-25 16:51:11,653 - __main__ - INFO - ================================================================================
+2026-06-25 16:51:11,653 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 16:51:11,654 - __main__ - INFO - ================================================================================
+2026-06-25 16:51:11,654 - __main__ - INFO - 
+Evaluating commit pair 1/1: d2f014ca -> 76138401
+2026-06-25 16:51:13,107 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 16:51:13,575 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 16:51:14,025 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 16:51:14,449 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 16:51:14,697 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 16:51:23,381 - __main__ - INFO - 
+================================================================================
+2026-06-25 16:51:23,382 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 16:51:23,382 - __main__ - INFO - ================================================================================
+2026-06-25 16:51:23,382 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 16:51:23,383 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 16:51:23,383 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 16:51:23,383 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 16:51:23,383 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 16:51:23,383 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 16:51:23,383 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 16:51:23,383 - __main__ - INFO -   Update %: 100.00%
+2026-06-25 16:51:23,383 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 16:51:23,383 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 16:51:23,383 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 16:51:23,383 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 16:51:23,383 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 16:51:23,383 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 16:51:23,383 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 16:51:23,383 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 16:51:23,383 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 16:51:23,384 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 16:51:23,385 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 16:51:23,385 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 16:51:23,386 - __main__ - INFO - ================================================================================
+2026-06-25 16:51:23,386 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 16:51:23,387 - __main__ - INFO - ================================================================================
+2026-06-25 16:51:23,467 - visualize - INFO - Generating feature importance plot...
+2026-06-25 16:51:25,155 - visualize - INFO - Feature importance plot saved to results\feature_importance.png
+2026-06-25 16:51:25,155 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 16:51:26,280 - visualize - INFO - Strategy comparison plot saved to results\strategy_comparison.png
+2026-06-25 16:51:26,311 - visualize - INFO - Generating Pareto frontier plot...
+2026-06-25 16:51:27,687 - visualize - INFO - Pareto frontier plot saved to results\pareto_frontier.png
+2026-06-25 16:51:27,688 - visualize - INFO - Generating drift distribution plot...
+2026-06-25 16:51:28,794 - visualize - INFO - Drift distribution plot saved to results\drift_distribution.png
+2026-06-25 16:51:28,795 - visualize - INFO - Generating confusion matrix plot...
+2026-06-25 16:51:28,982 - __main__ - ERROR - Experiment failed with error: The number of FixedLocator locations (1), usually from a call to set_ticks, does not match the number of labels (2).
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 714, in run
+    self.generate_visualizations(results)
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 670, in generate_visualizations
+    self.visualizer.plot_confusion_matrix(
+  File "C:\Users\kmohn\New folder\Project-1\src\visualize.py", line 278, in plot_confusion_matrix
+    ax.set_xticklabels(['No Drift', 'Drift'])
+  File "C:\Python312\Lib\site-packages\matplotlib\axes\_base.py", line 73, in wrapper
+    return get_method(self)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\matplotlib\_api\deprecation.py", line 297, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\matplotlib\axis.py", line 2025, in set_ticklabels
+    raise ValueError(
+ValueError: The number of FixedLocator locations (1), usually from a call to set_ticks, does not match the number of labels (2).
+2026-06-25 16:58:02,732 - __main__ - INFO - ================================================================================
+2026-06-25 16:58:02,732 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 16:58:02,732 - __main__ - INFO - ================================================================================
+2026-06-25 16:58:02,732 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 16:58:02,733 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 16:58:02,733 - __main__ - INFO - Initializing components...
+2026-06-25 16:58:02,735 - __main__ - INFO - Setup complete
+2026-06-25 16:58:02,735 - __main__ - INFO - ================================================================================
+2026-06-25 16:58:02,735 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 16:58:02,735 - __main__ - INFO - ================================================================================
+2026-06-25 16:58:02,735 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 16:58:02,799 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 16:58:02,800 - __main__ - INFO - Total commits: 5
+2026-06-25 16:58:02,800 - __main__ - INFO - Training commits: 3
+2026-06-25 16:58:02,800 - __main__ - INFO - Test commits: 2
+2026-06-25 16:58:02,800 - __main__ - INFO - ================================================================================
+2026-06-25 16:58:02,800 - __main__ - INFO - BUILDING DATASET
+2026-06-25 16:58:02,800 - __main__ - INFO - ================================================================================
+2026-06-25 16:58:02,800 - __main__ - INFO - 
+Processing commit 1/5 (0fff1dba)...
+2026-06-25 16:58:08,071 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 16:58:08,076 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 16:58:08,076 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 16:58:13,869 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 16:58:13,870 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 16:58:41,083 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 16:58:41,184 - __main__ - INFO - 
+Processing commit 2/5 (70e0956f)...
+2026-06-25 16:58:52,067 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 16:59:58,028 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 16:59:58,029 - __main__ - INFO - Computing drifts and features between 0fff1dba and 70e0956f...
+2026-06-25 17:00:15,941 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 17:00:15,941 - __main__ - INFO -   Modified entities: 19
+2026-06-25 17:00:16,043 - __main__ - INFO - 
+Processing commit 3/5 (77a9a587)...
+2026-06-25 17:00:29,988 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 17:01:20,051 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 17:01:20,052 - __main__ - INFO - Computing drifts and features between 70e0956f and 77a9a587...
+2026-06-25 17:01:28,831 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 17:01:28,832 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:01:28,933 - __main__ - INFO - 
+Processing commit 4/5 (d2f014ca)...
+2026-06-25 17:01:35,412 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 17:02:25,645 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 17:02:25,646 - __main__ - INFO - Computing drifts and features between 77a9a587 and d2f014ca...
+2026-06-25 17:03:30,005 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 17:03:30,006 - __main__ - INFO -   Modified entities: 149
+2026-06-25 17:03:30,107 - __main__ - INFO - 
+Processing commit 5/5 (76138401)...
+2026-06-25 17:03:47,578 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 17:04:42,184 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 17:04:42,187 - __main__ - INFO - Computing drifts and features between d2f014ca and 76138401...
+2026-06-25 17:05:05,587 - __main__ - INFO -   Computed drifts for 697 entities
+2026-06-25 17:05:05,587 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:05:05,690 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data
+2026-06-25 17:05:05,693 - __main__ - INFO - ================================================================================
+2026-06-25 17:05:05,693 - __main__ - INFO - TRAINING MODEL
+2026-06-25 17:05:05,693 - __main__ - INFO - ================================================================================
+2026-06-25 17:05:05,722 - __main__ - INFO - Training on 696 entities with 696 drift values
+2026-06-25 17:05:05,753 - predictor - INFO - Train set: 487 entities
+2026-06-25 17:05:05,753 - predictor - INFO - Test set: 209 entities
+2026-06-25 17:05:05,754 - predictor - INFO - Training random_forest regression model...
+2026-06-25 17:05:06,748 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 17:05:06,749 - predictor - INFO - Training R²: 0.3808
+2026-06-25 17:05:06,751 - predictor - INFO - Evaluating model on test data...
+2026-06-25 17:05:06,920 - predictor - INFO - Test MSE: 0.000000
+2026-06-25 17:05:06,921 - predictor - INFO - Test RMSE: 0.000000
+2026-06-25 17:05:06,923 - predictor - INFO - Test R²: -0.0717
+2026-06-25 17:05:06,924 - predictor - INFO - Test MAE: 0.000000
+2026-06-25 17:05:07,096 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 17:05:07,097 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 17:05:07,097 - __main__ - INFO - Test metrics: {'test_mse': 5.576632253384489e-15, 'test_rmse': np.float64(7.467685219252676e-08), 'test_r2': -0.07173468775884695, 'test_mae': np.float64(6.203592378502974e-08)}
+2026-06-25 17:05:07,098 - __main__ - INFO - ================================================================================
+2026-06-25 17:05:07,099 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 17:05:07,099 - __main__ - INFO - ================================================================================
+2026-06-25 17:05:07,100 - __main__ - INFO - 
+Evaluating commit pair 1/1: d2f014ca -> 76138401
+2026-06-25 17:05:09,491 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 17:05:10,321 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 17:05:11,042 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 17:05:11,957 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 17:05:12,755 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 17:05:30,043 - __main__ - INFO - 
+================================================================================
+2026-06-25 17:05:30,043 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 17:05:30,043 - __main__ - INFO - ================================================================================
+2026-06-25 17:05:30,044 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 17:05:30,044 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 17:05:30,045 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:05:30,045 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 17:05:30,045 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 17:05:30,045 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 17:05:30,046 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:05:30,047 - __main__ - INFO -   Update %: 100.00%
+2026-06-25 17:05:30,047 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 17:05:30,047 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 17:05:30,048 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:05:30,049 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 17:05:30,049 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 17:05:30,049 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 17:05:30,049 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:05:30,050 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 17:05:30,050 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 17:05:30,051 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 17:05:30,051 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:05:30,051 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 17:05:30,052 - __main__ - INFO - ================================================================================
+2026-06-25 17:05:30,052 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 17:05:30,053 - __main__ - INFO - ================================================================================
+2026-06-25 17:05:30,248 - visualize - INFO - Generating feature importance plot...
+2026-06-25 17:05:34,252 - visualize - INFO - Feature importance plot saved to results\feature_importance.png
+2026-06-25 17:05:34,252 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 17:05:36,938 - visualize - INFO - Strategy comparison plot saved to results\strategy_comparison.png
+2026-06-25 17:05:36,970 - visualize - INFO - Generating Pareto frontier plot...
+2026-06-25 17:05:39,546 - visualize - INFO - Pareto frontier plot saved to results\pareto_frontier.png
+2026-06-25 17:05:39,548 - visualize - INFO - Generating drift distribution plot...
+2026-06-25 17:05:42,049 - visualize - INFO - Drift distribution plot saved to results\drift_distribution.png
+2026-06-25 17:05:42,050 - visualize - INFO - Generating confusion matrix plot...
+2026-06-25 17:05:44,037 - visualize - INFO - Confusion matrix plot saved to results\confusion_matrix.png
+2026-06-25 17:05:44,039 - visualize - INFO - Generating summary report...
+2026-06-25 17:05:44,043 - visualize - INFO - Summary report saved to results\summary_report.txt
+2026-06-25 17:05:44,044 - __main__ - INFO - Visualizations generated successfully
+2026-06-25 17:05:44,049 - __main__ - INFO - Results saved to results\results.json
+2026-06-25 17:05:44,050 - __main__ - INFO - ================================================================================
+2026-06-25 17:05:44,051 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 461.32 seconds
+2026-06-25 17:05:44,051 - __main__ - INFO - ================================================================================
+2026-06-25 17:05:44,051 - __main__ - INFO - Results saved to results
+2026-06-25 17:05:44,052 - __main__ - INFO - Logs saved to experiment.log
+2026-06-25 17:26:44,348 - __main__ - INFO - ================================================================================
+2026-06-25 17:26:44,349 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 17:26:44,349 - __main__ - INFO - ================================================================================
+2026-06-25 17:26:44,349 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 17:26:44,349 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 17:26:44,349 - __main__ - INFO - Initializing components...
+2026-06-25 17:26:44,351 - __main__ - INFO - Setup complete
+2026-06-25 17:26:44,351 - __main__ - INFO - ================================================================================
+2026-06-25 17:26:44,351 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 17:26:44,351 - __main__ - INFO - ================================================================================
+2026-06-25 17:26:44,351 - git_helper - INFO - Retrieving last 15 commits
+2026-06-25 17:26:44,400 - git_helper - INFO - Retrieved 15 commits
+2026-06-25 17:26:44,400 - __main__ - INFO - Total commits: 15
+2026-06-25 17:26:44,400 - __main__ - INFO - Training commits: 10
+2026-06-25 17:26:44,400 - __main__ - INFO - Test commits: 5
+2026-06-25 17:26:44,400 - __main__ - INFO - ================================================================================
+2026-06-25 17:26:44,401 - __main__ - INFO - BUILDING DATASET
+2026-06-25 17:26:44,401 - __main__ - INFO - ================================================================================
+2026-06-25 17:26:44,401 - __main__ - INFO - 
+Processing commit 1/15 (2b13ea76)...
+2026-06-25 17:26:49,379 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 17:26:49,381 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 17:26:49,381 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 17:26:54,009 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 17:26:54,011 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:27:28,911 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:27:29,013 - __main__ - INFO - 
+Processing commit 2/15 (d2490e24)...
+2026-06-25 17:27:38,618 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:28:09,378 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:28:09,378 - __main__ - INFO - Computing drifts and features between 2b13ea76 and d2490e24...
+2026-06-25 17:28:16,779 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:28:16,780 - __main__ - INFO -   Modified entities: 15
+2026-06-25 17:28:16,881 - __main__ - INFO - 
+Processing commit 3/15 (6d0fff0d)...
+2026-06-25 17:28:22,450 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:28:51,043 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:28:51,043 - __main__ - INFO - Computing drifts and features between d2490e24 and 6d0fff0d...
+2026-06-25 17:28:57,898 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:28:57,900 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:28:58,001 - __main__ - INFO - 
+Processing commit 4/15 (3dc8e6c4)...
+2026-06-25 17:29:03,818 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:29:31,303 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:29:31,303 - __main__ - INFO - Computing drifts and features between 6d0fff0d and 3dc8e6c4...
+2026-06-25 17:29:37,707 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:29:37,708 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:29:37,809 - __main__ - INFO - 
+Processing commit 5/15 (9cbd95f8)...
+2026-06-25 17:29:43,621 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:30:12,383 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:30:12,385 - __main__ - INFO - Computing drifts and features between 3dc8e6c4 and 9cbd95f8...
+2026-06-25 17:30:19,125 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:30:19,126 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:30:19,227 - __main__ - INFO - 
+Processing commit 6/15 (ebe6018e)...
+2026-06-25 17:30:25,008 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:30:50,937 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:30:50,937 - __main__ - INFO - Computing drifts and features between 9cbd95f8 and ebe6018e...
+2026-06-25 17:31:01,195 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:31:01,195 - __main__ - INFO -   Modified entities: 34
+2026-06-25 17:31:01,296 - __main__ - INFO - 
+Processing commit 7/15 (61361b71)...
+2026-06-25 17:31:11,238 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:31:43,319 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:31:43,320 - __main__ - INFO - Computing drifts and features between ebe6018e and 61361b71...
+2026-06-25 17:31:50,349 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:31:50,350 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:31:50,451 - __main__ - INFO - 
+Processing commit 8/15 (5809338f)...
+2026-06-25 17:32:01,249 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 17:32:34,545 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 17:32:34,545 - __main__ - INFO - Computing drifts and features between 61361b71 and 5809338f...
+2026-06-25 17:32:46,345 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:32:46,346 - __main__ - INFO -   Modified entities: 67
+2026-06-25 17:32:46,447 - __main__ - INFO - 
+Processing commit 9/15 (c970a497)...
+2026-06-25 17:32:52,992 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 17:33:20,174 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 17:33:20,175 - __main__ - INFO - Computing drifts and features between 5809338f and c970a497...
+2026-06-25 17:33:28,294 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 17:33:28,294 - __main__ - INFO -   Modified entities: 22
+2026-06-25 17:33:28,396 - __main__ - INFO - 
+Processing commit 10/15 (87928e6d)...
+2026-06-25 17:33:34,058 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 17:34:00,080 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 17:34:00,081 - __main__ - INFO - Computing drifts and features between c970a497 and 87928e6d...
+2026-06-25 17:34:06,068 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 17:34:06,068 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:34:06,170 - __main__ - INFO - 
+Processing commit 11/15 (0fff1dba)...
+2026-06-25 17:34:11,734 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 17:34:38,606 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 17:34:38,606 - __main__ - INFO - Computing drifts and features between 87928e6d and 0fff1dba...
+2026-06-25 17:34:43,844 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 17:34:43,845 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:34:43,947 - __main__ - INFO - 
+Processing commit 12/15 (70e0956f)...
+2026-06-25 17:34:50,957 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 17:35:18,222 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 17:35:18,222 - __main__ - INFO - Computing drifts and features between 0fff1dba and 70e0956f...
+2026-06-25 17:35:26,262 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 17:35:26,263 - __main__ - INFO -   Modified entities: 19
+2026-06-25 17:35:26,364 - __main__ - INFO - 
+Processing commit 13/15 (77a9a587)...
+2026-06-25 17:35:32,083 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 17:35:57,697 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 17:35:57,697 - __main__ - INFO - Computing drifts and features between 70e0956f and 77a9a587...
+2026-06-25 17:36:03,546 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 17:36:03,547 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:36:03,649 - __main__ - INFO - 
+Processing commit 14/15 (d2f014ca)...
+2026-06-25 17:36:09,984 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 17:36:36,886 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 17:36:36,887 - __main__ - INFO - Computing drifts and features between 77a9a587 and d2f014ca...
+2026-06-25 17:36:58,621 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 17:36:58,621 - __main__ - INFO -   Modified entities: 149
+2026-06-25 17:36:58,722 - __main__ - INFO - 
+Processing commit 15/15 (76138401)...
+2026-06-25 17:37:04,417 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 17:37:29,577 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 17:37:29,578 - __main__ - INFO - Computing drifts and features between d2f014ca and 76138401...
+2026-06-25 17:37:36,541 - __main__ - INFO -   Computed drifts for 697 entities
+2026-06-25 17:37:36,541 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:37:36,642 - __main__ - INFO - 
+Dataset built: 14 commit pairs with data
+2026-06-25 17:37:36,644 - __main__ - INFO - ================================================================================
+2026-06-25 17:37:36,644 - __main__ - INFO - TRAINING MODEL
+2026-06-25 17:37:36,645 - __main__ - INFO - ================================================================================
+2026-06-25 17:37:36,664 - __main__ - INFO - Training on 694 entities with 694 drift values
+2026-06-25 17:37:36,685 - predictor - INFO - Train set: 485 entities
+2026-06-25 17:37:36,687 - predictor - INFO - Test set: 209 entities
+2026-06-25 17:37:36,688 - predictor - INFO - Training random_forest regression model...
+2026-06-25 17:37:36,946 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 17:37:36,948 - predictor - INFO - Training R²: 0.3641
+2026-06-25 17:37:36,949 - predictor - INFO - Evaluating model on test data...
+2026-06-25 17:37:36,981 - predictor - INFO - Test MSE: 0.000000
+2026-06-25 17:37:36,982 - predictor - INFO - Test RMSE: 0.000000
+2026-06-25 17:37:36,982 - predictor - INFO - Test R²: -0.0993
+2026-06-25 17:37:36,982 - predictor - INFO - Test MAE: 0.000000
+2026-06-25 17:37:37,018 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 17:37:37,020 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 17:37:37,020 - __main__ - INFO - Test metrics: {'test_mse': 5.719886744767254e-15, 'test_rmse': np.float64(7.562993286237437e-08), 'test_r2': -0.09926578549242637, 'test_mae': np.float64(6.288910008723625e-08)}
+2026-06-25 17:37:37,021 - __main__ - INFO - ================================================================================
+2026-06-25 17:37:37,021 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 17:37:37,022 - __main__ - INFO - ================================================================================
+2026-06-25 17:37:37,022 - __main__ - INFO - 
+Evaluating commit pair 1/4: 0fff1dba -> 70e0956f
+2026-06-25 17:37:37,716 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 17:37:37,950 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 17:37:38,188 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 17:37:38,431 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 17:37:38,738 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 17:37:44,834 - __main__ - INFO - 
+Evaluating commit pair 2/4: 70e0956f -> 77a9a587
+2026-06-25 17:37:45,729 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 17:37:45,939 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 17:37:46,154 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 17:37:46,415 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 17:37:46,649 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 17:37:52,269 - __main__ - INFO - 
+Evaluating commit pair 3/4: 77a9a587 -> d2f014ca
+2026-06-25 17:37:52,987 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 17:37:53,198 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 17:37:53,441 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 17:37:53,673 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 17:37:53,888 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 17:37:59,606 - __main__ - INFO - 
+Evaluating commit pair 4/4: d2f014ca -> 76138401
+2026-06-25 17:38:00,239 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 17:38:00,445 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 17:38:00,645 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 17:38:00,920 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 17:38:01,133 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 17:38:07,138 - __main__ - INFO - 
+================================================================================
+2026-06-25 17:38:07,139 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 17:38:07,140 - __main__ - INFO - ================================================================================
+2026-06-25 17:38:07,140 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 17:38:07,141 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 17:38:07,141 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:38:07,142 - __main__ - INFO -   Update %: 5.92%
+2026-06-25 17:38:07,142 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 17:38:07,144 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 17:38:07,145 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:38:07,145 - __main__ - INFO -   Update %: 99.89%
+2026-06-25 17:38:07,146 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 17:38:07,146 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 17:38:07,147 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:38:07,147 - __main__ - INFO -   Update %: 5.92%
+2026-06-25 17:38:07,148 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 17:38:07,148 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 17:38:07,149 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:38:07,149 - __main__ - INFO -   Update %: 5.92%
+2026-06-25 17:38:07,150 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 17:38:07,150 - __main__ - INFO -   Recall@5: 0.9975
+2026-06-25 17:38:07,151 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 17:38:07,152 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 17:38:07,152 - __main__ - INFO - ================================================================================
+2026-06-25 17:38:07,153 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 17:38:07,153 - __main__ - INFO - ================================================================================
+2026-06-25 17:38:07,154 - visualize - INFO - Generating drift decay plot...
+2026-06-25 17:38:08,473 - visualize - INFO - Drift decay plot saved to results\drift_decay.png
+2026-06-25 17:38:08,531 - visualize - INFO - Generating feature importance plot...
+2026-06-25 17:38:09,292 - visualize - INFO - Feature importance plot saved to results\feature_importance.png
+2026-06-25 17:38:09,292 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 17:38:10,045 - visualize - INFO - Strategy comparison plot saved to results\strategy_comparison.png
+2026-06-25 17:38:10,056 - visualize - INFO - Generating Pareto frontier plot...
+2026-06-25 17:38:11,025 - visualize - INFO - Pareto frontier plot saved to results\pareto_frontier.png
+2026-06-25 17:38:11,026 - visualize - INFO - Generating drift distribution plot...
+2026-06-25 17:38:11,849 - visualize - INFO - Drift distribution plot saved to results\drift_distribution.png
+2026-06-25 17:38:11,850 - visualize - INFO - Generating confusion matrix plot...
+2026-06-25 17:38:12,271 - visualize - INFO - Confusion matrix plot saved to results\confusion_matrix.png
+2026-06-25 17:38:12,272 - visualize - INFO - Generating summary report...
+2026-06-25 17:38:12,273 - visualize - INFO - Summary report saved to results\summary_report.txt
+2026-06-25 17:38:12,273 - __main__ - INFO - Visualizations generated successfully
+2026-06-25 17:38:12,276 - __main__ - INFO - Results saved to results\results.json
+2026-06-25 17:38:12,277 - __main__ - INFO - ================================================================================
+2026-06-25 17:38:12,277 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 687.93 seconds
+2026-06-25 17:38:12,277 - __main__ - INFO - ================================================================================
+2026-06-25 17:38:12,277 - __main__ - INFO - Results saved to results
+2026-06-25 17:38:12,277 - __main__ - INFO - Logs saved to experiment.log
+2026-06-25 17:46:02,703 - __main__ - INFO - ================================================================================
+2026-06-25 17:46:02,704 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 17:46:02,704 - __main__ - INFO - ================================================================================
+2026-06-25 17:46:02,704 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 17:46:02,704 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 17:46:02,704 - __main__ - INFO - Initializing components...
+2026-06-25 17:46:02,706 - __main__ - INFO - Setup complete
+2026-06-25 17:46:02,706 - __main__ - INFO - ================================================================================
+2026-06-25 17:46:02,706 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 17:46:02,707 - __main__ - INFO - ================================================================================
+2026-06-25 17:46:02,707 - git_helper - INFO - Retrieving last 25 commits
+2026-06-25 17:46:02,752 - git_helper - INFO - Retrieved 25 commits
+2026-06-25 17:46:02,752 - __main__ - INFO - Total commits: 25
+2026-06-25 17:46:02,752 - __main__ - INFO - Training commits: 17
+2026-06-25 17:46:02,752 - __main__ - INFO - Test commits: 8
+2026-06-25 17:46:02,752 - __main__ - INFO - ================================================================================
+2026-06-25 17:46:02,752 - __main__ - INFO - BUILDING DATASET
+2026-06-25 17:46:02,753 - __main__ - INFO - ================================================================================
+2026-06-25 17:46:02,753 - __main__ - INFO - 
+Processing commit 1/25 (8dcc4865)...
+2026-06-25 17:46:06,991 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 17:46:06,992 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 17:46:06,993 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 17:46:11,257 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 17:46:11,258 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 17:46:36,789 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 17:46:36,890 - __main__ - INFO - 
+Processing commit 2/25 (6b5f6ab0)...
+2026-06-25 17:46:44,739 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 17:47:12,926 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 17:47:12,926 - __main__ - INFO - Computing drifts and features between 8dcc4865 and 6b5f6ab0...
+2026-06-25 17:47:18,803 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 17:47:18,804 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:47:18,905 - __main__ - INFO - 
+Processing commit 3/25 (530d5abb)...
+2026-06-25 17:47:25,461 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 17:47:52,046 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 17:47:52,046 - __main__ - INFO - Computing drifts and features between 6b5f6ab0 and 530d5abb...
+2026-06-25 17:47:57,577 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 17:47:57,578 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:47:57,678 - __main__ - INFO - 
+Processing commit 4/25 (b0fa37ff)...
+2026-06-25 17:48:07,020 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 17:48:49,683 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 17:48:49,685 - __main__ - INFO - Computing drifts and features between 530d5abb and b0fa37ff...
+2026-06-25 17:48:59,544 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 17:48:59,545 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:48:59,646 - __main__ - INFO - 
+Processing commit 5/25 (1c25a476)...
+2026-06-25 17:49:09,197 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 17:49:41,652 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 17:49:41,653 - __main__ - INFO - Computing drifts and features between b0fa37ff and 1c25a476...
+2026-06-25 17:49:47,902 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 17:49:47,903 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:49:48,004 - __main__ - INFO - 
+Processing commit 6/25 (05b4d1e6)...
+2026-06-25 17:49:59,408 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 17:50:35,545 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 17:50:35,546 - __main__ - INFO - Computing drifts and features between 1c25a476 and 05b4d1e6...
+2026-06-25 17:50:46,162 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 17:50:46,164 - __main__ - INFO -   Modified entities: 15
+2026-06-25 17:50:46,265 - __main__ - INFO - 
+Processing commit 7/25 (866c350c)...
+2026-06-25 17:50:55,592 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 17:51:26,533 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 17:51:26,533 - __main__ - INFO - Computing drifts and features between 05b4d1e6 and 866c350c...
+2026-06-25 17:51:35,379 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 17:51:35,379 - __main__ - INFO -   Modified entities: 4
+2026-06-25 17:51:35,481 - __main__ - INFO - 
+Processing commit 8/25 (9fd9ea28)...
+2026-06-25 17:51:43,076 - embedding_manager - INFO - Generating embeddings for 692 entities
+2026-06-25 17:52:13,402 - __main__ - INFO -   Parsed 692 entities, generated 692 embeddings
+2026-06-25 17:52:13,403 - __main__ - INFO - Computing drifts and features between 866c350c and 9fd9ea28...
+2026-06-25 17:52:21,396 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 17:52:21,396 - __main__ - INFO -   Modified entities: 54
+2026-06-25 17:52:21,498 - __main__ - INFO - 
+Processing commit 9/25 (9e874952)...
+2026-06-25 17:52:27,536 - embedding_manager - INFO - Generating embeddings for 692 entities
+2026-06-25 17:52:54,902 - __main__ - INFO -   Parsed 692 entities, generated 692 embeddings
+2026-06-25 17:52:54,903 - __main__ - INFO - Computing drifts and features between 9fd9ea28 and 9e874952...
+2026-06-25 17:52:58,982 - __main__ - INFO -   Computed drifts for 692 entities
+2026-06-25 17:52:58,982 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:52:59,084 - __main__ - INFO - 
+Processing commit 10/25 (aef52e00)...
+2026-06-25 17:53:05,228 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:53:38,634 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:53:38,636 - __main__ - INFO - Computing drifts and features between 9e874952 and aef52e00...
+2026-06-25 17:53:51,707 - __main__ - INFO -   Computed drifts for 692 entities
+2026-06-25 17:53:51,707 - __main__ - INFO -   Modified entities: 22
+2026-06-25 17:53:51,808 - __main__ - INFO - 
+Processing commit 11/25 (2b13ea76)...
+2026-06-25 17:53:56,967 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:54:27,239 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:54:27,240 - __main__ - INFO - Computing drifts and features between aef52e00 and 2b13ea76...
+2026-06-25 17:54:34,079 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:54:34,080 - __main__ - INFO -   Modified entities: 22
+2026-06-25 17:54:34,181 - __main__ - INFO - 
+Processing commit 12/25 (d2490e24)...
+2026-06-25 17:54:38,533 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:55:08,330 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:55:08,331 - __main__ - INFO - Computing drifts and features between 2b13ea76 and d2490e24...
+2026-06-25 17:55:16,392 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:55:16,392 - __main__ - INFO -   Modified entities: 15
+2026-06-25 17:55:16,493 - __main__ - INFO - 
+Processing commit 13/25 (6d0fff0d)...
+2026-06-25 17:55:20,604 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:55:48,632 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:55:48,632 - __main__ - INFO - Computing drifts and features between d2490e24 and 6d0fff0d...
+2026-06-25 17:55:52,589 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:55:52,589 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:55:52,690 - __main__ - INFO - 
+Processing commit 14/25 (3dc8e6c4)...
+2026-06-25 17:55:57,034 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:56:24,259 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:56:24,260 - __main__ - INFO - Computing drifts and features between 6d0fff0d and 3dc8e6c4...
+2026-06-25 17:56:28,441 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:56:28,442 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:56:28,543 - __main__ - INFO - 
+Processing commit 15/25 (9cbd95f8)...
+2026-06-25 17:56:32,715 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:56:59,407 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:56:59,408 - __main__ - INFO - Computing drifts and features between 3dc8e6c4 and 9cbd95f8...
+2026-06-25 17:57:03,535 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:57:03,536 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:57:03,637 - __main__ - INFO - 
+Processing commit 16/25 (ebe6018e)...
+2026-06-25 17:57:07,944 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:57:36,711 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:57:36,712 - __main__ - INFO - Computing drifts and features between 9cbd95f8 and ebe6018e...
+2026-06-25 17:57:45,211 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:57:45,212 - __main__ - INFO -   Modified entities: 34
+2026-06-25 17:57:45,313 - __main__ - INFO - 
+Processing commit 17/25 (61361b71)...
+2026-06-25 17:57:49,851 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 17:58:21,337 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 17:58:21,338 - __main__ - INFO - Computing drifts and features between ebe6018e and 61361b71...
+2026-06-25 17:58:32,878 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:58:32,879 - __main__ - INFO -   Modified entities: 0
+2026-06-25 17:58:32,980 - __main__ - INFO - 
+Processing commit 18/25 (5809338f)...
+2026-06-25 17:58:42,201 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 17:59:14,104 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 17:59:14,104 - __main__ - INFO - Computing drifts and features between 61361b71 and 5809338f...
+2026-06-25 17:59:29,161 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 17:59:29,162 - __main__ - INFO -   Modified entities: 67
+2026-06-25 17:59:29,264 - __main__ - INFO - 
+Processing commit 19/25 (c970a497)...
+2026-06-25 17:59:39,607 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 18:00:06,264 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 18:00:06,264 - __main__ - INFO - Computing drifts and features between 5809338f and c970a497...
+2026-06-25 18:00:11,722 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 18:00:11,722 - __main__ - INFO -   Modified entities: 22
+2026-06-25 18:00:11,823 - __main__ - INFO - 
+Processing commit 20/25 (87928e6d)...
+2026-06-25 18:00:16,217 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 18:00:44,197 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 18:00:44,197 - __main__ - INFO - Computing drifts and features between c970a497 and 87928e6d...
+2026-06-25 18:00:48,269 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 18:00:48,270 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:00:48,371 - __main__ - INFO - 
+Processing commit 21/25 (0fff1dba)...
+2026-06-25 18:00:52,717 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 18:01:19,904 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 18:01:19,904 - __main__ - INFO - Computing drifts and features between 87928e6d and 0fff1dba...
+2026-06-25 18:01:23,956 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 18:01:23,957 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:01:24,058 - __main__ - INFO - 
+Processing commit 22/25 (70e0956f)...
+2026-06-25 18:01:28,409 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 18:01:53,566 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 18:01:53,567 - __main__ - INFO - Computing drifts and features between 0fff1dba and 70e0956f...
+2026-06-25 18:01:58,408 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 18:01:58,408 - __main__ - INFO -   Modified entities: 19
+2026-06-25 18:01:58,509 - __main__ - INFO - 
+Processing commit 23/25 (77a9a587)...
+2026-06-25 18:02:03,044 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 18:02:28,170 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 18:02:28,171 - __main__ - INFO - Computing drifts and features between 70e0956f and 77a9a587...
+2026-06-25 18:02:32,071 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 18:02:32,071 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:02:32,173 - __main__ - INFO - 
+Processing commit 24/25 (d2f014ca)...
+2026-06-25 18:02:36,871 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 18:03:01,667 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 18:03:01,668 - __main__ - INFO - Computing drifts and features between 77a9a587 and d2f014ca...
+2026-06-25 18:03:14,946 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 18:03:14,947 - __main__ - INFO -   Modified entities: 149
+2026-06-25 18:03:15,049 - __main__ - INFO - 
+Processing commit 25/25 (76138401)...
+2026-06-25 18:03:19,122 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 18:03:45,689 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 18:03:45,690 - __main__ - INFO - Computing drifts and features between d2f014ca and 76138401...
+2026-06-25 18:03:56,743 - __main__ - INFO -   Computed drifts for 697 entities
+2026-06-25 18:03:56,743 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:03:56,845 - __main__ - INFO - 
+Dataset built: 24 commit pairs with data
+2026-06-25 18:03:56,845 - __main__ - INFO - ================================================================================
+2026-06-25 18:03:56,845 - __main__ - INFO - TRAINING MODEL
+2026-06-25 18:03:56,845 - __main__ - INFO - ================================================================================
+2026-06-25 18:03:56,864 - __main__ - INFO - Training on 693 entities with 693 drift values
+2026-06-25 18:03:56,874 - predictor - INFO - Train set: 485 entities
+2026-06-25 18:03:56,875 - predictor - INFO - Test set: 208 entities
+2026-06-25 18:03:56,876 - predictor - INFO - Training random_forest regression model...
+2026-06-25 18:03:57,199 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 18:03:57,200 - predictor - INFO - Training R²: 0.3960
+2026-06-25 18:03:57,200 - predictor - INFO - Evaluating model on test data...
+2026-06-25 18:03:57,263 - predictor - INFO - Test MSE: 0.000000
+2026-06-25 18:03:57,264 - predictor - INFO - Test RMSE: 0.000000
+2026-06-25 18:03:57,266 - predictor - INFO - Test R²: -0.1182
+2026-06-25 18:03:57,267 - predictor - INFO - Test MAE: 0.000000
+2026-06-25 18:03:57,355 - predictor - INFO - Model saved to results\results_contextual_commits25_cleanFalse\drift_predictor.pkl
+2026-06-25 18:03:57,357 - __main__ - INFO - Model saved to results\results_contextual_commits25_cleanFalse\drift_predictor.pkl
+2026-06-25 18:03:57,358 - __main__ - INFO - Test metrics: {'test_mse': 5.804785815604578e-15, 'test_rmse': np.float64(7.618914499851391e-08), 'test_r2': -0.11821586406091389, 'test_mae': np.float64(6.244356822157479e-08)}
+2026-06-25 18:03:57,359 - __main__ - INFO - ================================================================================
+2026-06-25 18:03:57,360 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 18:03:57,361 - __main__ - INFO - ================================================================================
+2026-06-25 18:03:57,362 - __main__ - INFO - 
+Evaluating commit pair 1/7: 5809338f -> c970a497
+2026-06-25 18:03:58,666 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:03:59,061 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:03:59,540 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:04:00,305 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:04:01,024 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:04:10,509 - __main__ - INFO - 
+Evaluating commit pair 2/7: c970a497 -> 87928e6d
+2026-06-25 18:04:11,869 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:04:12,311 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:04:12,704 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:04:13,085 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:04:13,366 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:04:19,470 - __main__ - INFO - 
+Evaluating commit pair 3/7: 87928e6d -> 0fff1dba
+2026-06-25 18:04:19,877 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:04:19,959 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:04:20,040 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:04:20,114 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:04:20,192 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:04:23,352 - __main__ - INFO - 
+Evaluating commit pair 4/7: 0fff1dba -> 70e0956f
+2026-06-25 18:04:23,870 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:04:24,000 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:04:24,112 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:04:24,329 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:04:24,528 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:04:28,411 - __main__ - INFO - 
+Evaluating commit pair 5/7: 70e0956f -> 77a9a587
+2026-06-25 18:04:28,945 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:04:29,063 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:04:29,174 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:04:29,283 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:04:29,389 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:04:33,263 - __main__ - INFO - 
+Evaluating commit pair 6/7: 77a9a587 -> d2f014ca
+2026-06-25 18:04:33,815 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:04:33,952 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:04:34,078 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:04:35,026 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:04:35,911 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:04:39,536 - __main__ - INFO - 
+Evaluating commit pair 7/7: d2f014ca -> 76138401
+2026-06-25 18:04:40,158 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:04:40,289 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:04:40,405 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:04:40,514 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:04:40,619 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:04:44,396 - __main__ - INFO - 
+================================================================================
+2026-06-25 18:04:44,397 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 18:04:44,397 - __main__ - INFO - ================================================================================
+2026-06-25 18:04:44,398 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 18:04:44,398 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 18:04:44,398 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:04:44,398 - __main__ - INFO -   Update %: 3.84%
+2026-06-25 18:04:44,399 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 18:04:44,399 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 18:04:44,399 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:04:44,399 - __main__ - INFO -   Update %: 99.94%
+2026-06-25 18:04:44,400 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 18:04:44,400 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 18:04:44,400 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:04:44,400 - __main__ - INFO -   Update %: 4.43%
+2026-06-25 18:04:44,400 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 18:04:44,401 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 18:04:44,401 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:04:44,401 - __main__ - INFO -   Update %: 4.47%
+2026-06-25 18:04:44,401 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 18:04:44,402 - __main__ - INFO -   Recall@5: 0.9986
+2026-06-25 18:04:44,402 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:04:44,402 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 18:04:44,403 - __main__ - INFO - ================================================================================
+2026-06-25 18:04:44,403 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 18:04:44,403 - __main__ - INFO - ================================================================================
+2026-06-25 18:04:44,404 - visualize - INFO - Generating drift decay plot...
+2026-06-25 18:04:45,102 - visualize - INFO - Drift decay plot saved to results\results_contextual_commits25_cleanFalse\drift_decay.png
+2026-06-25 18:04:45,143 - visualize - INFO - Generating feature importance plot...
+2026-06-25 18:04:45,603 - visualize - INFO - Feature importance plot saved to results\results_contextual_commits25_cleanFalse\feature_importance.png
+2026-06-25 18:04:45,603 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 18:04:46,019 - visualize - INFO - Strategy comparison plot saved to results\results_contextual_commits25_cleanFalse\strategy_comparison.png
+2026-06-25 18:04:46,025 - visualize - INFO - Generating Pareto frontier plot...
+2026-06-25 18:04:46,556 - visualize - INFO - Pareto frontier plot saved to results\results_contextual_commits25_cleanFalse\pareto_frontier.png
+2026-06-25 18:04:46,558 - visualize - INFO - Generating drift distribution plot...
+2026-06-25 18:04:47,094 - visualize - INFO - Drift distribution plot saved to results\results_contextual_commits25_cleanFalse\drift_distribution.png
+2026-06-25 18:04:47,095 - visualize - INFO - Generating confusion matrix plot...
+2026-06-25 18:04:47,417 - visualize - INFO - Confusion matrix plot saved to results\results_contextual_commits25_cleanFalse\confusion_matrix.png
+2026-06-25 18:04:47,417 - visualize - INFO - Generating summary report...
+2026-06-25 18:04:47,418 - visualize - INFO - Summary report saved to results\results_contextual_commits25_cleanFalse\summary_report.txt
+2026-06-25 18:04:47,418 - __main__ - INFO - Visualizations generated successfully
+2026-06-25 18:04:47,422 - __main__ - INFO - Results saved to results\results_contextual_commits25_cleanFalse\results.json
+2026-06-25 18:04:47,422 - __main__ - INFO - ================================================================================
+2026-06-25 18:04:47,422 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 1124.72 seconds
+2026-06-25 18:04:47,423 - __main__ - INFO - ================================================================================
+2026-06-25 18:04:47,423 - __main__ - INFO - Results saved to results\results_contextual_commits25_cleanFalse
+2026-06-25 18:04:47,423 - __main__ - INFO - Logs saved to experiment.log
+2026-06-25 18:09:40,350 - __main__ - INFO - ================================================================================
+2026-06-25 18:09:40,350 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 18:09:40,350 - __main__ - INFO - ================================================================================
+2026-06-25 18:09:40,352 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 18:09:40,352 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 18:09:40,352 - __main__ - INFO - Initializing components...
+2026-06-25 18:09:40,353 - __main__ - INFO - Setup complete
+2026-06-25 18:09:40,354 - __main__ - INFO - ================================================================================
+2026-06-25 18:09:40,354 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 18:09:40,354 - __main__ - INFO - ================================================================================
+2026-06-25 18:09:40,354 - git_helper - INFO - Retrieving last 25 commits
+2026-06-25 18:09:40,395 - git_helper - INFO - Retrieved 25 commits
+2026-06-25 18:09:40,395 - __main__ - INFO - Total commits: 25
+2026-06-25 18:09:40,395 - __main__ - INFO - Training commits: 17
+2026-06-25 18:09:40,395 - __main__ - INFO - Test commits: 8
+2026-06-25 18:09:40,396 - __main__ - INFO - ================================================================================
+2026-06-25 18:09:40,396 - __main__ - INFO - BUILDING DATASET
+2026-06-25 18:09:40,396 - __main__ - INFO - ================================================================================
+2026-06-25 18:09:40,396 - __main__ - INFO - 
+Processing commit 1/25 (8dcc4865)...
+2026-06-25 18:09:44,135 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 18:09:44,137 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 18:09:44,138 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 18:09:49,445 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 18:09:49,447 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 18:10:16,386 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 18:10:16,488 - __main__ - INFO - 
+Processing commit 2/25 (6b5f6ab0)...
+2026-06-25 18:10:24,984 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 18:10:52,235 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 18:10:52,235 - __main__ - INFO - Computing drifts and features between 8dcc4865 and 6b5f6ab0...
+2026-06-25 18:10:59,287 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 18:10:59,287 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:10:59,388 - __main__ - INFO - 
+Processing commit 3/25 (530d5abb)...
+2026-06-25 18:11:04,404 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 18:11:32,917 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 18:11:32,919 - __main__ - INFO - Computing drifts and features between 6b5f6ab0 and 530d5abb...
+2026-06-25 18:11:37,236 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 18:11:37,237 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:11:37,338 - __main__ - INFO - 
+Processing commit 4/25 (b0fa37ff)...
+2026-06-25 18:11:42,425 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 18:12:09,745 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 18:12:09,745 - __main__ - INFO - Computing drifts and features between 530d5abb and b0fa37ff...
+2026-06-25 18:12:14,272 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 18:12:14,273 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:12:14,374 - __main__ - INFO - 
+Processing commit 5/25 (1c25a476)...
+2026-06-25 18:12:24,363 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 18:12:54,880 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 18:12:54,881 - __main__ - INFO - Computing drifts and features between b0fa37ff and 1c25a476...
+2026-06-25 18:13:03,318 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 18:13:03,318 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:13:03,420 - __main__ - INFO - 
+Processing commit 6/25 (05b4d1e6)...
+2026-06-25 18:13:11,018 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 18:13:38,629 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 18:13:38,630 - __main__ - INFO - Computing drifts and features between 1c25a476 and 05b4d1e6...
+2026-06-25 18:13:46,970 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 18:13:46,971 - __main__ - INFO -   Modified entities: 15
+2026-06-25 18:13:47,073 - __main__ - INFO - 
+Processing commit 7/25 (866c350c)...
+2026-06-25 18:13:56,092 - embedding_manager - INFO - Generating embeddings for 691 entities
+2026-06-25 18:14:24,568 - __main__ - INFO -   Parsed 691 entities, generated 691 embeddings
+2026-06-25 18:14:24,568 - __main__ - INFO - Computing drifts and features between 05b4d1e6 and 866c350c...
+2026-06-25 18:14:31,719 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 18:14:31,719 - __main__ - INFO -   Modified entities: 4
+2026-06-25 18:14:31,820 - __main__ - INFO - 
+Processing commit 8/25 (9fd9ea28)...
+2026-06-25 18:14:39,354 - embedding_manager - INFO - Generating embeddings for 692 entities
+2026-06-25 18:15:10,871 - __main__ - INFO -   Parsed 692 entities, generated 692 embeddings
+2026-06-25 18:15:10,871 - __main__ - INFO - Computing drifts and features between 866c350c and 9fd9ea28...
+2026-06-25 18:15:24,336 - __main__ - INFO -   Computed drifts for 691 entities
+2026-06-25 18:15:24,336 - __main__ - INFO -   Modified entities: 54
+2026-06-25 18:15:24,437 - __main__ - INFO - 
+Processing commit 9/25 (9e874952)...
+2026-06-25 18:15:31,820 - embedding_manager - INFO - Generating embeddings for 692 entities
+2026-06-25 18:15:58,547 - __main__ - INFO -   Parsed 692 entities, generated 692 embeddings
+2026-06-25 18:15:58,547 - __main__ - INFO - Computing drifts and features between 9fd9ea28 and 9e874952...
+2026-06-25 18:16:06,711 - __main__ - INFO -   Computed drifts for 692 entities
+2026-06-25 18:16:06,712 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:16:06,813 - __main__ - INFO - 
+Processing commit 10/25 (aef52e00)...
+2026-06-25 18:16:14,898 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 18:16:42,544 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 18:16:42,544 - __main__ - INFO - Computing drifts and features between 9e874952 and aef52e00...
+2026-06-25 18:16:52,316 - __main__ - INFO -   Computed drifts for 692 entities
+2026-06-25 18:16:52,317 - __main__ - INFO -   Modified entities: 22
+2026-06-25 18:16:52,419 - __main__ - INFO - 
+Processing commit 11/25 (2b13ea76)...
+2026-06-25 18:17:00,197 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 18:17:28,282 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 18:17:28,282 - __main__ - INFO - Computing drifts and features between aef52e00 and 2b13ea76...
+2026-06-25 18:17:37,774 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 18:17:37,776 - __main__ - INFO -   Modified entities: 22
+2026-06-25 18:17:37,877 - __main__ - INFO - 
+Processing commit 12/25 (d2490e24)...
+2026-06-25 18:17:45,867 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 18:18:12,395 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 18:18:12,395 - __main__ - INFO - Computing drifts and features between 2b13ea76 and d2490e24...
+2026-06-25 18:18:20,308 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 18:18:20,309 - __main__ - INFO -   Modified entities: 15
+2026-06-25 18:18:20,410 - __main__ - INFO - 
+Processing commit 13/25 (6d0fff0d)...
+2026-06-25 18:18:26,245 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 18:18:56,371 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 18:18:56,372 - __main__ - INFO - Computing drifts and features between d2490e24 and 6d0fff0d...
+2026-06-25 18:19:04,197 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 18:19:04,198 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:19:04,299 - __main__ - INFO - 
+Processing commit 14/25 (3dc8e6c4)...
+2026-06-25 18:19:13,472 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 18:19:40,212 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 18:19:40,212 - __main__ - INFO - Computing drifts and features between 6d0fff0d and 3dc8e6c4...
+2026-06-25 18:19:49,255 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 18:19:49,255 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:19:49,356 - __main__ - INFO - 
+Processing commit 15/25 (9cbd95f8)...
+2026-06-25 18:19:57,672 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 18:20:25,217 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 18:20:25,217 - __main__ - INFO - Computing drifts and features between 3dc8e6c4 and 9cbd95f8...
+2026-06-25 18:20:30,831 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 18:20:30,832 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:20:30,933 - __main__ - INFO - 
+Processing commit 16/25 (ebe6018e)...
+2026-06-25 18:20:37,871 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 18:21:06,444 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 18:21:06,445 - __main__ - INFO - Computing drifts and features between 9cbd95f8 and ebe6018e...
+2026-06-25 18:21:16,122 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 18:21:16,122 - __main__ - INFO -   Modified entities: 34
+2026-06-25 18:21:16,224 - __main__ - INFO - 
+Processing commit 17/25 (61361b71)...
+2026-06-25 18:21:20,669 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 18:21:55,499 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 18:21:55,501 - __main__ - INFO - Computing drifts and features between ebe6018e and 61361b71...
+2026-06-25 18:22:02,313 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 18:22:02,313 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:22:02,415 - __main__ - INFO - 
+Processing commit 18/25 (5809338f)...
+2026-06-25 18:22:10,851 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 18:22:48,096 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 18:22:48,097 - __main__ - INFO - Computing drifts and features between 61361b71 and 5809338f...
+2026-06-25 18:23:05,476 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 18:23:05,477 - __main__ - INFO -   Modified entities: 67
+2026-06-25 18:23:05,578 - __main__ - INFO - 
+Processing commit 19/25 (c970a497)...
+2026-06-25 18:23:17,022 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 18:23:54,276 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 18:23:54,277 - __main__ - INFO - Computing drifts and features between 5809338f and c970a497...
+2026-06-25 18:24:05,832 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 18:24:05,832 - __main__ - INFO -   Modified entities: 22
+2026-06-25 18:24:05,934 - __main__ - INFO - 
+Processing commit 20/25 (87928e6d)...
+2026-06-25 18:24:15,767 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 18:24:47,812 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 18:24:47,812 - __main__ - INFO - Computing drifts and features between c970a497 and 87928e6d...
+2026-06-25 18:24:54,602 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 18:24:54,603 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:24:54,704 - __main__ - INFO - 
+Processing commit 21/25 (0fff1dba)...
+2026-06-25 18:25:00,653 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 18:25:41,380 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 18:25:41,381 - __main__ - INFO - Computing drifts and features between 87928e6d and 0fff1dba...
+2026-06-25 18:25:56,217 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 18:25:56,218 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:25:56,319 - __main__ - INFO - 
+Processing commit 22/25 (70e0956f)...
+2026-06-25 18:26:08,504 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 18:26:42,888 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 18:26:42,889 - __main__ - INFO - Computing drifts and features between 0fff1dba and 70e0956f...
+2026-06-25 18:26:50,344 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 18:26:50,344 - __main__ - INFO -   Modified entities: 19
+2026-06-25 18:26:50,445 - __main__ - INFO - 
+Processing commit 23/25 (77a9a587)...
+2026-06-25 18:26:59,405 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 18:27:27,973 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 18:27:27,974 - __main__ - INFO - Computing drifts and features between 70e0956f and 77a9a587...
+2026-06-25 18:27:37,261 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 18:27:37,261 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:27:37,363 - __main__ - INFO - 
+Processing commit 24/25 (d2f014ca)...
+2026-06-25 18:27:47,204 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 18:28:13,754 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 18:28:13,754 - __main__ - INFO - Computing drifts and features between 77a9a587 and d2f014ca...
+2026-06-25 18:28:37,568 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 18:28:37,568 - __main__ - INFO -   Modified entities: 149
+2026-06-25 18:28:37,670 - __main__ - INFO - 
+Processing commit 25/25 (76138401)...
+2026-06-25 18:28:47,028 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 18:29:18,166 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 18:29:18,167 - __main__ - INFO - Computing drifts and features between d2f014ca and 76138401...
+2026-06-25 18:29:26,648 - __main__ - INFO -   Computed drifts for 697 entities
+2026-06-25 18:29:26,648 - __main__ - INFO -   Modified entities: 0
+2026-06-25 18:29:26,749 - __main__ - INFO - 
+Dataset built: 24 commit pairs with data
+2026-06-25 18:29:26,750 - __main__ - INFO - ================================================================================
+2026-06-25 18:29:26,751 - __main__ - INFO - TRAINING MODEL
+2026-06-25 18:29:26,753 - __main__ - INFO - ================================================================================
+2026-06-25 18:29:26,782 - __main__ - INFO - Training on 693 entities with 693 drift values
+2026-06-25 18:29:26,801 - predictor - INFO - Train set: 485 entities
+2026-06-25 18:29:26,801 - predictor - INFO - Test set: 208 entities
+2026-06-25 18:29:26,803 - predictor - INFO - Training random_forest regression model...
+2026-06-25 18:29:27,096 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 18:29:27,096 - predictor - INFO - Training R²: 0.4474
+2026-06-25 18:29:27,097 - predictor - INFO - Evaluating model on test data...
+2026-06-25 18:29:27,137 - predictor - INFO - Test MSE: 0.000000
+2026-06-25 18:29:27,139 - predictor - INFO - Test RMSE: 0.000000
+2026-06-25 18:29:27,139 - predictor - INFO - Test R²: -0.1739
+2026-06-25 18:29:27,139 - predictor - INFO - Test MAE: 0.000000
+2026-06-25 18:29:27,184 - predictor - INFO - Model saved to results\results_isolated_commits25_cleanFalse\drift_predictor.pkl
+2026-06-25 18:29:27,185 - __main__ - INFO - Model saved to results\results_isolated_commits25_cleanFalse\drift_predictor.pkl
+2026-06-25 18:29:27,185 - __main__ - INFO - Test metrics: {'test_mse': 5.918946269774621e-15, 'test_rmse': np.float64(7.693468833871118e-08), 'test_r2': -0.17394989555715812, 'test_mae': np.float64(6.269944281541849e-08)}
+2026-06-25 18:29:27,186 - __main__ - INFO - ================================================================================
+2026-06-25 18:29:27,186 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 18:29:27,186 - __main__ - INFO - ================================================================================
+2026-06-25 18:29:27,187 - __main__ - INFO - 
+Evaluating commit pair 1/7: 5809338f -> c970a497
+2026-06-25 18:29:28,043 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:29:28,373 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:29:28,722 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:29:29,367 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:29:30,004 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:29:35,880 - __main__ - INFO - 
+Evaluating commit pair 2/7: c970a497 -> 87928e6d
+2026-06-25 18:29:36,279 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:29:36,359 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:29:36,437 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:29:36,514 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:29:36,594 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:29:40,887 - __main__ - INFO - 
+Evaluating commit pair 3/7: 87928e6d -> 0fff1dba
+2026-06-25 18:29:41,577 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:29:41,988 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:29:42,433 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:29:42,851 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:29:43,201 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:29:49,642 - __main__ - INFO - 
+Evaluating commit pair 4/7: 0fff1dba -> 70e0956f
+2026-06-25 18:29:50,678 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:29:50,857 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:29:51,005 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:29:51,230 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:29:51,490 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:30:00,574 - __main__ - INFO - 
+Evaluating commit pair 5/7: 70e0956f -> 77a9a587
+2026-06-25 18:30:02,007 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:30:02,369 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:30:02,770 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:30:03,176 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:30:03,563 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:30:12,705 - __main__ - INFO - 
+Evaluating commit pair 6/7: 77a9a587 -> d2f014ca
+2026-06-25 18:30:13,384 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:30:13,674 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:30:13,950 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:30:16,129 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:30:18,431 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:30:27,071 - __main__ - INFO - 
+Evaluating commit pair 7/7: d2f014ca -> 76138401
+2026-06-25 18:30:28,423 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 18:30:28,720 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 18:30:29,010 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 18:30:29,419 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 18:30:29,795 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 18:30:37,505 - __main__ - INFO - 
+================================================================================
+2026-06-25 18:30:37,505 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 18:30:37,506 - __main__ - INFO - ================================================================================
+2026-06-25 18:30:37,506 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 18:30:37,506 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 18:30:37,506 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:30:37,506 - __main__ - INFO -   Update %: 3.84%
+2026-06-25 18:30:37,506 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 18:30:37,507 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 18:30:37,507 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:30:37,507 - __main__ - INFO -   Update %: 99.94%
+2026-06-25 18:30:37,507 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 18:30:37,507 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 18:30:37,507 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:30:37,510 - __main__ - INFO -   Update %: 4.43%
+2026-06-25 18:30:37,510 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 18:30:37,510 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 18:30:37,511 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:30:37,511 - __main__ - INFO -   Update %: 4.47%
+2026-06-25 18:30:37,511 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 18:30:37,511 - __main__ - INFO -   Recall@5: 0.9986
+2026-06-25 18:30:37,512 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 18:30:37,512 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 18:30:37,512 - __main__ - INFO - ================================================================================
+2026-06-25 18:30:37,512 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 18:30:37,513 - __main__ - INFO - ================================================================================
+2026-06-25 18:30:37,513 - visualize - INFO - Generating drift decay plot...
+2026-06-25 18:30:38,054 - visualize - INFO - Drift decay plot saved to results\results_isolated_commits25_cleanFalse\drift_decay.png
+2026-06-25 18:30:38,087 - visualize - INFO - Generating feature importance plot...
+2026-06-25 18:30:38,497 - visualize - INFO - Feature importance plot saved to results\results_isolated_commits25_cleanFalse\feature_importance.png
+2026-06-25 18:30:38,498 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 18:30:38,836 - visualize - INFO - Strategy comparison plot saved to results\results_isolated_commits25_cleanFalse\strategy_comparison.png
+2026-06-25 18:30:38,843 - visualize - INFO - Generating Pareto frontier plot...
+2026-06-25 18:30:39,217 - visualize - INFO - Pareto frontier plot saved to results\results_isolated_commits25_cleanFalse\pareto_frontier.png
+2026-06-25 18:30:39,218 - visualize - INFO - Generating drift distribution plot...
+2026-06-25 18:30:39,578 - visualize - INFO - Drift distribution plot saved to results\results_isolated_commits25_cleanFalse\drift_distribution.png
+2026-06-25 18:30:39,578 - visualize - INFO - Generating confusion matrix plot...
+2026-06-25 18:30:39,798 - visualize - INFO - Confusion matrix plot saved to results\results_isolated_commits25_cleanFalse\confusion_matrix.png
+2026-06-25 18:30:39,798 - visualize - INFO - Generating summary report...
+2026-06-25 18:30:39,799 - visualize - INFO - Summary report saved to results\results_isolated_commits25_cleanFalse\summary_report.txt
+2026-06-25 18:30:39,799 - __main__ - INFO - Visualizations generated successfully
+2026-06-25 18:30:39,801 - __main__ - INFO - Results saved to results\results_isolated_commits25_cleanFalse\results.json
+2026-06-25 18:30:39,802 - __main__ - INFO - ================================================================================
+2026-06-25 18:30:39,802 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 1259.45 seconds
+2026-06-25 18:30:39,802 - __main__ - INFO - ================================================================================
+2026-06-25 18:30:39,802 - __main__ - INFO - Results saved to results\results_isolated_commits25_cleanFalse
+2026-06-25 18:30:39,802 - __main__ - INFO - Logs saved to experiment.log
