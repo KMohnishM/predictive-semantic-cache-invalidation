@@ -266,7 +266,7 @@ class Visualizer:
 
         logger.info("Generating confusion matrix plot...")
 
-        cm = confusion_matrix(y_true, y_pred)
+        cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
 
         fig, ax = plt.subplots(figsize=(8, 6))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax,
