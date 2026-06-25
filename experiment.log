@@ -1,0 +1,2768 @@
+2026-06-25 09:07:47,727 - __main__ - INFO - ================================================================================
+2026-06-25 09:07:47,728 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 09:07:47,728 - __main__ - INFO - ================================================================================
+2026-06-25 09:07:47,729 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 09:07:47,730 - git_helper - INFO - Cloning repository from https://github.com/psf/black.git to C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 09:07:56,722 - git_helper - INFO - Repository cloned successfully
+2026-06-25 09:07:56,723 - __main__ - INFO - Initializing components...
+2026-06-25 09:07:56,727 - __main__ - INFO - Setup complete
+2026-06-25 09:07:56,728 - __main__ - INFO - ================================================================================
+2026-06-25 09:07:56,728 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 09:07:56,729 - __main__ - INFO - ================================================================================
+2026-06-25 09:07:56,729 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 09:07:56,796 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 09:07:56,796 - __main__ - INFO - Total commits: 5
+2026-06-25 09:07:56,797 - __main__ - INFO - Training commits: 3
+2026-06-25 09:07:56,797 - __main__ - INFO - Test commits: 2
+2026-06-25 09:07:56,797 - __main__ - INFO - ================================================================================
+2026-06-25 09:07:56,797 - __main__ - INFO - BUILDING DATASET
+2026-06-25 09:07:56,797 - __main__ - INFO - ================================================================================
+2026-06-25 09:07:56,798 - __main__ - INFO - 
+Processing commit 1/5...
+2026-06-25 09:07:56,798 - __main__ - INFO - Processing commit a51a0be7...
+2026-06-25 09:07:56,917 - __main__ - ERROR - Experiment failed with error: 'workspace\\black\\action\\main.py' is not in the subpath of 'C:\\Users\\kmohn\\New folder\\Project-1\\workspace\\black'
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 603, in run
+    if not self.build_dataset():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 254, in build_dataset
+    self.process_commit(commit)
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 164, in process_commit
+    self.repo_parser.parse_directory(str(self.repo_path))
+  File "C:\Users\kmohn\New folder\Project-1\src\repo_parser.py", line 374, in parse_directory
+    self.parse_file(str(py_file))
+  File "C:\Users\kmohn\New folder\Project-1\src\repo_parser.py", line 332, in parse_file
+    entities, symbol_table = self._parse_file(file_path)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\repo_parser.py", line 154, in _parse_file
+    rel_path = self._get_relative_path(file_path)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\repo_parser.py", line 83, in _get_relative_path
+    return str(Path(absolute_path).relative_to(self.repo_path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\pathlib.py", line 682, in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+ValueError: 'workspace\\black\\action\\main.py' is not in the subpath of 'C:\\Users\\kmohn\\New folder\\Project-1\\workspace\\black'
+2026-06-25 09:08:33,995 - __main__ - INFO - ================================================================================
+2026-06-25 09:08:33,995 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 09:08:33,995 - __main__ - INFO - ================================================================================
+2026-06-25 09:08:33,996 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 09:08:33,997 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 09:08:33,997 - __main__ - INFO - Initializing components...
+2026-06-25 09:08:33,998 - __main__ - INFO - Setup complete
+2026-06-25 09:08:33,998 - __main__ - INFO - ================================================================================
+2026-06-25 09:08:33,998 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 09:08:33,998 - __main__ - INFO - ================================================================================
+2026-06-25 09:08:33,999 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 09:08:34,047 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 09:08:34,047 - __main__ - INFO - Total commits: 5
+2026-06-25 09:08:34,048 - __main__ - INFO - Training commits: 3
+2026-06-25 09:08:34,048 - __main__ - INFO - Test commits: 2
+2026-06-25 09:08:34,049 - __main__ - INFO - ================================================================================
+2026-06-25 09:08:34,049 - __main__ - INFO - BUILDING DATASET
+2026-06-25 09:08:34,050 - __main__ - INFO - ================================================================================
+2026-06-25 09:08:34,050 - __main__ - INFO - 
+Processing commit 1/5...
+2026-06-25 09:08:34,050 - __main__ - INFO - Processing commit 505bbfc9...
+2026-06-25 09:08:43,322 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:08:43,329 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 09:08:43,330 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:09:20,116 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 09:09:20,117 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:09:44,028 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:09:44,130 - __main__ - INFO - 
+Processing commit 2/5...
+2026-06-25 09:09:44,131 - __main__ - INFO - Processing commit 177744ee...
+2026-06-25 09:09:51,299 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:10:19,902 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:10:20,003 - __main__ - INFO - 
+Processing commit 3/5...
+2026-06-25 09:10:20,003 - __main__ - INFO - Processing commit 69dcf870...
+2026-06-25 09:10:27,745 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:10:57,178 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:10:57,280 - __main__ - INFO - 
+Processing commit 4/5...
+2026-06-25 09:10:57,280 - __main__ - INFO - Processing commit d883a7da...
+2026-06-25 09:11:04,397 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:11:36,059 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:11:36,161 - __main__ - INFO - 
+Processing commit 5/5...
+2026-06-25 09:11:36,162 - __main__ - INFO - Processing commit a51a0be7...
+2026-06-25 09:11:43,577 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:12:11,628 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:12:11,729 - __main__ - INFO - 
+Computing drifts and features...
+2026-06-25 09:12:25,371 - __main__ - INFO - Computing drifts and features between 505bbfc9 and 177744ee...
+2026-06-25 09:12:25,452 - __main__ - ERROR - Experiment failed with error: Source src\blib2to3\pgen2\driver.py::TokenProxy::__iter__ is not in G
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 603, in run
+    if not self.build_dataset():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 276, in build_dataset
+    drifts, features = self.compute_drifts_and_features(commit_a, commit_b)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 220, in compute_drifts_and_features
+    features_df = self.feature_extractor.extract_features_batch(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\feature_extractor.py", line 283, in extract_features_batch
+    features = self.extract_features(
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\feature_extractor.py", line 248, in extract_features
+    features.update(self._get_evolution_features(entity_id, modified_entities))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\feature_extractor.py", line 90, in _get_evolution_features
+    directed_distance = self.repo_parser.get_shortest_path_distance(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\repo_parser.py", line 510, in get_shortest_path_distance
+    return nx.shortest_path_length(self.graph, source, target)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\networkx\utils\decorators.py", line 788, in func
+    return argmap._lazy_compile(__wrapper)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<class 'networkx.utils.decorators.argmap'> compilation 4", line 3, in argmap_shortest_path_length_1
+    import gzip
+            ^^^^
+  File "C:\Python312\Lib\site-packages\networkx\utils\backends.py", line 967, in __call__
+    return self.orig_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\networkx\algorithms\shortest_paths\generic.py", line 326, in shortest_path_length
+    p = nx.bidirectional_shortest_path(G, source, target)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\networkx\utils\decorators.py", line 788, in func
+    return argmap._lazy_compile(__wrapper)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<class 'networkx.utils.decorators.argmap'> compilation 8", line 3, in argmap_bidirectional_shortest_path_5
+    import gzip
+            ^^^^
+  File "C:\Python312\Lib\site-packages\networkx\utils\backends.py", line 967, in __call__
+    return self.orig_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\networkx\algorithms\shortest_paths\unweighted.py", line 244, in bidirectional_shortest_path
+    raise nx.NodeNotFound(f"Source {source} is not in G")
+networkx.exception.NodeNotFound: Source src\blib2to3\pgen2\driver.py::TokenProxy::__iter__ is not in G
+2026-06-25 09:13:23,065 - __main__ - INFO - ================================================================================
+2026-06-25 09:13:23,066 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 09:13:23,066 - __main__ - INFO - ================================================================================
+2026-06-25 09:13:23,066 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 09:13:23,067 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 09:13:23,067 - __main__ - INFO - Initializing components...
+2026-06-25 09:13:23,068 - __main__ - INFO - Setup complete
+2026-06-25 09:13:23,068 - __main__ - INFO - ================================================================================
+2026-06-25 09:13:23,068 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 09:13:23,068 - __main__ - INFO - ================================================================================
+2026-06-25 09:13:23,070 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 09:13:23,132 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 09:13:23,132 - __main__ - INFO - Total commits: 5
+2026-06-25 09:13:23,133 - __main__ - INFO - Training commits: 3
+2026-06-25 09:13:23,133 - __main__ - INFO - Test commits: 2
+2026-06-25 09:13:23,133 - __main__ - INFO - ================================================================================
+2026-06-25 09:13:23,134 - __main__ - INFO - BUILDING DATASET
+2026-06-25 09:13:23,134 - __main__ - INFO - ================================================================================
+2026-06-25 09:13:23,134 - __main__ - INFO - 
+Processing commit 1/5...
+2026-06-25 09:13:23,134 - __main__ - INFO - Processing commit 0676fe9e...
+2026-06-25 09:13:29,949 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:13:29,954 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 09:13:29,955 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:13:34,284 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 09:13:34,285 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:13:56,351 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:13:56,453 - __main__ - INFO - 
+Processing commit 2/5...
+2026-06-25 09:13:56,453 - __main__ - INFO - Processing commit f50ab10f...
+2026-06-25 09:14:03,558 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:14:29,005 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:14:29,106 - __main__ - INFO - 
+Processing commit 3/5...
+2026-06-25 09:14:29,106 - __main__ - INFO - Processing commit b74b2301...
+2026-06-25 09:14:35,444 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:15:01,232 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:15:01,334 - __main__ - INFO - 
+Processing commit 4/5...
+2026-06-25 09:15:01,334 - __main__ - INFO - Processing commit 505bbfc9...
+2026-06-25 09:15:09,002 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:15:34,525 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:15:34,626 - __main__ - INFO - 
+Processing commit 5/5...
+2026-06-25 09:15:34,627 - __main__ - INFO - Processing commit 177744ee...
+2026-06-25 09:15:41,385 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:16:07,251 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:16:07,353 - __main__ - INFO - 
+Computing drifts and features...
+2026-06-25 09:16:21,832 - __main__ - INFO - Computing drifts and features between 0676fe9e and f50ab10f...
+2026-06-25 09:16:21,939 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:16:21,939 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:16:36,047 - __main__ - INFO - Computing drifts and features between f50ab10f and b74b2301...
+2026-06-25 09:16:36,131 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:16:36,131 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:16:49,230 - __main__ - INFO - Computing drifts and features between b74b2301 and 505bbfc9...
+2026-06-25 09:16:49,319 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:16:49,320 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:17:03,010 - __main__ - INFO - Computing drifts and features between 505bbfc9 and 177744ee...
+2026-06-25 09:17:03,088 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:17:03,089 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:17:03,089 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data
+2026-06-25 09:17:03,090 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:03,090 - __main__ - INFO - TRAINING MODEL
+2026-06-25 09:17:03,090 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:03,100 - __main__ - INFO - Training on 704 entities with 704 drift values
+2026-06-25 09:17:03,110 - predictor - INFO - Train set: 492 entities
+2026-06-25 09:17:03,111 - predictor - INFO - Test set: 212 entities
+2026-06-25 09:17:03,112 - predictor - INFO - Training random_forest regression model...
+2026-06-25 09:17:03,453 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 09:17:03,455 - predictor - INFO - Training R²: -0.0000
+2026-06-25 09:17:03,455 - predictor - INFO - Evaluating model on test data...
+2026-06-25 09:17:03,493 - predictor - INFO - Test MSE: 0.000011
+2026-06-25 09:17:03,494 - predictor - INFO - Test RMSE: 0.003278
+2026-06-25 09:17:03,494 - predictor - INFO - Test R²: -0.0154
+2026-06-25 09:17:03,494 - predictor - INFO - Test MAE: 0.000403
+2026-06-25 09:17:03,525 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:17:03,525 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:17:03,525 - __main__ - INFO - Test metrics: {'test_mse': 1.0747245573505914e-05, 'test_rmse': np.float64(0.0032782991891384646), 'test_r2': -0.015366675763590187, 'test_mae': np.float64(0.0004033535303701413)}
+2026-06-25 09:17:03,526 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:03,526 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 09:17:03,526 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:03,526 - __main__ - INFO - 
+Evaluating commit pair 1/1: 505bbfc9 -> 177744ee
+2026-06-25 09:17:04,141 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 09:17:04,446 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 09:17:04,703 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 09:17:04,703 - __main__ - ERROR - Experiment failed with error: Evaluator.evaluate_strategy() got an unexpected keyword argument 'repo_parser'
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 615, in run
+    results = self.evaluate_strategies()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 417, in evaluate_strategies
+    strategy_results = self.evaluator.evaluate_all_strategies(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\evaluator.py", line 303, in evaluate_all_strategies
+    results[f'baseline_c_fixed_hop_k{k}'] = self.evaluate_strategy(
+                                            ^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Evaluator.evaluate_strategy() got an unexpected keyword argument 'repo_parser'
+2026-06-25 09:17:39,422 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:39,422 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 09:17:39,423 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:39,423 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 09:17:39,424 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 09:17:39,424 - __main__ - INFO - Initializing components...
+2026-06-25 09:17:39,425 - __main__ - INFO - Setup complete
+2026-06-25 09:17:39,425 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:39,426 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 09:17:39,426 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:39,426 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 09:17:39,481 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 09:17:39,482 - __main__ - INFO - Total commits: 5
+2026-06-25 09:17:39,482 - __main__ - INFO - Training commits: 3
+2026-06-25 09:17:39,482 - __main__ - INFO - Test commits: 2
+2026-06-25 09:17:39,482 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:39,483 - __main__ - INFO - BUILDING DATASET
+2026-06-25 09:17:39,483 - __main__ - INFO - ================================================================================
+2026-06-25 09:17:39,484 - __main__ - INFO - 
+Processing commit 1/5...
+2026-06-25 09:17:39,484 - __main__ - INFO - Processing commit 0676fe9e...
+2026-06-25 09:17:46,424 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:17:46,427 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 09:17:46,427 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:17:50,909 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 09:17:50,910 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:18:12,574 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:18:12,675 - __main__ - INFO - 
+Processing commit 2/5...
+2026-06-25 09:18:12,677 - __main__ - INFO - Processing commit f50ab10f...
+2026-06-25 09:18:19,886 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:18:44,559 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:18:44,660 - __main__ - INFO - 
+Processing commit 3/5...
+2026-06-25 09:18:44,661 - __main__ - INFO - Processing commit b74b2301...
+2026-06-25 09:18:51,559 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:19:17,598 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:19:17,699 - __main__ - INFO - 
+Processing commit 4/5...
+2026-06-25 09:19:17,700 - __main__ - INFO - Processing commit 505bbfc9...
+2026-06-25 09:19:24,924 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:19:50,279 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:19:50,381 - __main__ - INFO - 
+Processing commit 5/5...
+2026-06-25 09:19:50,381 - __main__ - INFO - Processing commit 177744ee...
+2026-06-25 09:19:57,780 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:20:23,352 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:20:23,453 - __main__ - INFO - 
+Computing drifts and features...
+2026-06-25 09:20:37,400 - __main__ - INFO - Computing drifts and features between 0676fe9e and f50ab10f...
+2026-06-25 09:20:37,494 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:20:37,494 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:20:51,533 - __main__ - INFO - Computing drifts and features between f50ab10f and b74b2301...
+2026-06-25 09:20:51,601 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:20:51,603 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:21:05,302 - __main__ - INFO - Computing drifts and features between b74b2301 and 505bbfc9...
+2026-06-25 09:21:05,393 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:21:05,394 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:21:18,777 - __main__ - INFO - Computing drifts and features between 505bbfc9 and 177744ee...
+2026-06-25 09:21:18,861 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:21:18,862 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:21:18,862 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data
+2026-06-25 09:21:18,862 - __main__ - INFO - ================================================================================
+2026-06-25 09:21:18,863 - __main__ - INFO - TRAINING MODEL
+2026-06-25 09:21:18,863 - __main__ - INFO - ================================================================================
+2026-06-25 09:21:18,865 - __main__ - INFO - Training on 704 entities with 704 drift values
+2026-06-25 09:21:18,873 - predictor - INFO - Train set: 492 entities
+2026-06-25 09:21:18,874 - predictor - INFO - Test set: 212 entities
+2026-06-25 09:21:18,874 - predictor - INFO - Training random_forest regression model...
+2026-06-25 09:21:19,139 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 09:21:19,139 - predictor - INFO - Training R²: -0.0000
+2026-06-25 09:21:19,140 - predictor - INFO - Evaluating model on test data...
+2026-06-25 09:21:19,177 - predictor - INFO - Test MSE: 0.000011
+2026-06-25 09:21:19,177 - predictor - INFO - Test RMSE: 0.003278
+2026-06-25 09:21:19,178 - predictor - INFO - Test R²: -0.0154
+2026-06-25 09:21:19,178 - predictor - INFO - Test MAE: 0.000403
+2026-06-25 09:21:19,205 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:21:19,206 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:21:19,206 - __main__ - INFO - Test metrics: {'test_mse': 1.0747245573505914e-05, 'test_rmse': np.float64(0.0032782991891384646), 'test_r2': -0.015366675763590187, 'test_mae': np.float64(0.0004033535303701413)}
+2026-06-25 09:21:19,206 - __main__ - INFO - ================================================================================
+2026-06-25 09:21:19,207 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 09:21:19,207 - __main__ - INFO - ================================================================================
+2026-06-25 09:21:19,207 - __main__ - INFO - 
+Evaluating commit pair 1/1: 505bbfc9 -> 177744ee
+2026-06-25 09:21:19,824 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 09:21:20,016 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 09:21:20,274 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 09:21:20,480 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 09:21:20,777 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 09:21:26,833 - __main__ - INFO - 
+================================================================================
+2026-06-25 09:21:26,833 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 09:21:26,834 - __main__ - INFO - ================================================================================
+2026-06-25 09:21:26,834 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 09:21:26,835 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:21:26,836 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:21:26,836 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:21:26,836 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 09:21:26,837 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:21:26,837 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:21:26,838 - __main__ - INFO -   Update %: 100.00%
+2026-06-25 09:21:26,841 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 09:21:26,841 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:21:26,842 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:21:26,842 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:21:26,843 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 09:21:26,843 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:21:26,844 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:21:26,844 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:21:26,845 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 09:21:26,845 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:21:26,845 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:21:26,846 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:21:26,846 - __main__ - INFO - ================================================================================
+2026-06-25 09:21:26,847 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 09:21:26,847 - __main__ - INFO - ================================================================================
+2026-06-25 09:21:26,848 - visualize - INFO - Generating feature importance plot...
+2026-06-25 09:21:28,509 - visualize - INFO - Feature importance plot saved to results\feature_importance.png
+2026-06-25 09:21:28,509 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 09:21:29,225 - visualize - INFO - Strategy comparison plot saved to results\strategy_comparison.png
+2026-06-25 09:21:29,234 - __main__ - ERROR - Experiment failed with error: 'total_entities'
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 618, in run
+    self.generate_visualizations(results)
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 547, in generate_visualizations
+    all_df = self.evaluator.compute_maintenance_cost(results['strategy_results'])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\evaluator.py", line 334, in compute_maintenance_cost
+    'total_entities': metrics['total_entities'],
+                      ~~~~~~~^^^^^^^^^^^^^^^^^^
+KeyError: 'total_entities'
+2026-06-25 09:22:05,254 - __main__ - INFO - ================================================================================
+2026-06-25 09:22:05,254 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 09:22:05,255 - __main__ - INFO - ================================================================================
+2026-06-25 09:22:05,255 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 09:22:05,256 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 09:22:05,257 - __main__ - INFO - Initializing components...
+2026-06-25 09:22:05,259 - __main__ - INFO - Setup complete
+2026-06-25 09:22:05,259 - __main__ - INFO - ================================================================================
+2026-06-25 09:22:05,260 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 09:22:05,260 - __main__ - INFO - ================================================================================
+2026-06-25 09:22:05,260 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 09:22:05,338 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 09:22:05,338 - __main__ - INFO - Total commits: 5
+2026-06-25 09:22:05,338 - __main__ - INFO - Training commits: 3
+2026-06-25 09:22:05,339 - __main__ - INFO - Test commits: 2
+2026-06-25 09:22:05,339 - __main__ - INFO - ================================================================================
+2026-06-25 09:22:05,339 - __main__ - INFO - BUILDING DATASET
+2026-06-25 09:22:05,340 - __main__ - INFO - ================================================================================
+2026-06-25 09:22:05,340 - __main__ - INFO - 
+Processing commit 1/5...
+2026-06-25 09:22:05,341 - __main__ - INFO - Processing commit 0676fe9e...
+2026-06-25 09:22:12,266 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:22:12,272 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 09:22:12,272 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:22:16,621 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 09:22:16,622 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:22:39,702 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:22:39,803 - __main__ - INFO - 
+Processing commit 2/5...
+2026-06-25 09:22:39,805 - __main__ - INFO - Processing commit f50ab10f...
+2026-06-25 09:22:46,758 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:23:12,377 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:23:12,478 - __main__ - INFO - 
+Processing commit 3/5...
+2026-06-25 09:23:12,478 - __main__ - INFO - Processing commit b74b2301...
+2026-06-25 09:23:19,525 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:23:45,254 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:23:45,355 - __main__ - INFO - 
+Processing commit 4/5...
+2026-06-25 09:23:45,355 - __main__ - INFO - Processing commit 505bbfc9...
+2026-06-25 09:23:52,481 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:24:22,369 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:24:22,470 - __main__ - INFO - 
+Processing commit 5/5...
+2026-06-25 09:24:22,471 - __main__ - INFO - Processing commit 177744ee...
+2026-06-25 09:24:30,618 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:25:01,617 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:25:01,718 - __main__ - INFO - 
+Computing drifts and features...
+2026-06-25 09:25:16,276 - __main__ - INFO - Computing drifts and features between 0676fe9e and f50ab10f...
+2026-06-25 09:25:16,346 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:25:16,346 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:25:38,903 - __main__ - INFO - Computing drifts and features between f50ab10f and b74b2301...
+2026-06-25 09:25:39,018 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:25:39,018 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:26:02,210 - __main__ - INFO - Computing drifts and features between b74b2301 and 505bbfc9...
+2026-06-25 09:26:02,275 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:26:02,275 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:26:25,472 - __main__ - INFO - Computing drifts and features between 505bbfc9 and 177744ee...
+2026-06-25 09:26:25,578 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:26:25,579 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:26:25,580 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data
+2026-06-25 09:26:25,581 - __main__ - INFO - ================================================================================
+2026-06-25 09:26:25,581 - __main__ - INFO - TRAINING MODEL
+2026-06-25 09:26:25,582 - __main__ - INFO - ================================================================================
+2026-06-25 09:26:25,594 - __main__ - INFO - Training on 704 entities with 704 drift values
+2026-06-25 09:26:25,609 - predictor - INFO - Train set: 492 entities
+2026-06-25 09:26:25,610 - predictor - INFO - Test set: 212 entities
+2026-06-25 09:26:25,611 - predictor - INFO - Training random_forest regression model...
+2026-06-25 09:26:26,032 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 09:26:26,035 - predictor - INFO - Training R²: -0.0000
+2026-06-25 09:26:26,035 - predictor - INFO - Evaluating model on test data...
+2026-06-25 09:26:26,114 - predictor - INFO - Test MSE: 0.000011
+2026-06-25 09:26:26,115 - predictor - INFO - Test RMSE: 0.003278
+2026-06-25 09:26:26,115 - predictor - INFO - Test R²: -0.0154
+2026-06-25 09:26:26,116 - predictor - INFO - Test MAE: 0.000403
+2026-06-25 09:26:26,155 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:26:26,155 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:26:26,155 - __main__ - INFO - Test metrics: {'test_mse': 1.0747245573505914e-05, 'test_rmse': np.float64(0.0032782991891384646), 'test_r2': -0.015366675763590187, 'test_mae': np.float64(0.0004033535303701413)}
+2026-06-25 09:26:26,157 - __main__ - INFO - ================================================================================
+2026-06-25 09:26:26,157 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 09:26:26,158 - __main__ - INFO - ================================================================================
+2026-06-25 09:26:26,158 - __main__ - INFO - 
+Evaluating commit pair 1/1: 505bbfc9 -> 177744ee
+2026-06-25 09:26:27,372 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 09:26:27,687 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 09:26:28,073 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 09:26:28,496 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 09:26:28,970 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 09:26:29,294 - __main__ - ERROR - Experiment failed with error: 'total_entities'
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 615, in run
+    results = self.evaluate_strategies()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 441, in evaluate_strategies
+    all_strategy_results[strategy_name][metric].append(metrics[metric])
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'total_entities'
+2026-06-25 09:27:50,727 - __main__ - INFO - ================================================================================
+2026-06-25 09:27:50,728 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 09:27:50,729 - __main__ - INFO - ================================================================================
+2026-06-25 09:27:50,730 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 09:27:50,734 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 09:27:50,734 - __main__ - INFO - Initializing components...
+2026-06-25 09:27:50,738 - __main__ - INFO - Setup complete
+2026-06-25 09:27:50,739 - __main__ - INFO - ================================================================================
+2026-06-25 09:27:50,739 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 09:27:50,740 - __main__ - INFO - ================================================================================
+2026-06-25 09:27:50,741 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 09:27:50,814 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 09:27:50,814 - __main__ - INFO - Total commits: 5
+2026-06-25 09:27:50,815 - __main__ - INFO - Training commits: 3
+2026-06-25 09:27:50,815 - __main__ - INFO - Test commits: 2
+2026-06-25 09:27:50,816 - __main__ - INFO - ================================================================================
+2026-06-25 09:27:50,816 - __main__ - INFO - BUILDING DATASET
+2026-06-25 09:27:50,816 - __main__ - INFO - ================================================================================
+2026-06-25 09:27:50,817 - __main__ - INFO - 
+Processing commit 1/5...
+2026-06-25 09:27:50,817 - __main__ - INFO - Processing commit 0676fe9e...
+2026-06-25 09:27:59,570 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:27:59,579 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 09:27:59,579 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:28:04,696 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 09:28:04,697 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:28:39,912 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:28:40,013 - __main__ - INFO - 
+Processing commit 2/5...
+2026-06-25 09:28:40,013 - __main__ - INFO - Processing commit f50ab10f...
+2026-06-25 09:28:47,472 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:29:20,242 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:29:20,343 - __main__ - INFO - 
+Processing commit 3/5...
+2026-06-25 09:29:20,343 - __main__ - INFO - Processing commit b74b2301...
+2026-06-25 09:29:30,342 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:30:08,957 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:30:09,059 - __main__ - INFO - 
+Processing commit 4/5...
+2026-06-25 09:30:09,059 - __main__ - INFO - Processing commit 505bbfc9...
+2026-06-25 09:30:17,044 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:30:45,095 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:30:45,196 - __main__ - INFO - 
+Processing commit 5/5...
+2026-06-25 09:30:45,196 - __main__ - INFO - Processing commit 177744ee...
+2026-06-25 09:30:53,080 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:31:20,530 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:31:20,632 - __main__ - INFO - 
+Computing drifts and features...
+2026-06-25 09:31:34,284 - __main__ - INFO - Computing drifts and features between 0676fe9e and f50ab10f...
+2026-06-25 09:31:34,373 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:31:34,374 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:31:48,777 - __main__ - INFO - Computing drifts and features between f50ab10f and b74b2301...
+2026-06-25 09:31:48,850 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:31:48,850 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:32:01,820 - __main__ - INFO - Computing drifts and features between b74b2301 and 505bbfc9...
+2026-06-25 09:32:01,875 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:32:01,875 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:32:15,433 - __main__ - INFO - Computing drifts and features between 505bbfc9 and 177744ee...
+2026-06-25 09:32:15,514 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:32:15,515 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:32:15,515 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data
+2026-06-25 09:32:15,516 - __main__ - INFO - ================================================================================
+2026-06-25 09:32:15,516 - __main__ - INFO - TRAINING MODEL
+2026-06-25 09:32:15,516 - __main__ - INFO - ================================================================================
+2026-06-25 09:32:15,529 - __main__ - INFO - Training on 704 entities with 704 drift values
+2026-06-25 09:32:15,537 - predictor - INFO - Train set: 492 entities
+2026-06-25 09:32:15,538 - predictor - INFO - Test set: 212 entities
+2026-06-25 09:32:15,538 - predictor - INFO - Training random_forest regression model...
+2026-06-25 09:32:15,825 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 09:32:15,826 - predictor - INFO - Training R²: -0.0000
+2026-06-25 09:32:15,826 - predictor - INFO - Evaluating model on test data...
+2026-06-25 09:32:15,865 - predictor - INFO - Test MSE: 0.000011
+2026-06-25 09:32:15,869 - predictor - INFO - Test RMSE: 0.003278
+2026-06-25 09:32:15,869 - predictor - INFO - Test R²: -0.0154
+2026-06-25 09:32:15,870 - predictor - INFO - Test MAE: 0.000403
+2026-06-25 09:32:15,911 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:32:15,911 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:32:15,912 - __main__ - INFO - Test metrics: {'test_mse': 1.0747245573505914e-05, 'test_rmse': np.float64(0.0032782991891384646), 'test_r2': -0.015366675763590187, 'test_mae': np.float64(0.0004033535303701413)}
+2026-06-25 09:32:15,913 - __main__ - INFO - ================================================================================
+2026-06-25 09:32:15,913 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 09:32:15,914 - __main__ - INFO - ================================================================================
+2026-06-25 09:32:15,914 - __main__ - INFO - 
+Evaluating commit pair 1/1: 505bbfc9 -> 177744ee
+2026-06-25 09:32:16,607 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 09:32:16,798 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 09:32:16,968 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 09:32:17,304 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 09:32:17,604 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 09:32:23,847 - __main__ - INFO - 
+================================================================================
+2026-06-25 09:32:23,847 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 09:32:23,848 - __main__ - INFO - ================================================================================
+2026-06-25 09:32:23,849 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 09:32:23,850 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:32:23,850 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:32:23,851 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:32:23,851 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 09:32:23,853 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:32:23,853 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:32:23,854 - __main__ - INFO -   Update %: 100.00%
+2026-06-25 09:32:23,854 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 09:32:23,854 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:32:23,854 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:32:23,854 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:32:23,856 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 09:32:23,856 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:32:23,856 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:32:23,856 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:32:23,857 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 09:32:23,857 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:32:23,858 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:32:23,858 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:32:23,859 - __main__ - INFO - ================================================================================
+2026-06-25 09:32:23,859 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 09:32:23,861 - __main__ - INFO - ================================================================================
+2026-06-25 09:32:23,864 - visualize - INFO - Generating feature importance plot...
+2026-06-25 09:32:25,287 - visualize - INFO - Feature importance plot saved to results\feature_importance.png
+2026-06-25 09:32:25,288 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 09:32:26,184 - visualize - INFO - Strategy comparison plot saved to results\strategy_comparison.png
+2026-06-25 09:32:26,195 - __main__ - ERROR - Experiment failed with error: 'evaluation_time'
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 619, in run
+    self.generate_visualizations(results)
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 548, in generate_visualizations
+    all_df = self.evaluator.compute_maintenance_cost(results['strategy_results'])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\evaluator.py", line 336, in compute_maintenance_cost
+    'evaluation_time': metrics['evaluation_time']
+                       ~~~~~~~^^^^^^^^^^^^^^^^^^^
+KeyError: 'evaluation_time'
+2026-06-25 09:33:38,494 - __main__ - INFO - ================================================================================
+2026-06-25 09:33:38,495 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 09:33:38,496 - __main__ - INFO - ================================================================================
+2026-06-25 09:33:38,496 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 09:33:38,499 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 09:33:38,499 - __main__ - INFO - Initializing components...
+2026-06-25 09:33:38,501 - __main__ - INFO - Setup complete
+2026-06-25 09:33:38,502 - __main__ - INFO - ================================================================================
+2026-06-25 09:33:38,502 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 09:33:38,503 - __main__ - INFO - ================================================================================
+2026-06-25 09:33:38,503 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 09:33:38,566 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 09:33:38,566 - __main__ - INFO - Total commits: 5
+2026-06-25 09:33:38,566 - __main__ - INFO - Training commits: 3
+2026-06-25 09:33:38,567 - __main__ - INFO - Test commits: 2
+2026-06-25 09:33:38,567 - __main__ - INFO - ================================================================================
+2026-06-25 09:33:38,567 - __main__ - INFO - BUILDING DATASET
+2026-06-25 09:33:38,567 - __main__ - INFO - ================================================================================
+2026-06-25 09:33:38,568 - __main__ - INFO - 
+Processing commit 1/5...
+2026-06-25 09:33:38,568 - __main__ - INFO - Processing commit 0676fe9e...
+2026-06-25 09:33:45,527 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:33:45,532 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 09:33:45,532 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:33:49,986 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 09:33:49,987 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:34:12,717 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:34:12,819 - __main__ - INFO - 
+Processing commit 2/5...
+2026-06-25 09:34:12,820 - __main__ - INFO - Processing commit f50ab10f...
+2026-06-25 09:34:19,829 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:34:47,966 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:34:48,067 - __main__ - INFO - 
+Processing commit 3/5...
+2026-06-25 09:34:48,068 - __main__ - INFO - Processing commit b74b2301...
+2026-06-25 09:34:55,374 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:35:23,390 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:35:23,491 - __main__ - INFO - 
+Processing commit 4/5...
+2026-06-25 09:35:23,492 - __main__ - INFO - Processing commit 505bbfc9...
+2026-06-25 09:35:30,793 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:35:57,363 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:35:57,464 - __main__ - INFO - 
+Processing commit 5/5...
+2026-06-25 09:35:57,464 - __main__ - INFO - Processing commit 177744ee...
+2026-06-25 09:36:04,375 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:36:40,329 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:36:40,431 - __main__ - INFO - 
+Computing drifts and features...
+2026-06-25 09:36:54,464 - __main__ - INFO - Computing drifts and features between 0676fe9e and f50ab10f...
+2026-06-25 09:36:54,550 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:36:54,550 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:37:08,425 - __main__ - INFO - Computing drifts and features between f50ab10f and b74b2301...
+2026-06-25 09:37:08,509 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 09:37:08,509 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:37:22,932 - __main__ - INFO - Computing drifts and features between b74b2301 and 505bbfc9...
+2026-06-25 09:37:22,979 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:37:22,980 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:37:37,607 - __main__ - INFO - Computing drifts and features between 505bbfc9 and 177744ee...
+2026-06-25 09:37:37,664 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 09:37:37,665 - __main__ - INFO -   Modified entities: 0
+2026-06-25 09:37:37,665 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data
+2026-06-25 09:37:37,665 - __main__ - INFO - ================================================================================
+2026-06-25 09:37:37,665 - __main__ - INFO - TRAINING MODEL
+2026-06-25 09:37:37,666 - __main__ - INFO - ================================================================================
+2026-06-25 09:37:37,667 - __main__ - INFO - Training on 704 entities with 704 drift values
+2026-06-25 09:37:37,670 - predictor - INFO - Train set: 492 entities
+2026-06-25 09:37:37,670 - predictor - INFO - Test set: 212 entities
+2026-06-25 09:37:37,671 - predictor - INFO - Training random_forest regression model...
+2026-06-25 09:37:37,939 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 09:37:37,939 - predictor - INFO - Training R²: -0.0000
+2026-06-25 09:37:37,939 - predictor - INFO - Evaluating model on test data...
+2026-06-25 09:37:37,972 - predictor - INFO - Test MSE: 0.000011
+2026-06-25 09:37:37,972 - predictor - INFO - Test RMSE: 0.003278
+2026-06-25 09:37:37,973 - predictor - INFO - Test R²: -0.0154
+2026-06-25 09:37:37,973 - predictor - INFO - Test MAE: 0.000403
+2026-06-25 09:37:37,997 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:37:37,997 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 09:37:37,997 - __main__ - INFO - Test metrics: {'test_mse': 1.0747245573505914e-05, 'test_rmse': np.float64(0.0032782991891384646), 'test_r2': -0.015366675763590187, 'test_mae': np.float64(0.0004033535303701413)}
+2026-06-25 09:37:37,997 - __main__ - INFO - ================================================================================
+2026-06-25 09:37:37,998 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 09:37:37,998 - __main__ - INFO - ================================================================================
+2026-06-25 09:37:37,998 - __main__ - INFO - 
+Evaluating commit pair 1/1: 505bbfc9 -> 177744ee
+2026-06-25 09:37:38,698 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 09:37:38,899 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 09:37:39,112 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 09:37:39,379 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 09:37:39,609 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 09:37:45,567 - __main__ - INFO - 
+================================================================================
+2026-06-25 09:37:45,568 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 09:37:45,568 - __main__ - INFO - ================================================================================
+2026-06-25 09:37:45,568 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 09:37:45,568 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:37:45,569 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:37:45,569 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:37:45,570 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 09:37:45,570 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:37:45,571 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:37:45,571 - __main__ - INFO -   Update %: 100.00%
+2026-06-25 09:37:45,571 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 09:37:45,572 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:37:45,572 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:37:45,573 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:37:45,575 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 09:37:45,575 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:37:45,576 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:37:45,576 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:37:45,577 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 09:37:45,577 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 09:37:45,577 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 09:37:45,577 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 09:37:45,578 - __main__ - INFO - ================================================================================
+2026-06-25 09:37:45,578 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 09:37:45,578 - __main__ - INFO - ================================================================================
+2026-06-25 09:37:45,579 - visualize - INFO - Generating feature importance plot...
+2026-06-25 09:37:46,500 - visualize - INFO - Feature importance plot saved to results\feature_importance.png
+2026-06-25 09:37:46,500 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 09:37:47,121 - visualize - INFO - Strategy comparison plot saved to results\strategy_comparison.png
+2026-06-25 09:37:47,134 - visualize - INFO - Generating Pareto frontier plot...
+2026-06-25 09:37:47,909 - visualize - INFO - Pareto frontier plot saved to results\pareto_frontier.png
+2026-06-25 09:37:47,910 - visualize - INFO - Generating drift distribution plot...
+2026-06-25 09:37:48,861 - visualize - INFO - Drift distribution plot saved to results\drift_distribution.png
+2026-06-25 09:37:48,861 - visualize - INFO - Generating confusion matrix plot...
+2026-06-25 09:37:49,800 - visualize - INFO - Confusion matrix plot saved to results\confusion_matrix.png
+2026-06-25 09:37:49,808 - predictor - INFO - Evaluating model on test data...
+2026-06-25 09:37:49,851 - __main__ - ERROR - Experiment failed with error: Found input variables with inconsistent numbers of samples: [707, 2822]
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 619, in run
+    self.generate_visualizations(results)
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 576, in generate_visualizations
+    'model_metrics': self.predictor.evaluate(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\predictor.py", line 187, in evaluate
+    metrics['test_mse'] = mean_squared_error(y, y_pred)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\sklearn\utils\_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\sklearn\metrics\_regression.py", line 565, in mean_squared_error
+    _check_reg_targets_with_floating_dtype(
+  File "C:\Python312\Lib\site-packages\sklearn\metrics\_regression.py", line 198, in _check_reg_targets_with_floating_dtype
+    y_type, y_true, y_pred, multioutput = _check_reg_targets(
+                                          ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\site-packages\sklearn\metrics\_regression.py", line 104, in _check_reg_targets
+    check_consistent_length(y_true, y_pred)
+  File "C:\Python312\Lib\site-packages\sklearn\utils\validation.py", line 475, in check_consistent_length
+    raise ValueError(
+ValueError: Found input variables with inconsistent numbers of samples: [707, 2822]
+2026-06-25 09:38:47,241 - __main__ - INFO - ================================================================================
+2026-06-25 09:38:47,242 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 09:38:47,242 - __main__ - INFO - ================================================================================
+2026-06-25 09:38:47,243 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 09:38:47,244 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 09:38:47,245 - __main__ - INFO - Initializing components...
+2026-06-25 09:38:47,247 - __main__ - INFO - Setup complete
+2026-06-25 09:38:47,248 - __main__ - INFO - ================================================================================
+2026-06-25 09:38:47,248 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 09:38:47,248 - __main__ - INFO - ================================================================================
+2026-06-25 09:38:47,249 - git_helper - INFO - Retrieving last 5 commits
+2026-06-25 09:38:47,334 - git_helper - INFO - Retrieved 5 commits
+2026-06-25 09:38:47,334 - __main__ - INFO - Total commits: 5
+2026-06-25 09:38:47,335 - __main__ - INFO - Training commits: 3
+2026-06-25 09:38:47,335 - __main__ - INFO - Test commits: 2
+2026-06-25 09:38:47,335 - __main__ - INFO - ================================================================================
+2026-06-25 09:38:47,336 - __main__ - INFO - BUILDING DATASET
+2026-06-25 09:38:47,336 - __main__ - INFO - ================================================================================
+2026-06-25 09:38:47,337 - __main__ - INFO - 
+Processing commit 1/5...
+2026-06-25 09:38:47,337 - __main__ - INFO - Processing commit 0676fe9e...
+2026-06-25 09:38:54,141 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:38:54,146 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 09:38:54,147 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 09:38:58,882 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 09:38:58,883 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:39:29,963 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:39:30,065 - __main__ - INFO - 
+Processing commit 2/5...
+2026-06-25 09:39:30,065 - __main__ - INFO - Processing commit f50ab10f...
+2026-06-25 09:39:38,726 - embedding_manager - INFO - Generating embeddings for 704 entities
+2026-06-25 09:40:14,170 - __main__ - INFO -   Parsed 704 entities, generated 704 embeddings
+2026-06-25 09:40:14,272 - __main__ - INFO - 
+Processing commit 3/5...
+2026-06-25 09:40:14,272 - __main__ - INFO - Processing commit b74b2301...
+2026-06-25 09:40:21,819 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 09:40:56,311 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 09:40:56,412 - __main__ - INFO - 
+Processing commit 4/5...
+2026-06-25 09:40:56,412 - __main__ - INFO - Processing commit 505bbfc9...
+2026-06-25 09:41:05,785 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 10:11:33,799 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 10:11:33,901 - __main__ - INFO - 
+Processing commit 5/5...
+2026-06-25 10:11:33,901 - __main__ - INFO - Processing commit 177744ee...
+2026-06-25 10:11:41,907 - embedding_manager - INFO - Generating embeddings for 707 entities
+2026-06-25 10:12:07,521 - __main__ - INFO -   Parsed 707 entities, generated 707 embeddings
+2026-06-25 10:12:07,622 - __main__ - INFO - 
+Computing drifts and features...
+2026-06-25 10:12:24,792 - __main__ - INFO - Computing drifts and features between 0676fe9e and f50ab10f...
+2026-06-25 10:12:24,910 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 10:12:24,910 - __main__ - INFO -   Modified entities: 0
+2026-06-25 10:12:39,816 - __main__ - INFO - Computing drifts and features between f50ab10f and b74b2301...
+2026-06-25 10:12:39,905 - __main__ - INFO -   Computed drifts for 704 entities
+2026-06-25 10:12:39,906 - __main__ - INFO -   Modified entities: 0
+2026-06-25 10:12:52,700 - __main__ - INFO - Computing drifts and features between b74b2301 and 505bbfc9...
+2026-06-25 10:12:52,753 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 10:12:52,754 - __main__ - INFO -   Modified entities: 0
+2026-06-25 10:13:05,674 - __main__ - INFO - Computing drifts and features between 505bbfc9 and 177744ee...
+2026-06-25 10:13:05,747 - __main__ - INFO -   Computed drifts for 707 entities
+2026-06-25 10:13:05,747 - __main__ - INFO -   Modified entities: 0
+2026-06-25 10:13:05,748 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data
+2026-06-25 10:13:05,749 - __main__ - INFO - ================================================================================
+2026-06-25 10:13:05,749 - __main__ - INFO - TRAINING MODEL
+2026-06-25 10:13:05,750 - __main__ - INFO - ================================================================================
+2026-06-25 10:13:05,756 - __main__ - INFO - Training on 704 entities with 704 drift values
+2026-06-25 10:13:05,764 - predictor - INFO - Train set: 492 entities
+2026-06-25 10:13:05,764 - predictor - INFO - Test set: 212 entities
+2026-06-25 10:13:05,765 - predictor - INFO - Training random_forest regression model...
+2026-06-25 10:13:06,024 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 10:13:06,025 - predictor - INFO - Training R²: -0.0000
+2026-06-25 10:13:06,026 - predictor - INFO - Evaluating model on test data...
+2026-06-25 10:13:06,059 - predictor - INFO - Test MSE: 0.000011
+2026-06-25 10:13:06,062 - predictor - INFO - Test RMSE: 0.003278
+2026-06-25 10:13:06,062 - predictor - INFO - Test R²: -0.0154
+2026-06-25 10:13:06,064 - predictor - INFO - Test MAE: 0.000403
+2026-06-25 10:13:06,100 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 10:13:06,100 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 10:13:06,101 - __main__ - INFO - Test metrics: {'test_mse': 1.0747245573505914e-05, 'test_rmse': np.float64(0.0032782991891384646), 'test_r2': -0.015366675763590187, 'test_mae': np.float64(0.0004033535303701413)}
+2026-06-25 10:13:06,102 - __main__ - INFO - ================================================================================
+2026-06-25 10:13:06,102 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 10:13:06,102 - __main__ - INFO - ================================================================================
+2026-06-25 10:13:06,102 - __main__ - INFO - 
+Evaluating commit pair 1/1: 505bbfc9 -> 177744ee
+2026-06-25 10:13:06,844 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 10:13:07,101 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 10:13:07,371 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 10:13:07,631 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 10:13:07,895 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 10:13:13,760 - __main__ - INFO - 
+================================================================================
+2026-06-25 10:13:13,760 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 10:13:13,761 - __main__ - INFO - ================================================================================
+2026-06-25 10:13:13,761 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 10:13:13,761 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 10:13:13,761 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 10:13:13,762 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 10:13:13,762 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 10:13:13,762 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 10:13:13,762 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 10:13:13,762 - __main__ - INFO -   Update %: 100.00%
+2026-06-25 10:13:13,762 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 10:13:13,764 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 10:13:13,764 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 10:13:13,764 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 10:13:13,764 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 10:13:13,764 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 10:13:13,764 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 10:13:13,765 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 10:13:13,765 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 10:13:13,765 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 10:13:13,765 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 10:13:13,766 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 10:13:13,766 - __main__ - INFO - ================================================================================
+2026-06-25 10:13:13,767 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 10:13:13,767 - __main__ - INFO - ================================================================================
+2026-06-25 10:13:13,769 - visualize - INFO - Generating feature importance plot...
+2026-06-25 10:13:15,020 - visualize - INFO - Feature importance plot saved to results\feature_importance.png
+2026-06-25 10:13:15,020 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 10:13:15,777 - visualize - INFO - Strategy comparison plot saved to results\strategy_comparison.png
+2026-06-25 10:13:15,787 - visualize - INFO - Generating Pareto frontier plot...
+2026-06-25 10:13:16,729 - visualize - INFO - Pareto frontier plot saved to results\pareto_frontier.png
+2026-06-25 10:13:16,730 - visualize - INFO - Generating drift distribution plot...
+2026-06-25 10:13:17,560 - visualize - INFO - Drift distribution plot saved to results\drift_distribution.png
+2026-06-25 10:13:17,561 - visualize - INFO - Generating confusion matrix plot...
+2026-06-25 10:13:18,097 - visualize - INFO - Confusion matrix plot saved to results\confusion_matrix.png
+2026-06-25 10:13:18,098 - visualize - INFO - Generating summary report...
+2026-06-25 10:13:18,099 - visualize - INFO - Summary report saved to results\summary_report.txt
+2026-06-25 10:13:18,099 - __main__ - INFO - Visualizations generated successfully
+2026-06-25 10:13:18,101 - __main__ - INFO - Results saved to results\results.json
+2026-06-25 10:13:18,102 - __main__ - INFO - ================================================================================
+2026-06-25 10:13:18,102 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 2070.86 seconds
+2026-06-25 10:13:18,103 - __main__ - INFO - ================================================================================
+2026-06-25 10:13:18,103 - __main__ - INFO - Results saved to results
+2026-06-25 10:13:18,103 - __main__ - INFO - Logs saved to experiment.log
+2026-06-25 10:27:16,754 - __main__ - INFO - ================================================================================
+2026-06-25 10:27:16,757 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 10:27:16,758 - __main__ - INFO - ================================================================================
+2026-06-25 10:27:16,759 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 10:27:16,763 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 10:27:16,763 - __main__ - INFO - Initializing components...
+2026-06-25 10:27:16,768 - __main__ - INFO - Setup complete
+2026-06-25 10:27:16,768 - __main__ - INFO - ================================================================================
+2026-06-25 10:27:16,770 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 10:27:16,770 - __main__ - INFO - ================================================================================
+2026-06-25 10:27:16,771 - git_helper - INFO - Retrieving last 10 commits
+2026-06-25 10:27:17,163 - git_helper - INFO - Retrieved 10 commits
+2026-06-25 10:27:17,163 - __main__ - INFO - Total commits: 10
+2026-06-25 10:27:17,164 - __main__ - INFO - Training commits: 7
+2026-06-25 10:27:17,164 - __main__ - INFO - Test commits: 3
+2026-06-25 10:27:17,165 - __main__ - INFO - ================================================================================
+2026-06-25 10:27:17,165 - __main__ - INFO - BUILDING DATASET
+2026-06-25 10:27:17,165 - __main__ - INFO - ================================================================================
+2026-06-25 10:27:17,166 - __main__ - INFO - 
+Processing commit 1/10...
+2026-06-25 10:27:17,167 - __main__ - INFO - Processing commit 3a98448d...
+2026-06-25 10:27:35,751 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 10:27:35,773 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 10:27:35,774 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 10:27:41,932 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 10:27:41,932 - embedding_manager - INFO - Generating embeddings for 703 entities
+2026-06-25 10:28:18,598 - __main__ - INFO -   Parsed 703 entities, generated 703 embeddings
+2026-06-25 10:28:18,700 - __main__ - INFO - 
+Processing commit 2/10...
+2026-06-25 10:28:18,700 - __main__ - INFO - Processing commit 6cf262f7...
+2026-06-25 10:28:34,480 - embedding_manager - INFO - Generating embeddings for 703 entities
+2026-06-25 10:40:27,843 - __main__ - INFO - ================================================================================
+2026-06-25 10:40:27,845 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 10:40:27,845 - __main__ - INFO - ================================================================================
+2026-06-25 10:40:27,845 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 10:40:27,846 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 10:40:27,846 - __main__ - INFO - Initializing components...
+2026-06-25 10:40:27,847 - __main__ - INFO - Setup complete
+2026-06-25 10:40:27,848 - __main__ - INFO - ================================================================================
+2026-06-25 10:40:27,848 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 10:40:27,848 - __main__ - INFO - ================================================================================
+2026-06-25 10:40:27,848 - git_helper - INFO - Retrieving last 10 commits
+2026-06-25 10:40:27,951 - git_helper - INFO - Retrieved 10 commits
+2026-06-25 10:40:27,951 - __main__ - INFO - Total commits: 10
+2026-06-25 10:40:27,951 - __main__ - INFO - Training commits: 7
+2026-06-25 10:40:27,951 - __main__ - INFO - Test commits: 3
+2026-06-25 10:40:27,951 - __main__ - INFO - ================================================================================
+2026-06-25 10:40:27,951 - __main__ - INFO - BUILDING DATASET
+2026-06-25 10:40:27,951 - __main__ - INFO - ================================================================================
+2026-06-25 10:40:27,951 - __main__ - INFO - 
+Processing commit 1/10 (67ffc34d)...
+2026-06-25 10:40:35,635 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 10:40:35,641 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 10:40:35,642 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 10:40:41,227 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 10:40:41,227 - embedding_manager - INFO - Generating embeddings for 699 entities
+2026-06-25 10:41:20,109 - __main__ - INFO -   Parsed 699 entities, generated 699 embeddings
+2026-06-25 10:41:20,210 - __main__ - INFO - 
+Processing commit 2/10 (ce1897a8)...
+2026-06-25 10:41:30,268 - embedding_manager - INFO - Generating embeddings for 699 entities
+2026-06-25 10:42:07,842 - __main__ - INFO -   Parsed 699 entities, generated 699 embeddings
+2026-06-25 10:42:07,842 - __main__ - INFO - Computing drifts and features between 67ffc34d and ce1897a8...
+2026-06-25 11:11:49,339 - __main__ - INFO - ================================================================================
+2026-06-25 11:11:49,341 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 11:11:49,341 - __main__ - INFO - ================================================================================
+2026-06-25 11:11:49,341 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 11:11:49,342 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 11:11:49,342 - __main__ - INFO - Initializing components...
+2026-06-25 11:11:49,343 - __main__ - INFO - Setup complete
+2026-06-25 11:11:49,343 - __main__ - INFO - ================================================================================
+2026-06-25 11:11:49,343 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 11:11:49,343 - __main__ - INFO - ================================================================================
+2026-06-25 11:11:49,343 - git_helper - INFO - Retrieving last 10 commits
+2026-06-25 11:11:49,414 - git_helper - INFO - Retrieved 10 commits
+2026-06-25 11:11:49,415 - __main__ - INFO - Total commits: 10
+2026-06-25 11:11:49,415 - __main__ - INFO - Training commits: 7
+2026-06-25 11:11:49,415 - __main__ - INFO - Test commits: 3
+2026-06-25 11:11:49,415 - __main__ - INFO - ================================================================================
+2026-06-25 11:11:49,415 - __main__ - INFO - BUILDING DATASET
+2026-06-25 11:11:49,415 - __main__ - INFO - ================================================================================
+2026-06-25 11:11:49,415 - __main__ - INFO - 
+Processing commit 1/10 (13e97b44)...
+2026-06-25 11:11:55,619 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 11:11:55,622 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 11:11:55,623 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 11:12:01,147 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 11:12:01,147 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 11:13:04,622 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 11:13:04,724 - __main__ - INFO - 
+Processing commit 2/10 (650983f7)...
+2026-06-25 11:13:16,483 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 11:13:53,565 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 11:13:53,566 - __main__ - INFO - Computing drifts and features between 13e97b44 and 650983f7...
+2026-06-25 11:16:50,851 - __main__ - INFO -   Computed drifts for 697 entities
+2026-06-25 11:16:50,852 - __main__ - INFO -   Modified entities: 15
+2026-06-25 11:16:50,953 - __main__ - INFO - 
+Processing commit 3/10 (7e8ef6bc)...
+2026-06-25 11:17:00,563 - embedding_manager - INFO - Generating embeddings for 698 entities
+2026-06-25 11:33:21,959 - __main__ - INFO - ================================================================================
+2026-06-25 11:33:21,963 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 11:33:21,963 - __main__ - INFO - ================================================================================
+2026-06-25 11:33:21,963 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 11:33:21,964 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 11:33:21,964 - __main__ - INFO - Initializing components...
+2026-06-25 11:33:21,966 - __main__ - INFO - Setup complete
+2026-06-25 11:33:21,967 - __main__ - INFO - ================================================================================
+2026-06-25 11:33:21,967 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 11:33:21,967 - __main__ - INFO - ================================================================================
+2026-06-25 11:33:21,967 - git_helper - INFO - Retrieving last 10 commits
+2026-06-25 11:33:22,066 - git_helper - INFO - Retrieved 10 commits
+2026-06-25 11:33:22,067 - __main__ - INFO - Total commits: 10
+2026-06-25 11:33:22,067 - __main__ - INFO - Training commits: 7
+2026-06-25 11:33:22,067 - __main__ - INFO - Test commits: 3
+2026-06-25 11:33:22,067 - __main__ - INFO - ================================================================================
+2026-06-25 11:33:22,067 - __main__ - INFO - BUILDING DATASET
+2026-06-25 11:33:22,068 - __main__ - INFO - ================================================================================
+2026-06-25 11:33:22,068 - __main__ - INFO - 
+Processing commit 1/10 (c970a497)...
+2026-06-25 11:33:27,202 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 11:33:27,204 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 11:33:27,205 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 11:33:32,570 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 11:33:32,570 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 11:34:00,094 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 11:34:00,195 - __main__ - INFO - 
+Processing commit 2/10 (87928e6d)...
+2026-06-25 11:34:09,172 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 11:34:53,028 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 11:34:53,029 - __main__ - INFO - Computing drifts and features between c970a497 and 87928e6d...
+2026-06-25 11:35:32,706 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 11:35:32,707 - __main__ - INFO -   Modified entities: 0
+2026-06-25 11:35:32,807 - __main__ - INFO - 
+Processing commit 3/10 (0fff1dba)...
+2026-06-25 11:35:37,221 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 11:36:06,756 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 11:36:06,756 - __main__ - INFO - Computing drifts and features between 87928e6d and 0fff1dba...
+2026-06-25 11:37:02,670 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 11:37:02,671 - __main__ - INFO -   Modified entities: 0
+2026-06-25 11:37:02,772 - __main__ - INFO - 
+Processing commit 4/10 (70e0956f)...
+2026-06-25 11:37:09,280 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 11:37:40,161 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 11:37:40,161 - __main__ - INFO - Computing drifts and features between 0fff1dba and 70e0956f...
+2026-06-25 11:38:32,511 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 11:38:32,511 - __main__ - INFO -   Modified entities: 19
+2026-06-25 11:38:32,611 - __main__ - INFO - 
+Processing commit 5/10 (77a9a587)...
+2026-06-25 11:38:37,646 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 11:39:06,595 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 11:39:06,595 - __main__ - INFO - Computing drifts and features between 70e0956f and 77a9a587...
+2026-06-25 11:39:57,649 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 11:39:57,650 - __main__ - INFO -   Modified entities: 0
+2026-06-25 11:39:57,750 - __main__ - INFO - 
+Processing commit 6/10 (d2f014ca)...
+2026-06-25 11:40:06,556 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 11:40:39,136 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 11:40:39,137 - __main__ - INFO - Computing drifts and features between 77a9a587 and d2f014ca...
+2026-06-25 11:41:07,852 - git_helper - ERROR - Git command failed: git diff --numstat 77a9a5875b0bc89fcc2ebdd8756263be77e4ecca d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 -- src/blib2to3/pgen2/pgen.py
+2026-06-25 11:41:07,853 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:41:07,854 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', '77a9a5875b0bc89fcc2ebdd8756263be77e4ecca', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '--', 'src/blib2to3/pgen2/pgen.py']' returned non-zero exit status 129.
+2026-06-25 11:41:08,055 - git_helper - ERROR - Git command failed: git diff --numstat 77a9a5875b0bc89fcc2ebdd8756263be77e4ecca d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 -- src/black/linegen.py
+2026-06-25 11:41:08,055 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:41:08,059 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', '77a9a5875b0bc89fcc2ebdd8756263be77e4ecca', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '--', 'src/black/linegen.py']' returned non-zero exit status 129.
+2026-06-25 11:41:08,177 - git_helper - ERROR - Git command failed: git show 77a9a5875b0bc89fcc2ebdd8756263be77e4ecca:src/black/linegen.py
+2026-06-25 11:41:08,178 - git_helper - ERROR - Error: fatal: not a git repository (or any of the parent directories): .git
+
+2026-06-25 11:41:08,344 - git_helper - ERROR - Git command failed: git diff --numstat 77a9a5875b0bc89fcc2ebdd8756263be77e4ecca d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 -- src/blib2to3/pgen2/pgen.py
+2026-06-25 11:41:08,344 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:41:08,347 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', '77a9a5875b0bc89fcc2ebdd8756263be77e4ecca', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '--', 'src/blib2to3/pgen2/pgen.py']' returned non-zero exit status 129.
+2026-06-25 11:41:08,506 - git_helper - ERROR - Git command failed: git diff --numstat 77a9a5875b0bc89fcc2ebdd8756263be77e4ecca d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 -- src/black/lines.py
+2026-06-25 11:41:08,507 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:41:08,509 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', '77a9a5875b0bc89fcc2ebdd8756263be77e4ecca', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '--', 'src/black/lines.py']' returned non-zero exit status 129.
+2026-06-25 11:41:08,674 - git_helper - ERROR - Git command failed: git diff --numstat 77a9a5875b0bc89fcc2ebdd8756263be77e4ecca d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 -- src/black/__init__.py
+2026-06-25 11:41:08,675 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:41:08,678 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', '77a9a5875b0bc89fcc2ebdd8756263be77e4ecca', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '--', 'src/black/__init__.py']' returned non-zero exit status 129.
+2026-06-25 11:42:03,837 - git_helper - ERROR - Git command failed: git show 77a9a5875b0bc89fcc2ebdd8756263be77e4ecca:src/black/linegen.py
+2026-06-25 11:42:03,837 - git_helper - ERROR - Error: fatal: not a git repository (or any of the parent directories): .git
+
+2026-06-25 11:42:04,067 - git_helper - ERROR - Git command failed: git diff --numstat 77a9a5875b0bc89fcc2ebdd8756263be77e4ecca d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 -- src/black/lines.py
+2026-06-25 11:42:04,067 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:42:04,071 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', '77a9a5875b0bc89fcc2ebdd8756263be77e4ecca', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '--', 'src/black/lines.py']' returned non-zero exit status 129.
+2026-06-25 11:42:19,159 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 11:42:19,160 - __main__ - INFO -   Modified entities: 149
+2026-06-25 11:42:19,261 - __main__ - INFO - 
+Processing commit 7/10 (76138401)...
+2026-06-25 11:42:34,027 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 11:43:32,086 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 11:43:32,088 - __main__ - INFO - Computing drifts and features between d2f014ca and 76138401...
+2026-06-25 11:43:58,463 - git_helper - ERROR - Git command failed: git diff --numstat d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 7613840124a7d6fdf7ce95157f9fc40360c2db88 -- src/black/nodes.py
+2026-06-25 11:43:58,464 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:43:58,468 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '7613840124a7d6fdf7ce95157f9fc40360c2db88', '--', 'src/black/nodes.py']' returned non-zero exit status 129.
+2026-06-25 11:43:58,783 - git_helper - ERROR - Git command failed: git diff --numstat d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 7613840124a7d6fdf7ce95157f9fc40360c2db88 -- src/black/__init__.py
+2026-06-25 11:43:58,783 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:43:58,797 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '7613840124a7d6fdf7ce95157f9fc40360c2db88', '--', 'src/black/__init__.py']' returned non-zero exit status 129.
+2026-06-25 11:44:41,768 - git_helper - ERROR - Git command failed: git diff --numstat d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 7613840124a7d6fdf7ce95157f9fc40360c2db88 -- src/blib2to3/pgen2/driver.py
+2026-06-25 11:44:41,769 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:44:41,772 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '7613840124a7d6fdf7ce95157f9fc40360c2db88', '--', 'src/blib2to3/pgen2/driver.py']' returned non-zero exit status 129.
+2026-06-25 11:44:41,972 - git_helper - ERROR - Git command failed: git diff --numstat d2f014ca5da6a1bf903cac45b7aa19dbda9fd864 7613840124a7d6fdf7ce95157f9fc40360c2db88 -- src/black/trans.py
+2026-06-25 11:44:41,973 - git_helper - ERROR - Error: warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-06-25 11:44:41,976 - feature_extractor - WARNING - Failed to get diff stats: Command '['git', 'diff', '--numstat', 'd2f014ca5da6a1bf903cac45b7aa19dbda9fd864', '7613840124a7d6fdf7ce95157f9fc40360c2db88', '--', 'src/black/trans.py']' returned non-zero exit status 129.
+2026-06-25 11:48:51,744 - __main__ - INFO - ================================================================================
+2026-06-25 11:48:51,744 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 11:48:51,744 - __main__ - INFO - ================================================================================
+2026-06-25 11:48:51,744 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 11:48:51,746 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 11:48:51,746 - __main__ - INFO - Initializing components...
+2026-06-25 11:48:51,748 - __main__ - INFO - Setup complete
+2026-06-25 11:48:51,748 - __main__ - INFO - ================================================================================
+2026-06-25 11:48:51,748 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 11:48:51,748 - __main__ - INFO - ================================================================================
+2026-06-25 11:48:51,748 - git_helper - INFO - Retrieving last 10 commits
+2026-06-25 11:48:51,842 - git_helper - INFO - Retrieved 10 commits
+2026-06-25 11:48:51,842 - __main__ - INFO - Total commits: 10
+2026-06-25 11:48:51,842 - __main__ - INFO - Training commits: 7
+2026-06-25 11:48:51,842 - __main__ - INFO - Test commits: 3
+2026-06-25 11:48:51,842 - __main__ - INFO - ================================================================================
+2026-06-25 11:48:51,842 - __main__ - INFO - BUILDING DATASET
+2026-06-25 11:48:51,842 - __main__ - INFO - ================================================================================
+2026-06-25 11:48:51,842 - __main__ - INFO - 
+Processing commit 1/10 (ebe6018e)...
+2026-06-25 11:48:56,915 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 11:48:56,918 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 11:48:56,918 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 11:49:01,725 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 11:49:01,726 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 11:49:34,146 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 11:49:34,247 - __main__ - INFO - 
+Processing commit 2/10 (61361b71)...
+2026-06-25 11:49:50,281 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 11:50:45,768 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 11:50:45,769 - __main__ - INFO - Computing drifts and features between ebe6018e and 61361b71...
+2026-06-25 11:50:58,057 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 11:50:58,058 - __main__ - INFO -   Modified entities: 0
+2026-06-25 11:50:58,158 - __main__ - INFO - 
+Processing commit 3/10 (5809338f)...
+2026-06-25 11:51:09,490 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 11:51:51,744 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 11:51:51,745 - __main__ - INFO - Computing drifts and features between 61361b71 and 5809338f...
+2026-06-25 11:52:08,399 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 11:52:08,399 - __main__ - INFO -   Modified entities: 67
+2026-06-25 11:52:08,500 - __main__ - INFO - 
+Processing commit 4/10 (c970a497)...
+2026-06-25 11:52:17,923 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 11:52:47,579 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 11:52:47,580 - __main__ - INFO - Computing drifts and features between 5809338f and c970a497...
+2026-06-25 11:52:57,480 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 11:52:57,480 - __main__ - INFO -   Modified entities: 22
+2026-06-25 11:52:57,581 - __main__ - INFO - 
+Processing commit 5/10 (87928e6d)...
+2026-06-25 11:53:06,348 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 11:53:37,661 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 11:53:37,661 - __main__ - INFO - Computing drifts and features between c970a497 and 87928e6d...
+2026-06-25 11:53:45,064 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 11:53:45,064 - __main__ - INFO -   Modified entities: 0
+2026-06-25 11:53:45,165 - __main__ - INFO - 
+Processing commit 6/10 (0fff1dba)...
+2026-06-25 11:53:54,376 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 11:54:38,208 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 11:54:38,208 - __main__ - INFO - Computing drifts and features between 87928e6d and 0fff1dba...
+2026-06-25 11:54:50,902 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 11:54:50,902 - __main__ - INFO -   Modified entities: 0
+2026-06-25 11:54:51,003 - __main__ - INFO - 
+Processing commit 7/10 (70e0956f)...
+2026-06-25 11:55:00,185 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 11:55:31,539 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 11:55:31,539 - __main__ - INFO - Computing drifts and features between 0fff1dba and 70e0956f...
+2026-06-25 11:55:42,228 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 11:55:42,228 - __main__ - INFO -   Modified entities: 19
+2026-06-25 11:55:42,330 - __main__ - INFO - 
+Processing commit 8/10 (77a9a587)...
+2026-06-25 11:55:53,296 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 11:56:27,273 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 11:56:27,274 - __main__ - INFO - Computing drifts and features between 70e0956f and 77a9a587...
+2026-06-25 11:56:33,630 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 11:56:33,631 - __main__ - INFO -   Modified entities: 0
+2026-06-25 11:56:33,732 - __main__ - INFO - 
+Processing commit 9/10 (d2f014ca)...
+2026-06-25 11:56:43,689 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 11:57:12,950 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 11:57:12,951 - __main__ - INFO - Computing drifts and features between 77a9a587 and d2f014ca...
+2026-06-25 11:57:37,388 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 11:57:37,388 - __main__ - INFO -   Modified entities: 149
+2026-06-25 11:57:37,489 - __main__ - INFO - 
+Processing commit 10/10 (76138401)...
+2026-06-25 11:57:46,919 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 11:58:24,608 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 11:58:24,609 - __main__ - INFO - Computing drifts and features between d2f014ca and 76138401...
+2026-06-25 11:58:32,004 - __main__ - INFO -   Computed drifts for 697 entities
+2026-06-25 11:58:32,004 - __main__ - INFO -   Modified entities: 0
+2026-06-25 11:58:32,105 - __main__ - INFO - 
+Dataset built: 9 commit pairs with data
+2026-06-25 11:58:32,106 - __main__ - INFO - ================================================================================
+2026-06-25 11:58:32,106 - __main__ - INFO - TRAINING MODEL
+2026-06-25 11:58:32,106 - __main__ - INFO - ================================================================================
+2026-06-25 11:58:32,128 - __main__ - INFO - Training on 694 entities with 694 drift values
+2026-06-25 11:58:32,149 - predictor - INFO - Train set: 485 entities
+2026-06-25 11:58:32,149 - predictor - INFO - Test set: 209 entities
+2026-06-25 11:58:32,150 - predictor - INFO - Training random_forest regression model...
+2026-06-25 11:58:32,594 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 11:58:32,594 - predictor - INFO - Training R²: 0.4032
+2026-06-25 11:58:32,595 - predictor - INFO - Evaluating model on test data...
+2026-06-25 11:58:32,660 - predictor - INFO - Test MSE: 0.000000
+2026-06-25 11:58:32,661 - predictor - INFO - Test RMSE: 0.000184
+2026-06-25 11:58:32,662 - predictor - INFO - Test R²: -6671441.6256
+2026-06-25 11:58:32,662 - predictor - INFO - Test MAE: 0.000027
+2026-06-25 11:58:32,790 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 11:58:32,791 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 11:58:32,791 - __main__ - INFO - Test metrics: {'test_mse': 3.375139598222882e-08, 'test_rmse': np.float64(0.0001837155300518408), 'test_r2': -6671441.625642608, 'test_mae': np.float64(2.6885525928133764e-05)}
+2026-06-25 11:58:32,792 - __main__ - INFO - ================================================================================
+2026-06-25 11:58:32,792 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 11:58:32,792 - __main__ - INFO - ================================================================================
+2026-06-25 11:58:32,793 - __main__ - INFO - 
+Evaluating commit pair 1/2: 77a9a587 -> d2f014ca
+2026-06-25 11:58:33,890 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 11:58:34,257 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 11:58:34,530 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 11:58:34,795 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 11:58:35,027 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 11:58:40,926 - __main__ - INFO - 
+Evaluating commit pair 2/2: d2f014ca -> 76138401
+2026-06-25 11:58:41,559 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 11:58:41,812 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 11:58:42,107 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 11:58:42,568 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 11:58:42,947 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 11:58:52,001 - __main__ - INFO - 
+================================================================================
+2026-06-25 11:58:52,001 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 11:58:52,002 - __main__ - INFO - ================================================================================
+2026-06-25 11:58:52,002 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 11:58:52,002 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 11:58:52,002 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 11:58:52,002 - __main__ - INFO -   Update %: 10.62%
+2026-06-25 11:58:52,003 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 11:58:52,003 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 11:58:52,003 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 11:58:52,004 - __main__ - INFO -   Update %: 99.93%
+2026-06-25 11:58:52,004 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 11:58:52,004 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 11:58:52,004 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 11:58:52,004 - __main__ - INFO -   Update %: 10.62%
+2026-06-25 11:58:52,004 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 11:58:52,004 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 11:58:52,005 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 11:58:52,005 - __main__ - INFO -   Update %: 10.62%
+2026-06-25 11:58:52,007 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 11:58:52,007 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 11:58:52,007 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 11:58:52,007 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 11:58:52,007 - __main__ - INFO - ================================================================================
+2026-06-25 11:58:52,008 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 11:58:52,008 - __main__ - INFO - ================================================================================
+2026-06-25 11:58:52,008 - visualize - INFO - Generating drift decay plot...
+2026-06-25 11:58:54,376 - visualize - INFO - Drift decay plot saved to results\drift_decay.png
+2026-06-25 11:58:54,510 - visualize - INFO - Generating feature importance plot...
+2026-06-25 11:58:56,076 - visualize - INFO - Feature importance plot saved to results\feature_importance.png
+2026-06-25 11:58:56,076 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 11:58:57,284 - visualize - INFO - Strategy comparison plot saved to results\strategy_comparison.png
+2026-06-25 11:58:57,320 - visualize - INFO - Generating Pareto frontier plot...
+2026-06-25 11:58:58,427 - visualize - INFO - Pareto frontier plot saved to results\pareto_frontier.png
+2026-06-25 11:58:58,428 - visualize - INFO - Generating drift distribution plot...
+2026-06-25 11:58:59,888 - visualize - INFO - Drift distribution plot saved to results\drift_distribution.png
+2026-06-25 11:58:59,889 - visualize - INFO - Generating confusion matrix plot...
+2026-06-25 11:59:00,506 - visualize - INFO - Confusion matrix plot saved to results\confusion_matrix.png
+2026-06-25 11:59:00,507 - visualize - INFO - Generating summary report...
+2026-06-25 11:59:00,509 - visualize - INFO - Summary report saved to results\summary_report.txt
+2026-06-25 11:59:00,510 - __main__ - INFO - Visualizations generated successfully
+2026-06-25 11:59:00,514 - __main__ - INFO - Results saved to results\results.json
+2026-06-25 11:59:00,514 - __main__ - INFO - ================================================================================
+2026-06-25 11:59:00,514 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 608.77 seconds
+2026-06-25 11:59:00,514 - __main__ - INFO - ================================================================================
+2026-06-25 11:59:00,515 - __main__ - INFO - Results saved to results
+2026-06-25 11:59:00,515 - __main__ - INFO - Logs saved to experiment.log
+2026-06-25 12:03:46,702 - __main__ - INFO - ================================================================================
+2026-06-25 12:03:46,702 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-06-25 12:03:46,703 - __main__ - INFO - ================================================================================
+2026-06-25 12:03:46,703 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-06-25 12:03:46,704 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-06-25 12:03:46,704 - __main__ - INFO - Initializing components...
+2026-06-25 12:03:46,705 - __main__ - INFO - Setup complete
+2026-06-25 12:03:46,705 - __main__ - INFO - ================================================================================
+2026-06-25 12:03:46,706 - __main__ - INFO - HARVESTING COMMITS
+2026-06-25 12:03:46,706 - __main__ - INFO - ================================================================================
+2026-06-25 12:03:46,706 - git_helper - INFO - Retrieving last 10 commits
+2026-06-25 12:03:46,764 - git_helper - INFO - Retrieved 10 commits
+2026-06-25 12:03:46,764 - __main__ - INFO - Total commits: 10
+2026-06-25 12:03:46,764 - __main__ - INFO - Training commits: 7
+2026-06-25 12:03:46,764 - __main__ - INFO - Test commits: 3
+2026-06-25 12:03:46,764 - __main__ - INFO - ================================================================================
+2026-06-25 12:03:46,764 - __main__ - INFO - BUILDING DATASET
+2026-06-25 12:03:46,764 - __main__ - INFO - ================================================================================
+2026-06-25 12:03:46,764 - __main__ - INFO - 
+Processing commit 1/10 (ebe6018e)...
+2026-06-25 12:03:54,399 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 12:03:54,407 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-06-25 12:03:54,408 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-06-25 12:04:01,023 - embedding_manager - INFO - Model loaded successfully
+2026-06-25 12:04:01,025 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 12:04:36,851 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 12:04:36,953 - __main__ - INFO - 
+Processing commit 2/10 (61361b71)...
+2026-06-25 12:04:49,117 - embedding_manager - INFO - Generating embeddings for 693 entities
+2026-06-25 12:05:24,836 - __main__ - INFO -   Parsed 693 entities, generated 693 embeddings
+2026-06-25 12:05:24,836 - __main__ - INFO - Computing drifts and features between ebe6018e and 61361b71...
+2026-06-25 12:05:33,004 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 12:05:33,005 - __main__ - INFO -   Modified entities: 0
+2026-06-25 12:05:33,106 - __main__ - INFO - 
+Processing commit 3/10 (5809338f)...
+2026-06-25 12:05:42,494 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 12:06:17,562 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 12:06:17,562 - __main__ - INFO - Computing drifts and features between 61361b71 and 5809338f...
+2026-06-25 12:06:32,829 - __main__ - INFO -   Computed drifts for 693 entities
+2026-06-25 12:06:32,829 - __main__ - INFO -   Modified entities: 67
+2026-06-25 12:06:32,930 - __main__ - INFO - 
+Processing commit 4/10 (c970a497)...
+2026-06-25 12:06:42,044 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 12:07:17,890 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 12:07:17,890 - __main__ - INFO - Computing drifts and features between 5809338f and c970a497...
+2026-06-25 12:07:30,381 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 12:07:30,382 - __main__ - INFO -   Modified entities: 22
+2026-06-25 12:07:30,482 - __main__ - INFO - 
+Processing commit 5/10 (87928e6d)...
+2026-06-25 12:07:36,245 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 12:08:16,951 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 12:08:16,952 - __main__ - INFO - Computing drifts and features between c970a497 and 87928e6d...
+2026-06-25 12:08:25,262 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 12:08:25,262 - __main__ - INFO -   Modified entities: 0
+2026-06-25 12:08:25,363 - __main__ - INFO - 
+Processing commit 6/10 (0fff1dba)...
+2026-06-25 12:08:33,352 - embedding_manager - INFO - Generating embeddings for 694 entities
+2026-06-25 12:09:07,970 - __main__ - INFO -   Parsed 694 entities, generated 694 embeddings
+2026-06-25 12:09:07,970 - __main__ - INFO - Computing drifts and features between 87928e6d and 0fff1dba...
+2026-06-25 12:09:16,529 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 12:09:16,532 - __main__ - INFO -   Modified entities: 0
+2026-06-25 12:09:16,633 - __main__ - INFO - 
+Processing commit 7/10 (70e0956f)...
+2026-06-25 12:09:24,050 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 12:10:06,800 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 12:10:06,801 - __main__ - INFO - Computing drifts and features between 0fff1dba and 70e0956f...
+2026-06-25 12:10:21,200 - __main__ - INFO -   Computed drifts for 694 entities
+2026-06-25 12:10:21,201 - __main__ - INFO -   Modified entities: 19
+2026-06-25 12:10:21,302 - __main__ - INFO - 
+Processing commit 8/10 (77a9a587)...
+2026-06-25 12:10:33,078 - embedding_manager - INFO - Generating embeddings for 696 entities
+2026-06-25 12:11:07,479 - __main__ - INFO -   Parsed 696 entities, generated 696 embeddings
+2026-06-25 12:11:07,479 - __main__ - INFO - Computing drifts and features between 70e0956f and 77a9a587...
+2026-06-25 12:11:16,878 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 12:11:16,878 - __main__ - INFO -   Modified entities: 0
+2026-06-25 12:11:16,979 - __main__ - INFO - 
+Processing commit 9/10 (d2f014ca)...
+2026-06-25 12:11:24,218 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 12:12:06,302 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 12:12:06,303 - __main__ - INFO - Computing drifts and features between 77a9a587 and d2f014ca...
+2026-06-25 12:12:37,800 - __main__ - INFO -   Computed drifts for 696 entities
+2026-06-25 12:12:37,800 - __main__ - INFO -   Modified entities: 149
+2026-06-25 12:12:37,901 - __main__ - INFO - 
+Processing commit 10/10 (76138401)...
+2026-06-25 12:12:50,243 - embedding_manager - INFO - Generating embeddings for 697 entities
+2026-06-25 12:13:31,828 - __main__ - INFO -   Parsed 697 entities, generated 697 embeddings
+2026-06-25 12:13:31,829 - __main__ - INFO - Computing drifts and features between d2f014ca and 76138401...
+2026-06-25 12:13:40,261 - __main__ - INFO -   Computed drifts for 697 entities
+2026-06-25 12:13:40,261 - __main__ - INFO -   Modified entities: 0
+2026-06-25 12:13:40,362 - __main__ - INFO - 
+Dataset built: 9 commit pairs with data
+2026-06-25 12:13:40,362 - __main__ - INFO - ================================================================================
+2026-06-25 12:13:40,362 - __main__ - INFO - TRAINING MODEL
+2026-06-25 12:13:40,363 - __main__ - INFO - ================================================================================
+2026-06-25 12:13:40,377 - __main__ - INFO - Training on 694 entities with 694 drift values
+2026-06-25 12:13:40,390 - predictor - INFO - Train set: 485 entities
+2026-06-25 12:13:40,392 - predictor - INFO - Test set: 209 entities
+2026-06-25 12:13:40,392 - predictor - INFO - Training random_forest regression model...
+2026-06-25 12:13:41,117 - predictor - INFO - Training MSE: 0.000000
+2026-06-25 12:13:41,117 - predictor - INFO - Training R²: 0.4159
+2026-06-25 12:13:41,117 - predictor - INFO - Evaluating model on test data...
+2026-06-25 12:13:41,199 - predictor - INFO - Test MSE: 0.000000
+2026-06-25 12:13:41,200 - predictor - INFO - Test RMSE: 0.000164
+2026-06-25 12:13:41,200 - predictor - INFO - Test R²: -5304864.7051
+2026-06-25 12:13:41,200 - predictor - INFO - Test MAE: 0.000025
+2026-06-25 12:13:43,652 - predictor - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 12:13:43,656 - __main__ - INFO - Model saved to results\drift_predictor.pkl
+2026-06-25 12:13:43,657 - __main__ - INFO - Test metrics: {'test_mse': 2.6837767045567934e-08, 'test_rmse': np.float64(0.00016382236430221588), 'test_r2': -5304864.705084971, 'test_mae': np.float64(2.4525506053231522e-05)}
+2026-06-25 12:13:43,658 - __main__ - INFO - ================================================================================
+2026-06-25 12:13:43,658 - __main__ - INFO - EVALUATING STRATEGIES
+2026-06-25 12:13:43,658 - __main__ - INFO - ================================================================================
+2026-06-25 12:13:43,658 - __main__ - INFO - 
+Evaluating commit pair 1/2: 77a9a587 -> d2f014ca
+2026-06-25 12:13:48,498 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 12:13:49,015 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 12:13:49,383 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 12:13:49,603 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 12:13:49,825 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 12:13:56,769 - __main__ - INFO - 
+Evaluating commit pair 2/2: d2f014ca -> 76138401
+2026-06-25 12:13:57,715 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-06-25 12:13:57,815 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-06-25 12:13:57,949 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-06-25 12:13:58,086 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-06-25 12:13:58,317 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-06-25 12:14:03,696 - __main__ - INFO - 
+================================================================================
+2026-06-25 12:14:03,696 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-06-25 12:14:03,696 - __main__ - INFO - ================================================================================
+2026-06-25 12:14:03,696 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-06-25 12:14:03,696 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 12:14:03,696 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 12:14:03,696 - __main__ - INFO -   Update %: 10.62%
+2026-06-25 12:14:03,696 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-06-25 12:14:03,697 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 12:14:03,697 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 12:14:03,697 - __main__ - INFO -   Update %: 99.93%
+2026-06-25 12:14:03,697 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-06-25 12:14:03,697 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 12:14:03,697 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 12:14:03,697 - __main__ - INFO -   Update %: 10.62%
+2026-06-25 12:14:03,697 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-06-25 12:14:03,697 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 12:14:03,697 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 12:14:03,697 - __main__ - INFO -   Update %: 10.62%
+2026-06-25 12:14:03,697 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-06-25 12:14:03,697 - __main__ - INFO -   Recall@5: 1.0000
+2026-06-25 12:14:03,697 - __main__ - INFO -   Recall@10: 1.0000
+2026-06-25 12:14:03,697 - __main__ - INFO -   Update %: 0.00%
+2026-06-25 12:14:03,698 - __main__ - INFO - ================================================================================
+2026-06-25 12:14:03,698 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-06-25 12:14:03,698 - __main__ - INFO - ================================================================================
+2026-06-25 12:14:03,698 - visualize - INFO - Generating drift decay plot...
+2026-06-25 12:14:04,932 - visualize - INFO - Drift decay plot saved to results\drift_decay.png
+2026-06-25 12:14:05,013 - visualize - INFO - Generating feature importance plot...
+2026-06-25 12:14:05,827 - visualize - INFO - Feature importance plot saved to results\feature_importance.png
+2026-06-25 12:14:05,828 - visualize - INFO - Generating strategy comparison plot...
+2026-06-25 12:14:06,422 - visualize - INFO - Strategy comparison plot saved to results\strategy_comparison.png
+2026-06-25 12:14:06,435 - visualize - INFO - Generating Pareto frontier plot...
+2026-06-25 12:14:07,234 - visualize - INFO - Pareto frontier plot saved to results\pareto_frontier.png
+2026-06-25 12:14:07,236 - visualize - INFO - Generating drift distribution plot...
+2026-06-25 12:14:07,990 - visualize - INFO - Drift distribution plot saved to results\drift_distribution.png
+2026-06-25 12:14:07,991 - visualize - INFO - Generating confusion matrix plot...
+2026-06-25 12:14:08,405 - visualize - INFO - Confusion matrix plot saved to results\confusion_matrix.png
+2026-06-25 12:14:08,406 - visualize - INFO - Generating summary report...
+2026-06-25 12:14:08,409 - visualize - INFO - Summary report saved to results\summary_report.txt
+2026-06-25 12:14:08,409 - __main__ - INFO - Visualizations generated successfully
+2026-06-25 12:14:08,412 - __main__ - INFO - Results saved to results\results.json
+2026-06-25 12:14:08,412 - __main__ - INFO - ================================================================================
+2026-06-25 12:14:08,412 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 621.71 seconds
+2026-06-25 12:14:08,412 - __main__ - INFO - ================================================================================
+2026-06-25 12:14:08,412 - __main__ - INFO - Results saved to results
+2026-06-25 12:14:08,412 - __main__ - INFO - Logs saved to experiment.log
