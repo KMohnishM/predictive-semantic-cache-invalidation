@@ -44,7 +44,8 @@ class Experiment:
                  num_commits: int = 50,
                  train_ratio: float = 0.7,
                  threshold: float = 0.02,
-                 clean_mode: bool = False):
+                 clean_mode: bool = False,
+                 context_chunking: bool = False):
         """
         Initialize experiment.
 
@@ -55,6 +56,7 @@ class Experiment:
             train_ratio: Ratio of commits to use for training
             threshold: Drift threshold for classification
             clean_mode: If True, remove comments/docstrings before embedding
+            context_chunking: If True, enable call-graph aware contextual chunking
         """
         self.repo_url = repo_url
         self.workspace_dir = Path(workspace_dir)
@@ -62,10 +64,15 @@ class Experiment:
         self.train_ratio = train_ratio
         self.threshold = threshold
         self.clean_mode = clean_mode
+        self.context_chunking = context_chunking
 
         # Paths
         self.repo_path = self.workspace_dir / "black"
-        self.results_dir = Path("results")
+        
+        # Determine unique results directory name based on configuration
+        mode_str = "contextual" if self.context_chunking else "isolated"
+        dir_name = f"results_{mode_str}_commits{self.num_commits}_clean{self.clean_mode}"
+        self.results_dir = Path("results") / dir_name
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
         # Components (initialized later)
@@ -86,6 +93,7 @@ class Experiment:
         self.features_history = {}  # (commit_a, commit_b) -> features DataFrame
         self.modification_history = {}  # entity_id -> list of commit hashes
         self.previous_drifts = {}  # entity_id -> last drift value
+        self.parsers_history = {}  # commit_hash -> RepoParser instance
 
     def setup(self) -> bool:
         """
@@ -145,6 +153,89 @@ class Experiment:
 
         return True
 
+    def _extract_signature(self, entity: Entity) -> str:
+        """
+        Extract the signature lines from an entity's source code.
+        """
+        lines = entity.source_code.splitlines()
+        def_idx = -1
+        for idx, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped.startswith("def ") or stripped.startswith("async def ") or stripped.startswith("class "):
+                def_idx = idx
+                break
+
+        if def_idx == -1:
+            # Fallback to name-only signature if def/class keyword is not found
+            name = entity.entity_id.split("::")[-1]
+            return f"def {name}()"
+
+        # Extract signature lines from def_idx until we find the ending colon ':'
+        sig_lines = []
+        found_colon = False
+        for idx in range(def_idx, len(lines)):
+            line = lines[idx]
+            sig_lines.append(line)
+            # Strip trailing comments and whitespace to check for end of signature
+            clean_line = line.split('#')[0].rstrip()
+            if clean_line.endswith(':'):
+                found_colon = True
+                break
+
+        if found_colon:
+            return "\n".join(sig_lines)
+        else:
+            return lines[def_idx]
+
+    def _get_contextual_source(self, entity: Entity) -> str:
+        """
+        Get call-graph aware contextual source code for an entity.
+        Appends direct dependencies as valid Python stubs.
+        """
+        source = entity.source_code
+        if not self.context_chunking:
+            return source
+
+        # Get direct dependencies (max_hops=1)
+        # Note: get_dependencies returns a set of entity IDs.
+        deps = self.repo_parser.get_dependencies(entity.entity_id, max_hops=1)
+        # Filter out self
+        deps = {d for d in deps if d != entity.entity_id}
+
+        if not deps:
+            return source
+
+        import hashlib
+        import textwrap
+
+        stubs = []
+        for dep_id in sorted(deps):
+            dep_entity = self.repo_parser.get_entity(dep_id)
+            if not dep_entity:
+                continue
+
+            # Extract signature
+            sig = self._extract_signature(dep_entity)
+            
+            # Calculate hash of the dependency's source code to capture internal changes
+            dep_hash = hashlib.md5(dep_entity.source_code.encode('utf-8')).hexdigest()
+
+            # Format signature to be top-level (dedented)
+            sig_dedented = textwrap.dedent(sig).strip()
+            if not sig_dedented.endswith(':'):
+                sig_dedented += ':'
+
+            # Format as valid python stub containing the hash in a variable assignment
+            # so that it survives clean_mode=True
+            stub = f"{sig_dedented}\n    _dep_hash_ = '{dep_hash}'\n    pass"
+            stubs.append(stub)
+
+        if stubs:
+            context_block = "\n\n# Call Graph Context\n" + "\n\n".join(stubs)
+            return source + context_block
+
+        return source
+
     def process_commit(self, commit_hash: str) -> None:
         """
         Process a single commit: parse repo and generate embeddings.
@@ -165,7 +256,7 @@ class Experiment:
 
         # Generate embeddings for all entities
         entities = self.repo_parser.get_all_entities()
-        entity_sources = {e.entity_id: e.source_code for e in entities}
+        entity_sources = {e.entity_id: self._get_contextual_source(e) for e in entities}
 
         if entity_sources:
             embeddings = self.embedding_manager.generate_embeddings_batch(entity_sources)
@@ -270,10 +361,11 @@ class Experiment:
             # Parse repository
             self.repo_parser = RepoParser(str(self.repo_path))
             self.repo_parser.parse_directory(str(self.repo_path))
+            self.parsers_history[commit] = self.repo_parser
 
             # Generate embeddings for all entities
             entities = self.repo_parser.get_all_entities()
-            entity_sources = {e.entity_id: e.source_code for e in entities}
+            entity_sources = {e.entity_id: self._get_contextual_source(e) for e in entities}
 
             if entity_sources:
                 embeddings = self.embedding_manager.generate_embeddings_batch(entity_sources)
@@ -424,6 +516,13 @@ class Experiment:
 
             # Generate queries from entity docstrings/first lines
             queries = self._generate_queries()
+
+            # Reset embedding manager's cache to commit_a's embeddings for accurate simulation
+            self.embedding_manager.embeddings = self.embeddings_history[commit_a].copy()
+
+            # Set evaluator's repo_parser to the parser of commit_b for accurate graph lookups
+            if commit_b in self.parsers_history:
+                self.evaluator.repo_parser = self.parsers_history[commit_b]
 
             # Evaluate all strategies
             strategy_results = self.evaluator.evaluate_all_strategies(
@@ -711,6 +810,11 @@ def main():
         help="Remove comments and docstrings before embedding"
     )
     parser.add_argument(
+        "--context-chunking",
+        action="store_true",
+        help="Enable call-graph aware contextual chunking"
+    )
+    parser.add_argument(
         "--subset",
         type=int,
         default=None,
@@ -726,7 +830,8 @@ def main():
         num_commits=args.num_commits if args.subset is None else args.subset,
         train_ratio=args.train_ratio,
         threshold=args.threshold,
-        clean_mode=args.clean_mode
+        clean_mode=args.clean_mode,
+        context_chunking=args.context_chunking
     )
 
     # Run experiment
