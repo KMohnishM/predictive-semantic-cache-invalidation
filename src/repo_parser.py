@@ -413,17 +413,55 @@ class RepoParser:
 
     def parse_directory(self, directory: str) -> None:
         """
-        Parse all Python files in a directory.
+        Parse all Python files in a directory in two passes.
+        Pass 1: Collect all entities.
+        Pass 2: Extract call-graph edges (requires complete entity table).
 
         Args:
             directory: Directory path to parse
         """
         dir_path = Path(directory).resolve()
+        py_files = []
         for py_file in dir_path.rglob("*.py"):
             # Skip test files and __pycache__
             if "__pycache__" in str(py_file) or "test" in str(py_file).lower():
                 continue
-            self.parse_file(str(py_file.resolve()))
+            py_files.append(str(py_file.resolve()))
+
+        # Pass 1: Parse files to populate self.entities and self.symbol_table
+        for py_file in py_files:
+            entities, symbol_table = self._parse_file(py_file)
+            
+            # Add entities to graph
+            for entity in entities:
+                self.entities[entity.entity_id] = entity
+                self.graph.add_node(entity.entity_id, **{
+                    'type': entity.entity_type,
+                    'file_path': entity.file_path,
+                    'lineno': entity.lineno,
+                    'end_lineno': entity.end_lineno,
+                    'source_code': entity.source_code
+                })
+            
+            # Update symbol table
+            rel_path = self._get_relative_path(py_file)
+            self.symbol_table[rel_path] = symbol_table
+
+        # Pass 2: Extract and add edges
+        for py_file in py_files:
+            rel_path = self._get_relative_path(py_file)
+            symbol_table = self.symbol_table.get(rel_path, {})
+            try:
+                with open(py_file, 'r', encoding='utf-8') as f:
+                    source = f.read()
+                tree = ast.parse(source)
+                edges = self._extract_edges(tree, rel_path, self.entities, symbol_table)
+
+                for caller_id, callee_id in edges:
+                    self.graph.add_edge(caller_id, callee_id, type='calls')
+
+            except Exception as e:
+                logger.error(f"Failed to extract edges from {py_file}: {e}")
 
     def remove_file(self, file_path: str) -> None:
         """

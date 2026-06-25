@@ -4,51 +4,51 @@ PREDICTIVE SEMANTIC CACHE INVALIDATION - EXPERIMENT SUMMARY
 
 TOP 10 FEATURE IMPORTANCES
 --------------------------------------------------------------------------------
-1. entity_size: 0.7283
-2. pagerank: 0.2218
-3. out_degree: 0.0249
-4. in_degree: 0.0166
-5. closeness: 0.0071
-6. betweenness: 0.0013
-7. distance_to_modified_directed: 0.0000
-8. distance_to_modified_undirected: 0.0000
-9. modified_dependents_count: 0.0000
+1. entity_size: 0.5464
+2. pagerank: 0.1352
+3. out_degree: 0.1021
+4. closeness: 0.0800
+5. betweenness: 0.0668
+6. in_degree: 0.0515
+7. modified_dependents_count: 0.0158
+8. distance_to_modified_directed: 0.0015
+9. distance_to_modified_undirected: 0.0006
 10. modified_dependencies_count: 0.0000
 
 STRATEGY COMPARISON
 --------------------------------------------------------------------------------
 
 BASELINE_A_CHANGED_ONLY
-  Entities Updated: 74.0 / 697.0 (10.62%)
+  Entities Updated: 41.25 / 696.5 (5.92%)
   Recall@5: 1.0000
   Recall@10: 1.0000
   Rank Correlation: 1.0000
   Evaluation Time: 0.0000s
 
 BASELINE_B_FULL_REINDEX
-  Entities Updated: 696.5 / 697.0 (99.93%)
+  Entities Updated: 695.75 / 696.5 (99.89%)
   Recall@5: 1.0000
   Recall@10: 1.0000
   Rank Correlation: 1.0000
   Evaluation Time: 0.0000s
 
 BASELINE_C_FIXED_HOP_K1
-  Entities Updated: 74.0 / 697.0 (10.62%)
+  Entities Updated: 41.25 / 696.5 (5.92%)
   Recall@5: 1.0000
   Recall@10: 1.0000
   Rank Correlation: 1.0000
   Evaluation Time: 0.0000s
 
 BASELINE_C_FIXED_HOP_K2
-  Entities Updated: 74.0 / 697.0 (10.62%)
+  Entities Updated: 41.25 / 696.5 (5.92%)
   Recall@5: 1.0000
   Recall@10: 1.0000
   Rank Correlation: 1.0000
   Evaluation Time: 0.0000s
 
 PROPOSED_PREDICTIVE
-  Entities Updated: 0.0 / 697.0 (0.00%)
-  Recall@5: 1.0000
+  Entities Updated: 0.0 / 696.5 (0.00%)
+  Recall@5: 0.9975
   Recall@10: 1.0000
   Rank Correlation: 1.0000
   Evaluation Time: 0.0000s
