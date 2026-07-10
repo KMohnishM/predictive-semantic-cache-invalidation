@@ -1,10 +1,13 @@
 """Feature extractor for computing structural and evolution features."""
 
-from typing import Dict, List, Set, Optional, Tuple
+from typing import Dict, List, Set, Optional, Tuple, TYPE_CHECKING
 import numpy as np
 import networkx as nx
 import pandas as pd
 import logging
+
+if TYPE_CHECKING:
+    from gtd import GraphTransitionDescriptor
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +55,11 @@ class FeatureExtractor:
                 self.diff_stats_cache = git_helper.get_all_files_diff_stats(commit_a, commit_b)
             except Exception as e:
                 logger.warning(f"Failed to precompute file diff stats: {e}")
+
+        # Personalised PageRank impact scores (seeded on modified entities)
+        # Populated lazily by _get_pagerank_impact_feature
+        self._ppr_cache: Optional[Dict[str, float]] = None
+        self._ppr_seed: Optional[frozenset] = None
 
     def _get_structural_features(self, entity_id: str) -> Dict[str, float]:
         """
@@ -153,6 +161,93 @@ class FeatureExtractor:
             features['modified_dependencies_count'] = 0.0
 
         return features
+
+    def _get_pagerank_impact_feature(self, entity_id: str,
+                                     modified_entities: Set[str]) -> Dict[str, float]:
+        """
+        Compute Personalised PageRank (PPR) impact score.
+
+        Seeds the PPR walk on the set of modified entities.  Every node
+        receives a score proportional to how much random-walk probability
+        flows to it from the modified set — a principled measure of
+        structural influence.
+
+        Args:
+            entity_id:        Target entity.
+            modified_entities: Seed set (directly modified nodes).
+
+        Returns:
+            Dict with key ``pagerank_impact``.
+        """
+        seed_key = frozenset(modified_entities)
+        if self._ppr_cache is None or self._ppr_seed != seed_key:
+            self._ppr_seed = seed_key
+            valid_seeds = {n for n in modified_entities if n in self.graph}
+            if valid_seeds and self.graph.number_of_nodes() > 0:
+                personalization = {n: 1.0 / len(valid_seeds) for n in valid_seeds}
+                # Zero for all other nodes
+                for n in self.graph.nodes():
+                    personalization.setdefault(n, 0.0)
+                try:
+                    self._ppr_cache = nx.pagerank(
+                        self.graph, alpha=0.85,
+                        personalization=personalization
+                    )
+                except Exception as e:
+                    logger.warning(f"PPR computation failed: {e}")
+                    self._ppr_cache = {}
+            else:
+                self._ppr_cache = {}
+
+        return {"pagerank_impact": float(self._ppr_cache.get(entity_id, 0.0))}
+
+    def _get_gtd_features(self, entity_id: str,
+                          gtd) -> Dict[str, float]:
+        """
+        Extract per-entity GTD features from a GraphTransitionDescriptor.
+
+        Args:
+            entity_id : Target entity.
+            gtd       : GraphTransitionDescriptor instance (or None).
+
+        Returns:
+            Dict of node-level and global GTD-derived features.
+        """
+        if gtd is None:
+            return {
+                "gtd_change_class":        0.0,
+                "gtd_local_edges_added":   0.0,
+                "gtd_local_edges_removed": 0.0,
+                "gtd_local_edge_churn":    0.0,
+                "gtd_mean_drift":          0.0,
+                "gtd_drift_variance":      0.0,
+                "gtd_edge_churn":          0.0,
+                "gtd_density_delta":       0.0,
+                "gtd_node_growth_ratio":   0.0,
+                "gtd_clustering_delta":    0.0,
+                "gtd_mean_pagerank_shift": 0.0,
+                "gtd_high_drift_ratio":    0.0,
+            }
+
+        node_feats   = gtd.get_node_features(entity_id)
+        global_feats = gtd.get_global_features()
+
+        return {
+            # Per-node
+            "gtd_change_class":        node_feats.get("gtd_change_class",        0.0),
+            "gtd_local_edges_added":   node_feats.get("gtd_local_edges_added",   0.0),
+            "gtd_local_edges_removed": node_feats.get("gtd_local_edges_removed", 0.0),
+            "gtd_local_edge_churn":    node_feats.get("gtd_local_edge_churn",    0.0),
+            # Global (same for all entities in this pair)
+            "gtd_mean_drift":          global_feats.get("sm_mean_drift",          0.0),
+            "gtd_drift_variance":      global_feats.get("sm_drift_variance",      0.0),
+            "gtd_edge_churn":          global_feats.get("ee_edge_churn",          0.0),
+            "gtd_density_delta":       global_feats.get("ee_density_delta",       0.0),
+            "gtd_node_growth_ratio":   global_feats.get("se_node_growth_ratio",   0.0),
+            "gtd_clustering_delta":    global_feats.get("se_clustering_delta",    0.0),
+            "gtd_mean_pagerank_shift": global_feats.get("ce_mean_pagerank_shift", 0.0),
+            "gtd_high_drift_ratio":    global_feats.get("sm_high_drift_ratio",    0.0),
+        }
 
     def _get_commit_features(self, entity_id: str, commit_a: str, commit_b: str,
                              modified_entities: Set[str], git_helper) -> Dict[str, float]:
@@ -267,18 +362,20 @@ class FeatureExtractor:
                          modified_entities: Set[str],
                          modification_history: Dict[str, List[str]],
                          previous_drifts: Dict[str, float],
-                         git_helper) -> Dict[str, float]:
+                         git_helper,
+                         gtd=None) -> Dict[str, float]:
         """
         Extract all features for an entity.
 
         Args:
-            entity_id: Entity identifier
-            commit_a: Earlier commit hash
-            commit_b: Later commit hash
-            modified_entities: Set of directly modified entity IDs
+            entity_id:            Entity identifier
+            commit_a:             Earlier commit hash
+            commit_b:             Later commit hash
+            modified_entities:    Set of directly modified entity IDs
             modification_history: Historical modification data
-            previous_drifts: Previous drift values
-            git_helper: GitHelper instance
+            previous_drifts:      Previous drift values
+            git_helper:           GitHelper instance
+            gtd:                  Optional GraphTransitionDescriptor for this pair
 
         Returns:
             Dictionary of all features
@@ -288,8 +385,11 @@ class FeatureExtractor:
         # Structural features
         features.update(self._get_structural_features(entity_id))
 
-        # Evolution features
+        # Evolution features (hop-distance based)
         features.update(self._get_evolution_features(entity_id, modified_entities))
+
+        # Personalised PageRank impact (principled propagation)
+        features.update(self._get_pagerank_impact_feature(entity_id, modified_entities))
 
         # Commit features
         features.update(self._get_commit_features(entity_id, commit_a, commit_b, modified_entities, git_helper))
@@ -299,24 +399,29 @@ class FeatureExtractor:
             entity_id, modification_history, previous_drifts
         ))
 
+        # Graph Transition Descriptor features
+        features.update(self._get_gtd_features(entity_id, gtd))
+
         return features
 
     def extract_features_batch(self, entity_ids: List[str], commit_a: str, commit_b: str,
                                modified_entities: Set[str],
                                modification_history: Dict[str, List[str]],
                                previous_drifts: Dict[str, float],
-                               git_helper) -> pd.DataFrame:
+                               git_helper,
+                               gtd=None) -> pd.DataFrame:
         """
         Extract features for multiple entities.
 
         Args:
-            entity_ids: List of entity identifiers
-            commit_a: Earlier commit hash
-            commit_b: Later commit hash
-            modified_entities: Set of directly modified entity IDs
+            entity_ids:           List of entity identifiers
+            commit_a:             Earlier commit hash
+            commit_b:             Later commit hash
+            modified_entities:    Set of directly modified entity IDs
             modification_history: Historical modification data
-            previous_drifts: Previous drift values
-            git_helper: GitHelper instance
+            previous_drifts:      Previous drift values
+            git_helper:           GitHelper instance
+            gtd:                  Optional GraphTransitionDescriptor for this pair
 
         Returns:
             DataFrame with features for all entities
@@ -326,7 +431,7 @@ class FeatureExtractor:
         for entity_id in entity_ids:
             features = self.extract_features(
                 entity_id, commit_a, commit_b, modified_entities,
-                modification_history, previous_drifts, git_helper
+                modification_history, previous_drifts, git_helper, gtd=gtd
             )
             features['entity_id'] = entity_id
             features_list.append(features)
