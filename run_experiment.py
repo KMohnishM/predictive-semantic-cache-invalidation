@@ -21,8 +21,12 @@ from repo_parser import RepoParser, Entity
 from embedding_manager import EmbeddingManager
 from feature_extractor import FeatureExtractor
 from predictor import DriftPredictor, train_test_split_temporal
-from evaluator import Evaluator, BaselineAChangedOnly, BaselineBFullReindex, BaselineCFixedHop, PredictiveStrategy
+from evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
+                       BaselineCFixedHop, BaselineDPageRankPropagation,
+                       PredictiveStrategy)
 from visualize import Visualizer
+from rsd import RepositoryStateDescriptor
+from gtd import GraphTransitionDescriptor
 
 # Configure logging
 logging.basicConfig(
@@ -94,6 +98,10 @@ class Experiment:
         self.modification_history = {}  # entity_id -> list of commit hashes
         self.previous_drifts = {}  # entity_id -> last drift value
         self.parsers_history = {}  # commit_hash -> RepoParser instance
+        self.gtd_history = {}  # (commit_a, commit_b) -> GraphTransitionDescriptor
+
+        # Repository State Descriptor — used for stratified train/test split
+        self.rsd = RepositoryStateDescriptor()
 
     def setup(self) -> bool:
         """
@@ -142,14 +150,19 @@ class Experiment:
             logger.error(f"Not enough commits found: {len(self.commits)}")
             return False
 
-        # Split into train and test
+        # ----------------------------------------------------------------
+        # Stratified train/test split using RSD
+        # (RSDs are built lazily after build_dataset populates rsd_history;
+        #  a first-pass simple split is used here and refined post-dataset-build)
+        # We store the split ratio and apply it after RSDs are computed.
+        # ----------------------------------------------------------------
         split_idx = int(len(self.commits) * self.train_ratio)
         self.train_commits = self.commits[:split_idx]
-        self.test_commits = self.commits[split_idx:]
+        self.test_commits  = self.commits[split_idx:]
 
         logger.info(f"Total commits: {len(self.commits)}")
-        logger.info(f"Training commits: {len(self.train_commits)}")
-        logger.info(f"Test commits: {len(self.test_commits)}")
+        logger.info(f"Training commits (preliminary): {len(self.train_commits)}")
+        logger.info(f"Test commits (preliminary):     {len(self.test_commits)}")
 
         return True
 
@@ -291,6 +304,13 @@ class Experiment:
         # Compute drifts
         drifts = self.embedding_manager.compute_all_drifts(embeddings_a, embeddings_b)
 
+        # Compute Graph Transition Descriptor (GTD) with actual drifts
+        parser_a = self.parsers_history.get(commit_a)
+        parser_b = self.repo_parser
+        gtd = GraphTransitionDescriptor()
+        gtd.compute(parser_a=parser_a, parser_b=parser_b, drifts=drifts)
+        self.gtd_history[(commit_a, commit_b)] = gtd
+
         # Get modified entities
         modified_files = self.git_helper.get_modified_files(commit_a, commit_b)
         logger.debug(f"Modified files: {modified_files[:5] if len(modified_files) > 5 else modified_files}")
@@ -320,7 +340,8 @@ class Experiment:
         
         features_df = self.feature_extractor.extract_features_batch(
             entity_ids, commit_a, commit_b, modified_entities,
-            self.modification_history, self.previous_drifts, self.git_helper
+            self.modification_history, self.previous_drifts, self.git_helper,
+            gtd=gtd
         )
 
         # Update modification history
@@ -384,10 +405,31 @@ class Experiment:
                     self.drifts_history[(commit_prev, commit)] = drifts
                     self.features_history[(commit_prev, commit)] = features
 
+            # ---- Add RSD entry for this commit ----
+            self.rsd.add_commit(
+                commit_hash=commit,
+                repo_parser=self.repo_parser,
+                embeddings=self.embeddings_history.get(commit, {}),
+                modification_history=self.modification_history,
+                previous_drifts=self.previous_drifts,
+                commit_index=i,
+                total_commits=len(self.commits)
+            )
+
             # Small delay
             time.sleep(0.1)
 
         logger.info(f"\nDataset built: {len(self.drifts_history)} commit pairs with data")
+
+        # ---- Finalise stratified split with RSD ----
+        logger.info("Building RSDs and finalising stratified train/test split...")
+        self.rsd.build_all_rsds()
+        self.train_commits, self.test_commits = self.rsd.stratified_split(
+            self.commits, train_ratio=self.train_ratio, n_clusters=3
+        )
+        logger.info(f"Stratified split → train={len(self.train_commits)}, test={len(self.test_commits)}")
+        logger.info("\nRSD Summary:\n" + self.rsd.summary_table())
+
         return True
 
     def train_model(self) -> bool:
@@ -539,16 +581,19 @@ class Experiment:
             for strategy_name, metrics in strategy_results.items():
                 if strategy_name not in all_strategy_results:
                     all_strategy_results[strategy_name] = {
-                        'recall_at_5': [],
-                        'recall_at_10': [],
-                        'rank_correlation': [],
+                        'recall_at_5':       [],
+                        'recall_at_10':      [],
+                        'mrr':               [],
+                        'ndcg_at_10':        [],
+                        'rank_correlation':  [],
                         'update_percentage': [],
-                        'entities_updated': [],
-                        'total_entities': []
+                        'entities_updated':  [],
+                        'total_entities':    []
                     }
 
-                for metric in ['recall_at_5', 'recall_at_10', 'rank_correlation',
-                              'update_percentage', 'entities_updated', 'total_entities']:
+                for metric in ['recall_at_5', 'recall_at_10', 'mrr', 'ndcg_at_10',
+                               'rank_correlation', 'update_percentage',
+                               'entities_updated', 'total_entities']:
                     if metric in metrics:
                         all_strategy_results[strategy_name][metric].append(metrics[metric])
 
@@ -573,9 +618,11 @@ class Experiment:
         logger.info("=" * 80)
         for strategy_name, metrics in averaged_results.items():
             logger.info(f"\n{strategy_name.upper()}:")
-            logger.info(f"  Recall@5: {metrics.get('recall_at_5', 0):.4f}")
-            logger.info(f"  Recall@10: {metrics.get('recall_at_10', 0):.4f}")
-            logger.info(f"  Update %: {metrics.get('update_percentage', 0):.2f}%")
+            logger.info(f"  Recall@5:    {metrics.get('recall_at_5',    0):.4f}")
+            logger.info(f"  Recall@10:   {metrics.get('recall_at_10',   0):.4f}")
+            logger.info(f"  MRR:         {metrics.get('mrr',            0):.4f}")
+            logger.info(f"  nDCG@10:     {metrics.get('ndcg_at_10',     0):.4f}")
+            logger.info(f"  Update %:    {metrics.get('update_percentage', 0):.2f}%")
 
         return {
             'strategy_results': averaged_results,
@@ -652,6 +699,10 @@ class Experiment:
         # Strategy comparison
         if results.get('strategy_results'):
             self.visualizer.plot_strategy_comparison(results['strategy_results'])
+
+        # Ranking metrics (MRR + nDCG)
+        if results.get('strategy_results'):
+            self.visualizer.plot_ranking_metrics(results['strategy_results'])
 
         # Pareto frontier
         if results.get('strategy_results'):
