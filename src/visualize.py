@@ -146,11 +146,12 @@ class Visualizer:
         if all_strategies_df is not None:
             # Color by strategy type
             strategy_colors = {
-                'baseline_a_changed_only': '#E63946',
-                'baseline_b_full_reindex': '#F4A261',
-                'baseline_c_fixed_hop_k1': '#2A9D8F',
-                'baseline_c_fixed_hop_k2': '#264653',
-                'proposed_predictive': '#06D6A0'
+                'baseline_a_changed_only':         '#E63946',
+                'baseline_b_full_reindex':          '#F4A261',
+                'baseline_c_fixed_hop_k1':          '#2A9D8F',
+                'baseline_c_fixed_hop_k2':          '#264653',
+                'baseline_d_pagerank_propagation':  '#9B5DE5',
+                'proposed_predictive':              '#06D6A0'
             }
 
             for strategy_name in all_strategies_df['strategy'].unique():
@@ -197,7 +198,9 @@ class Visualizer:
         return str(output_path)
 
     def plot_strategy_comparison(self, strategies_results: Dict[str, Dict[str, float]],
-                                 metrics: List[str] = ['recall_at_5', 'recall_at_10', 'rank_correlation'],
+                                 metrics: List[str] = ['recall_at_5', 'recall_at_10',
+                                                        'mrr', 'ndcg_at_10',
+                                                        'rank_correlation'],
                                  output_file: str = "strategy_comparison.png") -> str:
         """
         Plot comparison of strategies across multiple metrics.
@@ -222,24 +225,30 @@ class Visualizer:
                 metric_values[metric].append(results.get(metric, 0.0))
 
         # Create grouped bar chart
+        n_metrics = len(metrics)
         x = np.arange(len(strategy_names))
-        width = 0.25
+        width = 0.75 / n_metrics
 
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(14, 6))
 
-        colors = ['#2E86AB', '#A23B72', '#F18F01']
+        colors = plt.cm.tab10(np.linspace(0, 0.9, n_metrics))
         for i, metric in enumerate(metrics):
-            offset = (i - 1) * width
-            bars = ax.bar(x + offset, metric_values[metric], width,
-                         label=metric.replace('_', ' ').title(), color=colors[i], alpha=0.8)
+            offset = (i - (n_metrics - 1) / 2) * width
+            ax.bar(x + offset, metric_values[metric], width,
+                   label=metric.replace('_', ' ').upper(), color=colors[i], alpha=0.85)
 
         ax.set_xlabel('Strategy', fontsize=12, fontweight='bold')
         ax.set_ylabel('Score', fontsize=12, fontweight='bold')
-        ax.set_title('Strategy Comparison Across Metrics', fontsize=14, fontweight='bold')
+        ax.set_title('Strategy Comparison — Recall, MRR, nDCG & Rank Correlation',
+                     fontsize=14, fontweight='bold')
         ax.set_xticks(x)
-        ax.set_xticklabels(strategy_names, rotation=15, ha='right')
-        ax.legend()
+        ax.set_xticklabels(strategy_names, rotation=20, ha='right')
+        ax.legend(fontsize=9)
         ax.grid(True, alpha=0.3, axis='y')
+        if 'rank_correlation' in metrics:
+            ax.set_ylim(-1.1, 1.1)
+        else:
+            ax.set_ylim(0, 1.1)
 
         plt.tight_layout()
         output_path = self.output_dir / output_file
@@ -247,6 +256,59 @@ class Visualizer:
         plt.close()
 
         logger.info(f"Strategy comparison plot saved to {output_path}")
+        return str(output_path)
+
+    def plot_ranking_metrics(self, strategies_results: Dict[str, Dict[str, float]],
+                             output_file: str = "ranking_metrics.png") -> str:
+        """
+        Side-by-side bar plot showing MRR and nDCG@10 across all strategies.
+
+        Args:
+            strategies_results: Results from evaluate_all_strategies
+            output_file:        Output filename
+
+        Returns:
+            Path to saved plot
+        """
+        logger.info("Generating ranking metrics plot (MRR + nDCG)...")
+
+        strategy_names = [s.replace('_', ' ').title() for s in strategies_results]
+        mrr_vals   = [v.get('mrr',       0.0) for v in strategies_results.values()]
+        ndcg_vals  = [v.get('ndcg_at_10', 0.0) for v in strategies_results.values()]
+
+        x = np.arange(len(strategy_names))
+        width = 0.35
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        bars1 = ax.bar(x - width / 2, mrr_vals,  width, label='MRR',       color='#4ECDC4', alpha=0.85)
+        bars2 = ax.bar(x + width / 2, ndcg_vals, width, label='nDCG@10',   color='#FF6B6B', alpha=0.85)
+
+        # Value labels on bars
+        for bar in bars1:
+            h = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width() / 2, h + 0.005,
+                    f'{h:.3f}', ha='center', va='bottom', fontsize=8)
+        for bar in bars2:
+            h = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width() / 2, h + 0.005,
+                    f'{h:.3f}', ha='center', va='bottom', fontsize=8)
+
+        ax.set_xlabel('Strategy', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Score', fontsize=12, fontweight='bold')
+        ax.set_title('MRR and nDCG@10 by Cache Invalidation Strategy',
+                     fontsize=14, fontweight='bold')
+        ax.set_xticks(x)
+        ax.set_xticklabels(strategy_names, rotation=20, ha='right')
+        ax.legend()
+        ax.set_ylim(0, 1.1)
+        ax.grid(True, alpha=0.3, axis='y')
+
+        plt.tight_layout()
+        output_path = self.output_dir / output_file
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        logger.info(f"Ranking metrics plot saved to {output_path}")
         return str(output_path)
 
     def plot_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray,
@@ -396,10 +458,12 @@ class Visualizer:
                     f.write(f"\n{strategy_name.upper()}\n")
                     f.write(f"  Entities Updated: {metrics['entities_updated']} / {metrics['total_entities']} "
                            f"({metrics['update_percentage']:.2f}%)\n")
-                    f.write(f"  Recall@5: {metrics.get('recall_at_5', 0):.4f}\n")
-                    f.write(f"  Recall@10: {metrics.get('recall_at_10', 0):.4f}\n")
-                    f.write(f"  Rank Correlation: {metrics.get('rank_correlation', 0):.4f}\n")
-                    f.write(f"  Evaluation Time: {metrics.get('evaluation_time', 0):.4f}s\n")
+                    f.write(f"  Recall@5:          {metrics.get('recall_at_5',    0):.4f}\n")
+                    f.write(f"  Recall@10:         {metrics.get('recall_at_10',   0):.4f}\n")
+                    f.write(f"  MRR:               {metrics.get('mrr',            0):.4f}\n")
+                    f.write(f"  nDCG@10:           {metrics.get('ndcg_at_10',     0):.4f}\n")
+                    f.write(f"  Rank Correlation:  {metrics.get('rank_correlation',0):.4f}\n")
+                    f.write(f"  Evaluation Time:   {metrics.get('evaluation_time', 0):.4f}s\n")
 
             f.write("\n" + "=" * 80 + "\n")
             f.write("END OF REPORT\n")

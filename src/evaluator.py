@@ -4,6 +4,7 @@ from typing import Dict, List, Set, Tuple, Optional
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
+import networkx as nx
 import logging
 import time
 
@@ -95,6 +96,66 @@ class PredictiveStrategy(CacheInvalidationStrategy):
         }
 
 
+class BaselineDPageRankPropagation(CacheInvalidationStrategy):
+    """
+    Baseline D: Re-embed entities ranked highest by Personalised PageRank
+    seeded on the modified nodes.
+
+    Rather than a fixed hop distance, this uses the stationary distribution
+    of a random walk seeded at the changed set to score every entity by
+    structural influence.  The top `top_fraction` of entities are updated.
+    """
+
+    def __init__(self, top_fraction: float = 0.3, alpha: float = 0.85):
+        """
+        Args:
+            top_fraction : Fraction of all entities to re-embed (sorted by PPR score).
+            alpha        : Damping factor for PageRank.
+        """
+        self.top_fraction = top_fraction
+        self.alpha = alpha
+
+    def get_entities_to_update(self, modified_entities: Set[str],
+                               predicted_drifts: Dict[str, float],
+                               threshold: float = 0.02,
+                               **kwargs) -> Set[str]:
+        repo_parser = kwargs.get('repo_parser')
+        if not repo_parser:
+            return modified_entities.copy()
+
+        G = repo_parser.get_graph()
+        if G.number_of_nodes() == 0:
+            return modified_entities.copy()
+
+        valid_seeds = {n for n in modified_entities if n in G}
+        if not valid_seeds:
+            return modified_entities.copy()
+
+        personalization = {n: 1.0 / len(valid_seeds) for n in valid_seeds}
+        for n in G.nodes():
+            personalization.setdefault(n, 0.0)
+
+        try:
+            ppr = nx.pagerank(G, alpha=self.alpha, personalization=personalization)
+        except Exception:
+            return modified_entities.copy()
+
+        # Always include directly modified entities
+        entities_to_update = modified_entities.copy()
+
+        # Add top-fraction by PPR score
+        n_additional = max(0, int(len(ppr) * self.top_fraction) - len(entities_to_update))
+        ranked = sorted(ppr.items(), key=lambda x: x[1], reverse=True)
+        for eid, score in ranked:
+            if n_additional <= 0:
+                break
+            if eid not in entities_to_update:
+                entities_to_update.add(eid)
+                n_additional -= 1
+
+        return entities_to_update
+
+
 class Evaluator:
     """Evaluates cache invalidation strategies."""
 
@@ -128,6 +189,61 @@ class Evaluator:
         top_k = retrieved[:k]
         relevant_retrieved = set(top_k) & set(ground_truth)
         return len(relevant_retrieved) / len(ground_truth)
+
+    def compute_mrr(self, retrieved: List[str], ground_truth: List[str]) -> float:
+        """
+        Compute Mean Reciprocal Rank (MRR).
+
+        The reciprocal rank is 1 / rank_of_first_relevant_result.
+        Returns 0 if no relevant result is found.
+
+        Args:
+            retrieved:    Ranked list of entity IDs.
+            ground_truth: Set of relevant entity IDs.
+
+        Returns:
+            Reciprocal rank score in [0, 1].
+        """
+        gt_set = set(ground_truth)
+        for rank, eid in enumerate(retrieved, start=1):
+            if eid in gt_set:
+                return 1.0 / rank
+        return 0.0
+
+    def compute_ndcg_at_k(self, retrieved: List[str], ground_truth: List[str],
+                          k: int = 10) -> float:
+        """
+        Compute Normalised Discounted Cumulative Gain at K (nDCG@K).
+
+        Relevance is binary (1 if in ground truth, 0 otherwise).
+        nDCG@K = DCG@K / IDCG@K.
+
+        Args:
+            retrieved:    Ranked list of entity IDs.
+            ground_truth: List of relevant entity IDs.
+            k:            Cut-off rank.
+
+        Returns:
+            nDCG@K score in [0, 1].
+        """
+        if not ground_truth:
+            return 0.0
+
+        gt_set = set(ground_truth)
+        top_k  = retrieved[:k]
+
+        # DCG
+        dcg = sum(
+            (1.0 / np.log2(rank + 2))  # log2(rank+2) because rank is 0-indexed
+            for rank, eid in enumerate(top_k)
+            if eid in gt_set
+        )
+
+        # IDCG — ideal ranking: all relevant docs at the top
+        n_relevant = min(len(gt_set), k)
+        idcg = sum(1.0 / np.log2(rank + 2) for rank in range(n_relevant))
+
+        return dcg / idcg if idcg > 0 else 0.0
 
     def compute_spearman_correlation(self, rankings1: Dict[str, float],
                                      rankings2: Dict[str, float]) -> float:
@@ -205,45 +321,60 @@ class Evaluator:
         metrics['total_entities'] = len(ground_truth_embeddings)
         metrics['update_percentage'] = len(entities_to_update) / len(ground_truth_embeddings) * 100
 
-        # Recall@K for each query
-        for k in k_values:
-            recall_scores = []
-            for query_id, query_embedding in queries.items():
-                # Get ground truth top-k
-                gt_results = self.embedding_manager.find_similar_entities(
-                    query_embedding, ground_truth_embeddings, top_k=k
-                )
-                gt_ids = [eid for eid, _ in gt_results]
-
-                # Get strategy top-k
-                strategy_results = self.embedding_manager.find_similar_entities(
-                    query_embedding, strategy_embeddings, top_k=k
-                )
-                strategy_ids = [eid for eid, _ in strategy_results]
-
-                # Compute recall
-                recall = self.compute_recall_at_k(strategy_ids, gt_ids, k=k)
-                recall_scores.append(recall)
-
-            metrics[f'recall_at_{k}'] = np.mean(recall_scores)
-
-        # Rank correlation
-        # Get full rankings for ground truth and strategy
+        # Precompute similarity rankings once per query for both ground truth and strategy
+        gt_rankings_by_query = {}
+        strategy_rankings_by_query = {}
         gt_rankings = {}
         strategy_rankings = {}
 
         for query_id, query_embedding in queries.items():
+            # Ground truth full ranking
             gt_results = self.embedding_manager.find_similar_entities(
-                query_embedding, ground_truth_embeddings, top_k=len(ground_truth_embeddings)
+                query_embedding, ground_truth_embeddings,
+                top_k=len(ground_truth_embeddings)
             )
+            gt_ids_ranked = [eid for eid, _ in gt_results]
+            gt_rankings_by_query[query_id] = gt_ids_ranked
             for rank, (eid, score) in enumerate(gt_results):
                 gt_rankings[eid] = gt_rankings.get(eid, 0.0) + score
 
+            # Strategy full ranking
             strategy_results = self.embedding_manager.find_similar_entities(
-                query_embedding, strategy_embeddings, top_k=len(strategy_embeddings)
+                query_embedding, strategy_embeddings,
+                top_k=len(strategy_embeddings)
             )
+            strategy_ids_ranked = [eid for eid, _ in strategy_results]
+            strategy_rankings_by_query[query_id] = strategy_ids_ranked
             for rank, (eid, score) in enumerate(strategy_results):
                 strategy_rankings[eid] = strategy_rankings.get(eid, 0.0) + score
+
+        # Recall@K, MRR, nDCG
+        recall_scores: Dict[int, List[float]] = {k: [] for k in k_values}
+        mrr_scores:   List[float] = []
+        ndcg_scores:  List[float] = []
+
+        for k in k_values:
+            for query_id in queries:
+                gt_ids_ranked = gt_rankings_by_query[query_id]
+                gt_top_k      = gt_ids_ranked[:k]
+                strategy_ids_ranked = strategy_rankings_by_query[query_id]
+
+                recall = self.compute_recall_at_k(strategy_ids_ranked, gt_top_k, k=k)
+                recall_scores[k].append(recall)
+
+        for query_id in queries:
+            gt_ids_ranked = gt_rankings_by_query[query_id]
+            gt_top10 = gt_ids_ranked[:10]
+            strategy_ids_ranked = strategy_rankings_by_query[query_id]
+
+            mrr_scores.append(self.compute_mrr(strategy_ids_ranked, gt_top10))
+            ndcg_scores.append(self.compute_ndcg_at_k(strategy_ids_ranked, gt_top10, k=10))
+
+        for k in k_values:
+            metrics[f'recall_at_{k}'] = np.mean(recall_scores[k])
+
+        metrics['mrr']      = float(np.mean(mrr_scores))  if mrr_scores  else 0.0
+        metrics['ndcg_at_10'] = float(np.mean(ndcg_scores)) if ndcg_scores else 0.0
 
         metrics['rank_correlation'] = self.compute_spearman_correlation(
             gt_rankings, strategy_rankings
@@ -310,6 +441,14 @@ class Evaluator:
         strategy_pred = PredictiveStrategy()
         results['proposed_predictive'] = self.evaluate_strategy(
             strategy_pred, ground_truth_embeddings, predicted_drifts,
+            modified_entities, queries, threshold, k_values
+        )
+
+        # Baseline D: Personalized PageRank Propagation
+        logger.info("Evaluating Baseline D (PageRank Propagation)...")
+        strategy_ppr = BaselineDPageRankPropagation(top_fraction=0.3)
+        results['baseline_d_pagerank_propagation'] = self.evaluate_strategy(
+            strategy_ppr, ground_truth_embeddings, predicted_drifts,
             modified_entities, queries, threshold, k_values
         )
 
