@@ -280,15 +280,13 @@ class Experiment:
             logger.warning(f"  No entities found in commit {commit_hash[:8]}")
             self.embeddings_history[commit_hash] = {}
 
-    def compute_drifts_and_features(self, commit_a: str, commit_b: str,
-                                    gtd=None) -> Tuple[Dict[str, float], pd.DataFrame]:
+    def compute_drifts_and_features(self, commit_a: str, commit_b: str) -> Tuple[Dict[str, float], pd.DataFrame]:
         """
         Compute drifts and features between two commits.
 
         Args:
             commit_a: Earlier commit hash
             commit_b: Later commit hash
-            gtd:      Optional pre-computed GraphTransitionDescriptor
 
         Returns:
             Tuple of (drifts dict, features DataFrame)
@@ -305,6 +303,13 @@ class Experiment:
 
         # Compute drifts
         drifts = self.embedding_manager.compute_all_drifts(embeddings_a, embeddings_b)
+
+        # Compute Graph Transition Descriptor (GTD) with actual drifts
+        parser_a = self.parsers_history.get(commit_a)
+        parser_b = self.repo_parser
+        gtd = GraphTransitionDescriptor()
+        gtd.compute(parser_a=parser_a, parser_b=parser_b, drifts=drifts)
+        self.gtd_history[(commit_a, commit_b)] = gtd
 
         # Get modified entities
         modified_files = self.git_helper.get_modified_files(commit_a, commit_b)
@@ -394,26 +399,11 @@ class Experiment:
             # If this is not the first commit, compute drifts and features compared to the previous commit
             if i > 0:
                 commit_prev = self.commits[i-1]
-
-                # ---- Compute Graph Transition Descriptor ----
-                parser_prev = self.parsers_history.get(commit_prev)
-                gtd = GraphTransitionDescriptor()
-                gtd.compute(
-                    parser_a=parser_prev,
-                    parser_b=self.repo_parser,
-                    drifts=self.drifts_history.get((commit_prev, commit), {})
-                )
-                self.gtd_history[(commit_prev, commit)] = gtd
-
-                drifts, features = self.compute_drifts_and_features(commit_prev, commit, gtd=gtd)
+                drifts, features = self.compute_drifts_and_features(commit_prev, commit)
 
                 if drifts and not features.empty:
                     self.drifts_history[(commit_prev, commit)] = drifts
                     self.features_history[(commit_prev, commit)] = features
-
-                    # Recompute GTD now that drifts are available
-                    gtd.compute(parser_a=parser_prev, parser_b=self.repo_parser, drifts=drifts)
-                    self.gtd_history[(commit_prev, commit)] = gtd
 
             # ---- Add RSD entry for this commit ----
             self.rsd.add_commit(

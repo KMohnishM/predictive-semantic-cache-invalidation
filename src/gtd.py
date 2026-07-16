@@ -91,8 +91,6 @@ def _node_diff(graph_a: nx.DiGraph, graph_b: nx.DiGraph,
     n_modified = len(drifted)
     n_unchanged = len(both) - n_modified
 
-    drift_vals = [drifts[eid] for eid in both if eid in drifts]
-
     return {
         "node_added_ratio":     n_added    / n_total,
         "node_deleted_ratio":   n_deleted  / n_total,
