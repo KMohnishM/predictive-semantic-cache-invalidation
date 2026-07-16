@@ -321,45 +321,51 @@ class Evaluator:
         metrics['total_entities'] = len(ground_truth_embeddings)
         metrics['update_percentage'] = len(entities_to_update) / len(ground_truth_embeddings) * 100
 
-        # Recall@K, MRR, nDCG for each query
-        recall_scores: Dict[int, List[float]] = {k: [] for k in k_values}
-        mrr_scores:   List[float] = []
-        ndcg_scores:  List[float] = []
+        # Precompute similarity rankings once per query for both ground truth and strategy
+        gt_rankings_by_query = {}
+        strategy_rankings_by_query = {}
+        gt_rankings = {}
+        strategy_rankings = {}
 
-        for k in k_values:
-            for query_id, query_embedding in queries.items():
-                # Ground truth full ranking
-                gt_results = self.embedding_manager.find_similar_entities(
-                    query_embedding, ground_truth_embeddings,
-                    top_k=len(ground_truth_embeddings)
-                )
-                gt_ids_ranked = [eid for eid, _ in gt_results]
-                gt_top_k      = gt_ids_ranked[:k]
-
-                # Strategy full ranking
-                strategy_results = self.embedding_manager.find_similar_entities(
-                    query_embedding, strategy_embeddings,
-                    top_k=len(strategy_embeddings)
-                )
-                strategy_ids_ranked = [eid for eid, _ in strategy_results]
-
-                recall = self.compute_recall_at_k(strategy_ids_ranked, gt_top_k, k=k)
-                recall_scores[k].append(recall)
-
-        # MRR and nDCG (computed once over all queries using top-10)
         for query_id, query_embedding in queries.items():
+            # Ground truth full ranking
             gt_results = self.embedding_manager.find_similar_entities(
                 query_embedding, ground_truth_embeddings,
                 top_k=len(ground_truth_embeddings)
             )
             gt_ids_ranked = [eid for eid, _ in gt_results]
-            gt_top10 = gt_ids_ranked[:10]
+            gt_rankings_by_query[query_id] = gt_ids_ranked
+            for rank, (eid, score) in enumerate(gt_results):
+                gt_rankings[eid] = gt_rankings.get(eid, 0.0) + score
 
+            # Strategy full ranking
             strategy_results = self.embedding_manager.find_similar_entities(
                 query_embedding, strategy_embeddings,
                 top_k=len(strategy_embeddings)
             )
             strategy_ids_ranked = [eid for eid, _ in strategy_results]
+            strategy_rankings_by_query[query_id] = strategy_ids_ranked
+            for rank, (eid, score) in enumerate(strategy_results):
+                strategy_rankings[eid] = strategy_rankings.get(eid, 0.0) + score
+
+        # Recall@K, MRR, nDCG
+        recall_scores: Dict[int, List[float]] = {k: [] for k in k_values}
+        mrr_scores:   List[float] = []
+        ndcg_scores:  List[float] = []
+
+        for k in k_values:
+            for query_id in queries:
+                gt_ids_ranked = gt_rankings_by_query[query_id]
+                gt_top_k      = gt_ids_ranked[:k]
+                strategy_ids_ranked = strategy_rankings_by_query[query_id]
+
+                recall = self.compute_recall_at_k(strategy_ids_ranked, gt_top_k, k=k)
+                recall_scores[k].append(recall)
+
+        for query_id in queries:
+            gt_ids_ranked = gt_rankings_by_query[query_id]
+            gt_top10 = gt_ids_ranked[:10]
+            strategy_ids_ranked = strategy_rankings_by_query[query_id]
 
             mrr_scores.append(self.compute_mrr(strategy_ids_ranked, gt_top10))
             ndcg_scores.append(self.compute_ndcg_at_k(strategy_ids_ranked, gt_top10, k=10))
@@ -369,24 +375,6 @@ class Evaluator:
 
         metrics['mrr']      = float(np.mean(mrr_scores))  if mrr_scores  else 0.0
         metrics['ndcg_at_10'] = float(np.mean(ndcg_scores)) if ndcg_scores else 0.0
-
-        # Rank correlation
-        # Get full rankings for ground truth and strategy
-        gt_rankings = {}
-        strategy_rankings = {}
-
-        for query_id, query_embedding in queries.items():
-            gt_results = self.embedding_manager.find_similar_entities(
-                query_embedding, ground_truth_embeddings, top_k=len(ground_truth_embeddings)
-            )
-            for rank, (eid, score) in enumerate(gt_results):
-                gt_rankings[eid] = gt_rankings.get(eid, 0.0) + score
-
-            strategy_results = self.embedding_manager.find_similar_entities(
-                query_embedding, strategy_embeddings, top_k=len(strategy_embeddings)
-            )
-            for rank, (eid, score) in enumerate(strategy_results):
-                strategy_rankings[eid] = strategy_rankings.get(eid, 0.0) + score
 
         metrics['rank_correlation'] = self.compute_spearman_correlation(
             gt_rankings, strategy_rankings

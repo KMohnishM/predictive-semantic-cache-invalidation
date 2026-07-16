@@ -245,7 +245,10 @@ class Visualizer:
         ax.set_xticklabels(strategy_names, rotation=20, ha='right')
         ax.legend(fontsize=9)
         ax.grid(True, alpha=0.3, axis='y')
-        ax.set_ylim(0, 1.1)
+        if 'rank_correlation' in metrics:
+            ax.set_ylim(-1.1, 1.1)
+        else:
+            ax.set_ylim(0, 1.1)
 
         plt.tight_layout()
         output_path = self.output_dir / output_file
