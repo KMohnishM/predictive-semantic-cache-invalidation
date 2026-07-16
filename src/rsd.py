@@ -175,13 +175,16 @@ def _semantic_metrics(embeddings: Dict[str, np.ndarray]) -> Dict[str, float]:
 
     # Approximate entropy via histogram of magnitudes
     mag_min, mag_max = np.min(magnitudes), np.max(magnitudes)
-    if mag_max - mag_min < 1e-9:
+    if mag_max - mag_min < 1e-4:
         embed_entropy = 0.0
     else:
-        hist, _ = np.histogram(magnitudes, bins=20, density=True)
-        hist = hist + 1e-9
-        hist /= hist.sum()
-        embed_entropy = float(-np.sum(hist * np.log(hist)))
+        try:
+            hist, _ = np.histogram(magnitudes, bins=20, density=True)
+            hist = hist + 1e-9
+            hist /= hist.sum()
+            embed_entropy = float(-np.sum(hist * np.log(hist)))
+        except ValueError:
+            embed_entropy = 0.0
 
     return {
         "avg_sim":        avg_sim,
