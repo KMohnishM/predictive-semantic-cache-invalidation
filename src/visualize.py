@@ -3,6 +3,10 @@
 from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
+import matplotlib
+
+# Use a non-interactive backend so plot generation does not depend on Tk.
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 import logging
@@ -70,7 +74,7 @@ class Visualizer:
         plt.tight_layout()
         output_path = self.output_dir / output_file
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
-        plt.close()
+        plt.close(fig)
 
         logger.info(f"Drift decay plot saved to {output_path}")
         return str(output_path)
@@ -119,7 +123,7 @@ class Visualizer:
         plt.tight_layout()
         output_path = self.output_dir / output_file
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
-        plt.close()
+        plt.close(fig)
 
         logger.info(f"Feature importance plot saved to {output_path}")
         return str(output_path)
@@ -192,7 +196,7 @@ class Visualizer:
         plt.tight_layout()
         output_path = self.output_dir / output_file
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
-        plt.close()
+        plt.close(fig)
 
         logger.info(f"Pareto frontier plot saved to {output_path}")
         return str(output_path)

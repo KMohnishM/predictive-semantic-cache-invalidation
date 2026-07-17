@@ -49,7 +49,8 @@ class Experiment:
                  train_ratio: float = 0.7,
                  threshold: float = 0.02,
                  clean_mode: bool = False,
-                 context_chunking: bool = False):
+                 context_chunking: bool = False,
+                 commit_stride: int = 20):
         """
         Initialize experiment.
 
@@ -61,6 +62,7 @@ class Experiment:
             threshold: Drift threshold for classification
             clean_mode: If True, remove comments/docstrings before embedding
             context_chunking: If True, enable call-graph aware contextual chunking
+            commit_stride: Step size between sampled commits
         """
         self.repo_url = repo_url
         self.workspace_dir = Path(workspace_dir)
@@ -69,13 +71,17 @@ class Experiment:
         self.threshold = threshold
         self.clean_mode = clean_mode
         self.context_chunking = context_chunking
+        self.commit_stride = commit_stride
 
         # Paths
         self.repo_path = self.workspace_dir / "black"
         
         # Determine unique results directory name based on configuration
         mode_str = "contextual" if self.context_chunking else "isolated"
-        dir_name = f"results_{mode_str}_commits{self.num_commits}_clean{self.clean_mode}"
+        dir_name = (
+            f"results_{mode_str}_commits{self.num_commits}"
+            f"_stride{self.commit_stride}_clean{self.clean_mode}"
+        )
         self.results_dir = Path("results") / dir_name
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
@@ -90,6 +96,7 @@ class Experiment:
 
         # Data storage
         self.commits = []
+        self.sampled_commits = []
         self.train_commits = []
         self.test_commits = []
         self.embeddings_history = {}  # commit_hash -> embeddings dict
@@ -144,10 +151,14 @@ class Experiment:
         logger.info("HARVESTING COMMITS")
         logger.info("=" * 80)
 
-        self.commits = self.git_helper.get_commit_history(count=self.num_commits)
+        raw_commit_count = self.num_commits * self.commit_stride
+        self.commits = self.git_helper.get_commit_history(count=raw_commit_count)
 
-        if len(self.commits) < 2:
-            logger.error(f"Not enough commits found: {len(self.commits)}")
+        if len(self.commits) < self.commit_stride + 1:
+            logger.error(
+                f"Not enough commits found for stride={self.commit_stride}: "
+                f"{len(self.commits)} raw commits"
+            )
             return False
 
         # ----------------------------------------------------------------
@@ -160,7 +171,7 @@ class Experiment:
         self.train_commits = self.commits[:split_idx]
         self.test_commits  = self.commits[split_idx:]
 
-        logger.info(f"Total commits: {len(self.commits)}")
+        logger.info(f"Total raw commits: {len(self.commits)}")
         logger.info(f"Training commits (preliminary): {len(self.train_commits)}")
         logger.info(f"Test commits (preliminary):     {len(self.test_commits)}")
 
@@ -361,7 +372,7 @@ class Experiment:
 
     def build_dataset(self) -> bool:
         """
-        Build dataset by processing all commits and computing drifts/features.
+        Build dataset by processing sampled commits and computing drifts/features.
 
         Returns:
             True if successful, False otherwise
@@ -370,9 +381,17 @@ class Experiment:
         logger.info("BUILDING DATASET")
         logger.info("=" * 80)
 
-        # Single-pass processing of all commits to avoid redundant checkouts/parses
-        for i, commit in enumerate(self.commits):
-            logger.info(f"\nProcessing commit {i+1}/{len(self.commits)} ({commit[:8]})...")
+        # Sample commits at the configured stride and only process those commits.
+        self.sampled_commits = self.commits[::self.commit_stride][:self.num_commits]
+        if len(self.sampled_commits) < 2:
+            logger.error(
+                "Not enough sampled commits to build a dataset: "
+                f"{len(self.sampled_commits)} sampled commits with stride={self.commit_stride}"
+            )
+            return False
+
+        for i, commit in enumerate(self.sampled_commits):
+            logger.info(f"\nProcessing sampled commit {i+1}/{len(self.sampled_commits)} ({commit[:8]})...")
             
             # Checkout commit
             if not self.git_helper.checkout_commit(commit):
@@ -396,9 +415,9 @@ class Experiment:
                 logger.warning(f"  No entities found in commit {commit[:8]}")
                 self.embeddings_history[commit] = {}
 
-            # If this is not the first commit, compute drifts and features compared to the previous commit
+            # Compare only sampled neighbors; skip all intermediate commits entirely.
             if i > 0:
-                commit_prev = self.commits[i-1]
+                commit_prev = self.sampled_commits[i - 1]
                 drifts, features = self.compute_drifts_and_features(commit_prev, commit)
 
                 if drifts and not features.empty:
@@ -413,21 +432,24 @@ class Experiment:
                 modification_history=self.modification_history,
                 previous_drifts=self.previous_drifts,
                 commit_index=i,
-                total_commits=len(self.commits)
+                total_commits=len(self.sampled_commits)
             )
 
             # Small delay
             time.sleep(0.1)
 
-        logger.info(f"\nDataset built: {len(self.drifts_history)} commit pairs with data")
+        logger.info(
+            f"\nDataset built: {len(self.drifts_history)} commit pairs with data "
+            f"(stride={self.commit_stride}, sampled_commits={len(self.sampled_commits)})"
+        )
 
         # ---- Finalise stratified split with RSD ----
         logger.info("Building RSDs and finalising stratified train/test split...")
         self.rsd.build_all_rsds()
         self.train_commits, self.test_commits = self.rsd.stratified_split(
-            self.commits, train_ratio=self.train_ratio, n_clusters=3
+            self.sampled_commits, train_ratio=self.train_ratio, n_clusters=3
         )
-        logger.info(f"Stratified split → train={len(self.train_commits)}, test={len(self.test_commits)}")
+        logger.info(f"Stratified split -> train={len(self.train_commits)}, test={len(self.test_commits)}")
         logger.info("\nRSD Summary:\n" + self.rsd.summary_table())
 
         return True
@@ -446,6 +468,14 @@ class Experiment:
         # Combine features and drifts from training commits
         all_features = []
         all_drifts = {}
+
+        if len(self.train_commits) < 2:
+            logger.error(
+                "Not enough sampled commits to train: "
+                f"train={len(self.train_commits)} with stride={self.commit_stride}. "
+                "Increase --num-commits or reduce the stride."
+            )
+            return False
 
         for i in range(1, len(self.train_commits)):
             commit_a = self.train_commits[i-1]
@@ -513,12 +543,12 @@ class Experiment:
         all_predictions = []
         all_labels = []
 
-        # Process each test commit
+        # Process each test commit pair from the sampled commit sequence.
         for i, commit_b in enumerate(self.test_commits):
             if i == 0:
                 continue  # Skip first test commit (no previous commit to compare)
 
-            commit_a = self.test_commits[i-1]
+            commit_a = self.test_commits[i - 1]
 
             logger.info(f"\nEvaluating commit pair {i}/{len(self.test_commits)-1}: "
                        f"{commit_a[:8]} -> {commit_b[:8]}")
@@ -841,7 +871,13 @@ def main():
         "--num-commits",
         type=int,
         default=50,
-        help="Number of commits to analyze"
+        help="Number of sampled commits to analyze"
+    )
+    parser.add_argument(
+        "--commit-stride",
+        type=int,
+        default=20,
+        help="Step size between sampled commits"
     )
     parser.add_argument(
         "--train-ratio",
@@ -882,7 +918,8 @@ def main():
         train_ratio=args.train_ratio,
         threshold=args.threshold,
         clean_mode=args.clean_mode,
-        context_chunking=args.context_chunking
+        context_chunking=args.context_chunking,
+        commit_stride=args.commit_stride
     )
 
     # Run experiment
