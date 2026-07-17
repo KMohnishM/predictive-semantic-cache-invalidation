@@ -48,8 +48,10 @@ class Experiment:
                  num_commits: int = 50,
                  train_ratio: float = 0.7,
                  threshold: float = 0.02,
+                 threshold_mode: str = "dynamic",
                  clean_mode: bool = False,
-                 context_chunking: bool = False):
+                 context_chunking: bool = False,
+                 model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         """
         Initialize experiment.
 
@@ -59,23 +61,28 @@ class Experiment:
             num_commits: Number of commits to analyze
             train_ratio: Ratio of commits to use for training
             threshold: Drift threshold for classification
+            threshold_mode: Threshold mode ("fixed" or "dynamic")
             clean_mode: If True, remove comments/docstrings before embedding
             context_chunking: If True, enable call-graph aware contextual chunking
+            model_name: HuggingFace model name for embeddings
         """
         self.repo_url = repo_url
         self.workspace_dir = Path(workspace_dir)
         self.num_commits = num_commits
         self.train_ratio = train_ratio
         self.threshold = threshold
+        self.threshold_mode = threshold_mode
         self.clean_mode = clean_mode
         self.context_chunking = context_chunking
+        self.model_name = model_name
 
         # Paths
         self.repo_path = self.workspace_dir / "black"
         
         # Determine unique results directory name based on configuration
         mode_str = "contextual" if self.context_chunking else "isolated"
-        dir_name = f"results_{mode_str}_commits{self.num_commits}_clean{self.clean_mode}"
+        model_slug = model_name.split("/")[-1]
+        dir_name = f"results_{model_slug}_{mode_str}_commits{self.num_commits}_clean{self.clean_mode}"
         self.results_dir = Path("results") / dir_name
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
@@ -124,7 +131,7 @@ class Experiment:
         # Initialize components
         logger.info("Initializing components...")
         self.repo_parser = RepoParser(str(self.repo_path))
-        self.embedding_manager = EmbeddingManager(clean_mode=self.clean_mode)
+        self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
         self.feature_extractor = FeatureExtractor(self.repo_parser)
         self.predictor = DriftPredictor(threshold=self.threshold)
         self.evaluator = Evaluator(self.embedding_manager, self.repo_parser)
@@ -469,6 +476,14 @@ class Experiment:
         combined_features = combined_features[~combined_features.index.duplicated(keep='first')]
 
         logger.info(f"Training on {len(combined_features)} entities with {len(all_drifts)} drift values")
+
+        # Dynamically calculate threshold if configured
+        if self.threshold_mode == "dynamic":
+            drift_values = [v for v in all_drifts.values() if not np.isnan(v)]
+            if drift_values:
+                self.threshold = float(np.percentile(drift_values, 85))
+                self.predictor.threshold = self.threshold
+                logger.info(f"Dynamically adjusted drift threshold to {self.threshold:.4f} based on 85th percentile of training drifts")
 
         # Prepare data
         try:
@@ -871,6 +886,17 @@ def main():
         default=None,
         help="Run on subset of commits (for testing)"
     )
+    parser.add_argument(
+        "--threshold-mode",
+        choices=["fixed", "dynamic"],
+        default="dynamic",
+        help="Whether to use a fixed threshold or compute it dynamically from percentile"
+    )
+    parser.add_argument(
+        "--model-name",
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        help="HuggingFace model name for embeddings"
+    )
 
     args = parser.parse_args()
 
@@ -881,8 +907,10 @@ def main():
         num_commits=args.num_commits if args.subset is None else args.subset,
         train_ratio=args.train_ratio,
         threshold=args.threshold,
+        threshold_mode=args.threshold_mode,
         clean_mode=args.clean_mode,
-        context_chunking=args.context_chunking
+        context_chunking=args.context_chunking,
+        model_name=args.model_name
     )
 
     # Run experiment

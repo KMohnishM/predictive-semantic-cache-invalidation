@@ -30,7 +30,7 @@ class EmbeddingManager:
         """Load the embedding model (lazy loading)."""
         if self.model is None:
             logger.info(f"Loading embedding model: {self.model_name}")
-            self.model = SentenceTransformer(self.model_name)
+            self.model = SentenceTransformer(self.model_name, trust_remote_code=True)
             logger.info("Model loaded successfully")
 
     def _remove_comments_and_docstrings(self, source: str) -> str:
