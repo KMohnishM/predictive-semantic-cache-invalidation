@@ -27,11 +27,27 @@ class EmbeddingManager:
         self.embeddings: Dict[str, np.ndarray] = {}
 
     def _load_model(self) -> None:
-        """Load the embedding model (lazy loading)."""
         if self.model is None:
             logger.info(f"Loading embedding model: {self.model_name}")
             self.model = SentenceTransformer(self.model_name, trust_remote_code=True)
-            logger.info("Model loaded successfully")
+            
+            # Enforce safe max sequence length to prevent IndexError in position embeddings
+            if "unixcoder" in self.model_name.lower():
+                self.model.max_seq_length = 512
+            elif "jina" in self.model_name.lower():
+                self.model.max_seq_length = 8192
+            else:
+                try:
+                    config = self.model._first_module().auto_model.config
+                    max_pos = getattr(config, "max_position_embeddings", None)
+                    if max_pos is not None:
+                        model_type = getattr(config, "model_type", "")
+                        offset = 2 if "roberta" in model_type else 0
+                        self.model.max_seq_length = max_pos - offset
+                except Exception:
+                    self.model.max_seq_length = min(getattr(self.model, "max_seq_length", 512), 512)
+                    
+            logger.info(f"Model loaded successfully with max_seq_length={self.model.max_seq_length}")
 
     def _remove_comments_and_docstrings(self, source: str) -> str:
         """
