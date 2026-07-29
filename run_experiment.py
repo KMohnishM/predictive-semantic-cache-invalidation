@@ -52,7 +52,8 @@ class Experiment:
                  clean_mode: bool = False,
                  context_chunking: bool = False,
                  model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
-                 commit_stride: int = 20):
+                 commit_stride: int = 20,
+                 parser_mode: str = "ast"):
         """
         Initialize experiment.
 
@@ -67,6 +68,7 @@ class Experiment:
             context_chunking: If True, enable call-graph aware contextual chunking
             model_name: HuggingFace model name for embeddings
             commit_stride: Step size between sampled commits
+            parser_mode: Parser mode ("ast", "joern_hybrid", "joern_only")
         """
         self.repo_url = repo_url
         self.workspace_dir = Path(workspace_dir)
@@ -78,6 +80,8 @@ class Experiment:
         self.context_chunking = context_chunking
         self.model_name = model_name
         self.commit_stride = commit_stride
+        self.parser_mode = parser_mode
+        self.joern_session = None
 
         # Paths
         self.repo_path = self.workspace_dir / "black"
@@ -137,14 +141,33 @@ class Experiment:
 
         # Initialize components
         logger.info("Initializing components...")
-        self.repo_parser = RepoParser(str(self.repo_path))
+
+        # Initialize Joern session if requested
+        if self.parser_mode in ["joern_hybrid", "joern_only"]:
+            try:
+                sys.path.insert(0, str(Path(__file__).resolve().parent / "joern_helper"))
+                from joern_interactive import JoernSession
+                self.joern_session = JoernSession(str(self.repo_path))
+                logger.info(f"Joern session connected successfully for mode: {self.parser_mode}")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Joern session ({e}). Falling back to AST parser_mode.")
+                self.parser_mode = "ast"
+
+        # Initialize repository parser based on parser_mode
+        if self.parser_mode == "joern_only" and self.joern_session:
+            from joern_repo_parser import JoernRepoParser
+            self.repo_parser = JoernRepoParser(str(self.repo_path), self.joern_session)
+            logger.info("Using Pure JoernRepoParser for repository parsing and graph construction")
+        else:
+            self.repo_parser = RepoParser(str(self.repo_path))
+
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
-        self.feature_extractor = FeatureExtractor(self.repo_parser)
+        self.feature_extractor = FeatureExtractor(self.repo_parser, joern_session=self.joern_session)
         self.predictor = DriftPredictor(threshold=self.threshold)
         self.evaluator = Evaluator(self.embedding_manager, self.repo_parser)
         self.visualizer = Visualizer(str(self.results_dir))
 
-        logger.info("Setup complete")
+        logger.info(f"Setup complete (parser_mode={self.parser_mode})")
         return True
 
     def harvest_commits(self) -> bool:
@@ -353,13 +376,13 @@ class Experiment:
             logger.warning("No entities found in current graph")
             return {}, pd.DataFrame()
 
-        # Update feature extractor with current graph
-        self.feature_extractor = FeatureExtractor(self.repo_parser)
+        # Update feature extractor with current graph and optional Joern session
+        self.feature_extractor = FeatureExtractor(self.repo_parser, joern_session=self.joern_session)
         
         features_df = self.feature_extractor.extract_features_batch(
             entity_ids, commit_a, commit_b, modified_entities,
             self.modification_history, self.previous_drifts, self.git_helper,
-            gtd=gtd
+            gtd=gtd, joern_session=self.joern_session
         )
 
         # Update modification history
@@ -929,12 +952,46 @@ def main():
         help="Whether to use a fixed threshold or compute it dynamically from percentile"
     )
     parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Path to JSON configuration file to load options from"
+    )
+    parser.add_argument(
+        "--parser-mode",
+        choices=["ast", "joern_hybrid", "joern_only"],
+        default="ast",
+        help="Parser mode: ast (default), joern_hybrid (AST + Joern CPG features), or joern_only (pure Joern)"
+    )
+    parser.add_argument(
+        "--use-joern",
+        action="store_true",
+        help="Alias for --parser-mode joern_hybrid"
+    )
+    parser.add_argument(
         "--model-name",
         default="sentence-transformers/all-MiniLM-L6-v2",
         help="HuggingFace model name for embeddings"
     )
 
     args = parser.parse_args()
+
+    # If --config is passed, load JSON file and merge parameters
+    if args.config:
+        config_path = Path(args.config)
+        if config_path.exists():
+            logger.info(f"Loading configuration from JSON file: {config_path}")
+            import json
+            with config_path.open("r", encoding="utf-8") as f:
+                json_config = json.load(f)
+                for key, value in json_config.items():
+                    if hasattr(args, key) and getattr(args, key) == parser.get_default(key):
+                        setattr(args, key, value)
+
+    # Determine final parser mode
+    parser_mode = args.parser_mode
+    if args.use_joern and parser_mode == "ast":
+        parser_mode = "joern_hybrid"
 
     # Create experiment
     experiment = Experiment(
@@ -947,7 +1004,8 @@ def main():
         clean_mode=args.clean_mode,
         context_chunking=args.context_chunking,
         model_name=args.model_name,
-        commit_stride=args.commit_stride
+        commit_stride=args.commit_stride,
+        parser_mode=parser_mode
     )
 
     # Run experiment

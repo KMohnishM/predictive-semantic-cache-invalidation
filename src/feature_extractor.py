@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class FeatureExtractor:
     """Extracts features for drift prediction."""
 
-    def __init__(self, repo_parser, git_helper=None, commit_a=None, commit_b=None):
+    def __init__(self, repo_parser, git_helper=None, commit_a=None, commit_b=None, joern_session=None):
         """
         Initialize feature extractor.
 
@@ -24,8 +24,10 @@ class FeatureExtractor:
             git_helper: GitHelper instance (optional, for caching diff stats)
             commit_a: Earlier commit hash (optional)
             commit_b: Later commit hash (optional)
+            joern_session: Optional JoernSession instance for CPG features
         """
         self.repo_parser = repo_parser
+        self.joern_session = joern_session
         self.graph = repo_parser.get_graph()
         self.undirected_graph = self.graph.to_undirected()
 
@@ -358,12 +360,47 @@ class FeatureExtractor:
 
         return features
 
+    def _get_joern_features(self, entity_id: str, joern_session=None) -> Dict[str, float]:
+        """Extract Joern CPG control-flow and data-flow features."""
+        session = joern_session or self.joern_session
+        if session is None:
+            return {
+                "joern_cyclomatic_complexity": 0.0,
+                "joern_cfg_node_count": 0.0,
+                "joern_max_cfg_nesting_depth": 0.0,
+                "joern_data_flow_distance": 0.0,
+                "joern_modified_data_deps_count": 0.0,
+                "joern_taint_reachability_score": 0.0,
+            }
+
+        try:
+            full_name = entity_id.split("::")[-1]
+            return {
+                "joern_cyclomatic_complexity": float(session.cyclomatic_complexity(full_name)),
+                "joern_cfg_node_count": float(session.cfg_node_count(full_name)),
+                "joern_max_cfg_nesting_depth": float(session.max_cfg_nesting_depth(full_name)),
+                "joern_data_flow_distance": float(session.data_flow_distance(full_name)),
+                "joern_modified_data_deps_count": float(session.modified_data_deps_count(full_name)),
+                "joern_taint_reachability_score": float(session.taint_reachability_score(full_name)),
+            }
+        except Exception as e:
+            logger.warning(f"Failed to harvest Joern features for {entity_id}: {e}")
+            return {
+                "joern_cyclomatic_complexity": 0.0,
+                "joern_cfg_node_count": 0.0,
+                "joern_max_cfg_nesting_depth": 0.0,
+                "joern_data_flow_distance": 0.0,
+                "joern_modified_data_deps_count": 0.0,
+                "joern_taint_reachability_score": 0.0,
+            }
+
     def extract_features(self, entity_id: str, commit_a: str, commit_b: str,
                          modified_entities: Set[str],
                          modification_history: Dict[str, List[str]],
                          previous_drifts: Dict[str, float],
                          git_helper,
-                         gtd=None) -> Dict[str, float]:
+                         gtd=None,
+                         joern_session=None) -> Dict[str, float]:
         """
         Extract all features for an entity.
 
@@ -376,6 +413,7 @@ class FeatureExtractor:
             previous_drifts:      Previous drift values
             git_helper:           GitHelper instance
             gtd:                  Optional GraphTransitionDescriptor for this pair
+            joern_session:        Optional JoernSession instance
 
         Returns:
             Dictionary of all features
@@ -402,6 +440,9 @@ class FeatureExtractor:
         # Graph Transition Descriptor features
         features.update(self._get_gtd_features(entity_id, gtd))
 
+        # Joern CPG features
+        features.update(self._get_joern_features(entity_id, joern_session))
+
         return features
 
     def extract_features_batch(self, entity_ids: List[str], commit_a: str, commit_b: str,
@@ -409,7 +450,8 @@ class FeatureExtractor:
                                modification_history: Dict[str, List[str]],
                                previous_drifts: Dict[str, float],
                                git_helper,
-                               gtd=None) -> pd.DataFrame:
+                               gtd=None,
+                               joern_session=None) -> pd.DataFrame:
         """
         Extract features for multiple entities.
 
@@ -422,6 +464,7 @@ class FeatureExtractor:
             previous_drifts:      Previous drift values
             git_helper:           GitHelper instance
             gtd:                  Optional GraphTransitionDescriptor for this pair
+            joern_session:        Optional JoernSession instance
 
         Returns:
             DataFrame with features for all entities
@@ -431,7 +474,8 @@ class FeatureExtractor:
         for entity_id in entity_ids:
             features = self.extract_features(
                 entity_id, commit_a, commit_b, modified_entities,
-                modification_history, previous_drifts, git_helper, gtd=gtd
+                modification_history, previous_drifts, git_helper, gtd=gtd,
+                joern_session=joern_session
             )
             features['entity_id'] = entity_id
             features_list.append(features)
