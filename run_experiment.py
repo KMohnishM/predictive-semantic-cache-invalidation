@@ -262,6 +262,10 @@ class Experiment:
         import hashlib
         import textwrap
 
+        is_large_context = False
+        if hasattr(self, 'embedding_manager') and self.embedding_manager and self.embedding_manager.model:
+            is_large_context = getattr(self.embedding_manager.model, 'max_seq_length', 512) >= 8192
+
         stubs = []
         for dep_id in sorted(deps):
             dep_entity = self.repo_parser.get_entity(dep_id)
@@ -270,18 +274,20 @@ class Experiment:
 
             # Extract signature
             sig = self._extract_signature(dep_entity)
-            
-            # Calculate hash of the dependency's source code to capture internal changes
-            dep_hash = hashlib.md5(dep_entity.source_code.encode('utf-8')).hexdigest()
-
-            # Format signature to be top-level (dedented)
             sig_dedented = textwrap.dedent(sig).strip()
             if not sig_dedented.endswith(':'):
                 sig_dedented += ':'
 
-            # Format as valid python stub containing the hash in a variable assignment
-            # so that it survives clean_mode=True
-            stub = f"{sig_dedented}\n    _dep_hash_ = '{dep_hash}'\n    pass"
+            if is_large_context:
+                # Large context window (8k+): include full docstrings & signatures without hashing
+                doc = getattr(dep_entity, 'docstring', '') or ''
+                doc_block = f'    """{doc}"""\n' if doc else ''
+                stub = f"{sig_dedented}\n{doc_block}    pass"
+            else:
+                # Small context window (<8k): use compact MD5 hash stub
+                dep_hash = hashlib.md5(dep_entity.source_code.encode('utf-8')).hexdigest()
+                stub = f"{sig_dedented}\n    _dep_hash_ = '{dep_hash}'\n    pass"
+
             stubs.append(stub)
 
         if stubs:
