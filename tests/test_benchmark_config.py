@@ -35,6 +35,10 @@ class BenchmarkConfigTests(unittest.TestCase):
         self.assertEqual(config.seed, 99)
         self.assertEqual(config.top_k_values, [1, 3, 5])
         self.assertTrue(config.clean_mode)
+        self.assertEqual(config.strategies, ["changed_only"])
+        self.assertTrue(config.compare_embeddings)
+        self.assertTrue(config.store_raw_vectors)
+
 
 
 if __name__ == "__main__":

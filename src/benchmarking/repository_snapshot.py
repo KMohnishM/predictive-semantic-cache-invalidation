@@ -6,9 +6,9 @@ import ast
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from git_helper import GitHelper
+from ..git_helper import GitHelper
 
-from benchmarking.types import RepositoryEntity, RepositorySnapshot
+from src.benchmarking.types import RepositoryEntity, RepositorySnapshot
 
 
 def _list_python_files_at_commit(git_helper: GitHelper, commit_hash: str) -> List[str]:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List
 
-from benchmarking.types import CommitPair, QueryCase
+from src.benchmarking.types import CommitPair, QueryCase
 
 
 @dataclass(frozen=True)

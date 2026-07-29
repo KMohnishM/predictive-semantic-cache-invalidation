@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional
 
-from git_helper import GitHelper
+from ..git_helper import GitHelper
 
-from benchmarking.types import CommitPair
+from .types import CommitPair
 
 
 def sample_commit_pairs(

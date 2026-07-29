@@ -5,10 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
-from benchmarking.types import BenchmarkSummary
+from src.benchmarking.types import BenchmarkSummary
 
 
-def write_summary_report(output_dir: str, summary: BenchmarkSummary) -> Path:
+def write_summary_report(
+    output_dir: str,
+    summary: BenchmarkSummary,
+    embedding_comparisons: Optional[Iterable[StrategyEmbeddingComparisonResult]] = None,
+) -> Path:
     output_path = Path(output_dir).resolve() / "summary_report.md"
     lines = [
         "# Benchmark Summary",
@@ -27,5 +31,19 @@ def write_summary_report(output_dir: str, summary: BenchmarkSummary) -> Path:
     for key, value in summary.metric_deltas.items():
         lines.append(f"- {key}: {value:.4f}")
 
+    if embedding_comparisons:
+        lines.extend([
+            "",
+            "## Direct Embedding Quality & Vector Fidelity",
+            "",
+            "| Strategy | Updated Fraction (Cost) | Mean Cosine Sim (Fidelity) | Min Cosine Sim | P95 Cosine Sim | Total Entities |",
+            "| :--- | :--- | :--- | :--- | :--- | :--- |",
+        ])
+        for comp in embedding_comparisons:
+            lines.append(
+                f"| `{comp.strategy_name}` | {comp.updated_fraction:.4f} | {comp.mean_cosine_similarity:.4f} | {comp.min_cosine_similarity:.4f} | {comp.p95_cosine_similarity:.4f} | {comp.total_entities} |"
+            )
+
     output_path.write_text("\n".join(lines), encoding="utf-8")
     return output_path
+
