@@ -7,9 +7,9 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from embedding_manager import EmbeddingManager
+from ..embedding_manager import EmbeddingManager
 
-from benchmarking.types import IndexSnapshot, RepositorySnapshot
+from src.benchmarking.types import IndexSnapshot, RepositorySnapshot
 
 
 @dataclass(frozen=True)
@@ -19,21 +19,29 @@ class RetrievalResult:
 
 
 def build_index_snapshot(snapshot: RepositorySnapshot, embedding_manager: EmbeddingManager) -> IndexSnapshot:
-    entity_embeddings: Dict[str, List[float]] = {}
-    entity_metadata: Dict[str, Dict[str, object]] = {}
+    if not snapshot.entities:
+        return IndexSnapshot(commit_hash=snapshot.commit_hash, entity_embeddings={}, entity_metadata={})
 
-    for entity in snapshot.entities.values():
-        embedding = embedding_manager.generate_embedding(entity.entity_id, entity.source_code)
-        entity_embeddings[entity.entity_id] = embedding.astype(float).tolist()
-        entity_metadata[entity.entity_id] = {
+    entities_dict = {entity_id: entity.source_code for entity_id, entity in snapshot.entities.items()}
+    raw_embeddings = embedding_manager.generate_embeddings_batch(entities_dict)
+
+    entity_embeddings: Dict[str, List[float]] = {
+        entity_id: vec.astype(float).tolist() for entity_id, vec in raw_embeddings.items()
+    }
+
+    entity_metadata: Dict[str, Dict[str, object]] = {
+        entity_id: {
             "file_path": entity.file_path,
             "entity_type": entity.entity_type,
             "lineno": entity.lineno,
             "end_lineno": entity.end_lineno,
             "name": entity.name,
         }
+        for entity_id, entity in snapshot.entities.items()
+    }
 
     return IndexSnapshot(commit_hash=snapshot.commit_hash, entity_embeddings=entity_embeddings, entity_metadata=entity_metadata)
+
 
 
 def build_selective_snapshot(
@@ -60,10 +68,13 @@ def retrieve_top_k(
     snapshot: IndexSnapshot,
     embedding_manager: EmbeddingManager,
     top_k: int,
+    query_embedding: Optional[np.ndarray] = None,
 ) -> RetrievalResult:
-    query_embedding = embedding_manager.generate_embedding(f"query::{query_text}", query_text)
+    if query_embedding is None:
+        query_embedding = embedding_manager.generate_embedding(f"query::{query_text}", query_text)
     entity_embeddings = {entity_id: np.asarray(values, dtype=float) for entity_id, values in snapshot.entity_embeddings.items()}
     ranked = embedding_manager.find_similar_entities(query_embedding, entity_embeddings, top_k=top_k)
     ranked_entity_ids = [entity_id for entity_id, _ in ranked]
     ranked_scores = [float(score) for _, score in ranked]
     return RetrievalResult(ranked_entity_ids=ranked_entity_ids, ranked_scores=ranked_scores)
+

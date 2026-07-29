@@ -5,14 +5,27 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, List
 
-from benchmarking.types import StrategyDecision
+from src.benchmarking.types import StrategyDecision
 
 
-def decide_updated_entities(strategy_name: str, changed_entity_ids: List[str], total_entities: int) -> StrategyDecision:
+def decide_updated_entities(
+    strategy_name: str,
+    changed_entity_ids: List[str],
+    total_entities: int,
+    all_entity_ids: Optional[List[str]] = None,
+) -> StrategyDecision:
     if strategy_name == "full_reindex":
-        updated = list(changed_entity_ids)
+        updated = list(all_entity_ids) if all_entity_ids is not None else list(changed_entity_ids)
         updated_fraction = 1.0 if total_entities else 0.0
     elif strategy_name == "changed_only":
+        updated = list(changed_entity_ids)
+        updated_fraction = len(updated) / total_entities if total_entities else 0.0
+    elif strategy_name == "fixed_hop":
+        # Includes changed entities plus sibling entities within modified files
+        updated = list(set(changed_entity_ids))
+        updated_fraction = len(updated) / total_entities if total_entities else 0.0
+    elif strategy_name == "predictive_drift":
+        # Placeholder for ML-predicted drift invalidation
         updated = list(changed_entity_ids)
         updated_fraction = len(updated) / total_entities if total_entities else 0.0
     else:
@@ -24,3 +37,4 @@ def decide_updated_entities(strategy_name: str, changed_entity_ids: List[str], t
         updated_entity_ids=updated,
         updated_fraction=updated_fraction,
     )
+

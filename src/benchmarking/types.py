@@ -34,6 +34,43 @@ class RepositorySnapshot:
 
 
 @dataclass(frozen=True)
+class EntityEmbeddingComparison:
+    entity_id: str
+    entity_type: str
+    file_path: str
+    status: str
+    cosine_similarity: float
+    semantic_drift: float
+    baseline_raw_vector: Optional[List[float]] = None
+    candidate_raw_vector: Optional[List[float]] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class StrategyEmbeddingComparisonResult:
+    strategy_name: str
+    total_entities: int
+    mean_cosine_similarity: float
+    min_cosine_similarity: float
+    p95_cosine_similarity: float
+    updated_fraction: float
+    per_entity_comparisons: List[EntityEmbeddingComparison]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "strategy_name": self.strategy_name,
+            "total_entities": self.total_entities,
+            "mean_cosine_similarity": self.mean_cosine_similarity,
+            "min_cosine_similarity": self.min_cosine_similarity,
+            "p95_cosine_similarity": self.p95_cosine_similarity,
+            "updated_fraction": self.updated_fraction,
+            "per_entity_comparisons": [item.to_dict() for item in self.per_entity_comparisons],
+        }
+
+
+@dataclass(frozen=True)
 class BenchmarkConfig:
     repo_url: str
     repo_path: str
@@ -50,6 +87,9 @@ class BenchmarkConfig:
     top_k_values: List[int] = field(default_factory=lambda: [1, 5, 10])
     output_format: str = "jsonl"
     max_queries_per_entity: int = 2
+    strategies: List[str] = field(default_factory=lambda: ["changed_only"])
+    compare_embeddings: bool = True
+    store_raw_vectors: bool = True
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -144,6 +184,7 @@ class BenchmarkSummary:
     cache_preservation_success_rate: float
     candidate_update_fraction: float
     benchmark_passed: bool
+    embedding_comparison_summaries: Optional[List[Dict[str, Any]]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -151,4 +192,5 @@ class BenchmarkSummary:
 
 def resolve_output_dir(base_dir: str, run_id: str) -> Path:
     return Path(base_dir).resolve() / run_id
+
 
