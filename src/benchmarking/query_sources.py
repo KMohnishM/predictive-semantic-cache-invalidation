@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Iterable, List, Optional
 
-from benchmarking.types import CommitPair, QueryCase, RepositorySnapshot
+from src.benchmarking.types import CommitPair, QueryCase, RepositorySnapshot
 
 
 def _normalize_query(text: str) -> str:

@@ -3904,3 +3904,305 @@ PROPOSED_PREDICTIVE:
 2026-06-25 18:30:39,802 - __main__ - INFO - ================================================================================
 2026-06-25 18:30:39,802 - __main__ - INFO - Results saved to results\results_isolated_commits25_cleanFalse
 2026-06-25 18:30:39,802 - __main__ - INFO - Logs saved to experiment.log
+2026-07-27 13:00:15,346 - __main__ - INFO - ================================================================================
+2026-07-27 13:00:15,346 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-07-27 13:00:15,346 - __main__ - INFO - ================================================================================
+2026-07-27 13:00:15,347 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-07-27 13:00:15,347 - git_helper - INFO - Repository already exists at C:\Users\adity\OneDrive\Desktop\All Folders\Git projects\LLM_Cache\predictive-semantic-cache-invalidation\workspace\black
+2026-07-27 13:00:15,347 - __main__ - INFO - Initializing components...
+2026-07-27 13:00:15,348 - __main__ - INFO - Setup complete
+2026-07-27 13:00:15,348 - __main__ - INFO - ================================================================================
+2026-07-27 13:00:15,348 - __main__ - INFO - HARVESTING COMMITS
+2026-07-27 13:00:15,348 - __main__ - INFO - ================================================================================
+2026-07-27 13:00:15,348 - git_helper - INFO - Retrieving last 50 commits
+2026-07-27 13:00:15,391 - git_helper - INFO - Retrieved 50 commits
+2026-07-27 13:00:15,391 - __main__ - INFO - Total raw commits: 50
+2026-07-27 13:00:15,391 - __main__ - INFO - Training commits (preliminary): 35
+2026-07-27 13:00:15,392 - __main__ - INFO - Test commits (preliminary):     15
+2026-07-27 13:00:15,392 - __main__ - INFO - ================================================================================
+2026-07-27 13:00:15,392 - __main__ - INFO - BUILDING DATASET
+2026-07-27 13:00:15,392 - __main__ - INFO - ================================================================================
+2026-07-27 13:00:15,392 - __main__ - INFO - 
+Processing sampled commit 1/5 (1abcffc8)...
+2026-07-27 13:00:18,416 - embedding_manager - INFO - Loading embedding model: microsoft/unixcoder-base
+2026-07-27 13:00:18,417 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-07-27 13:00:19,062 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+2026-07-27 13:00:19,339 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/modules.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:00:19,348 - sentence_transformers.base.model - INFO - No modules.json found for microsoft/unixcoder-base, initializing a new SentenceTransformer model.
+2026-07-27 13:00:19,651 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:00:19,948 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:00:20,223 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-07-27 13:00:20,561 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/pytorch_model.bin "HTTP/1.1 302 Found"
+2026-07-27 13:22:32,527 - __main__ - INFO - ================================================================================
+2026-07-27 13:22:32,527 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-07-27 13:22:32,527 - __main__ - INFO - ================================================================================
+2026-07-27 13:22:32,528 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-07-27 13:22:32,528 - git_helper - INFO - Repository already exists at C:\Users\adity\OneDrive\Desktop\All Folders\Git projects\LLM_Cache\predictive-semantic-cache-invalidation\workspace\black
+2026-07-27 13:22:32,528 - __main__ - INFO - Initializing components...
+2026-07-27 13:22:32,529 - __main__ - INFO - Setup complete
+2026-07-27 13:22:32,529 - __main__ - INFO - ================================================================================
+2026-07-27 13:22:32,530 - __main__ - INFO - HARVESTING COMMITS
+2026-07-27 13:22:32,530 - __main__ - INFO - ================================================================================
+2026-07-27 13:22:32,530 - git_helper - INFO - Retrieving last 50 commits
+2026-07-27 13:22:32,573 - git_helper - INFO - Retrieved 50 commits
+2026-07-27 13:22:32,573 - __main__ - INFO - Total raw commits: 50
+2026-07-27 13:22:32,573 - __main__ - INFO - Training commits (preliminary): 35
+2026-07-27 13:22:32,573 - __main__ - INFO - Test commits (preliminary):     15
+2026-07-27 13:22:32,573 - __main__ - INFO - ================================================================================
+2026-07-27 13:22:32,573 - __main__ - INFO - BUILDING DATASET
+2026-07-27 13:22:32,574 - __main__ - INFO - ================================================================================
+2026-07-27 13:22:32,574 - __main__ - INFO - 
+Processing sampled commit 1/5 (7f60f3db)...
+2026-07-27 13:22:35,537 - embedding_manager - INFO - Loading embedding model: microsoft/unixcoder-base
+2026-07-27 13:22:35,539 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-07-27 13:22:36,176 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/modules.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:22:36,178 - sentence_transformers.base.model - INFO - No modules.json found for microsoft/unixcoder-base, initializing a new SentenceTransformer model.
+2026-07-27 13:22:36,465 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:22:36,749 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:22:36,831 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-07-27 13:22:37,174 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/pytorch_model.bin "HTTP/1.1 302 Found"
+2026-07-27 13:26:13,463 - __main__ - INFO - ================================================================================
+2026-07-27 13:26:13,463 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-07-27 13:26:13,464 - __main__ - INFO - ================================================================================
+2026-07-27 13:26:13,464 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-07-27 13:26:13,465 - git_helper - INFO - Repository already exists at C:\Users\adity\OneDrive\Desktop\All Folders\Git projects\LLM_Cache\predictive-semantic-cache-invalidation\workspace\black
+2026-07-27 13:26:13,465 - __main__ - INFO - Initializing components...
+2026-07-27 13:26:13,467 - __main__ - INFO - Setup complete
+2026-07-27 13:26:13,467 - __main__ - INFO - ================================================================================
+2026-07-27 13:26:13,468 - __main__ - INFO - HARVESTING COMMITS
+2026-07-27 13:26:13,468 - __main__ - INFO - ================================================================================
+2026-07-27 13:26:13,468 - git_helper - INFO - Retrieving last 50 commits
+2026-07-27 13:26:13,548 - git_helper - INFO - Retrieved 50 commits
+2026-07-27 13:26:13,548 - __main__ - INFO - Total raw commits: 50
+2026-07-27 13:26:13,548 - __main__ - INFO - Training commits (preliminary): 35
+2026-07-27 13:26:13,549 - __main__ - INFO - Test commits (preliminary):     15
+2026-07-27 13:26:13,549 - __main__ - INFO - ================================================================================
+2026-07-27 13:26:13,549 - __main__ - INFO - BUILDING DATASET
+2026-07-27 13:26:13,549 - __main__ - INFO - ================================================================================
+2026-07-27 13:26:13,550 - __main__ - INFO - 
+Processing sampled commit 1/5 (5773d5cd)...
+2026-07-27 13:26:19,222 - embedding_manager - INFO - Loading embedding model: microsoft/unixcoder-base
+2026-07-27 13:26:19,226 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-07-27 13:26:20,119 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/modules.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:26:20,121 - sentence_transformers.base.model - INFO - No modules.json found for microsoft/unixcoder-base, initializing a new SentenceTransformer model.
+2026-07-27 13:26:20,474 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:26:20,763 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:26:20,829 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-07-27 13:26:21,276 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/pytorch_model.bin "HTTP/1.1 302 Found"
+2026-07-27 13:36:57,696 - __main__ - INFO - ================================================================================
+2026-07-27 13:36:57,696 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-07-27 13:36:57,696 - __main__ - INFO - ================================================================================
+2026-07-27 13:36:57,696 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-07-27 13:36:57,697 - git_helper - INFO - Repository already exists at C:\Users\adity\OneDrive\Desktop\All Folders\Git projects\LLM_Cache\predictive-semantic-cache-invalidation\workspace\black
+2026-07-27 13:36:57,697 - __main__ - INFO - Initializing components...
+2026-07-27 13:36:57,698 - __main__ - INFO - Setup complete
+2026-07-27 13:36:57,698 - __main__ - INFO - ================================================================================
+2026-07-27 13:36:57,698 - __main__ - INFO - HARVESTING COMMITS
+2026-07-27 13:36:57,698 - __main__ - INFO - ================================================================================
+2026-07-27 13:36:57,698 - git_helper - INFO - Retrieving last 50 commits
+2026-07-27 13:36:57,761 - git_helper - INFO - Retrieved 50 commits
+2026-07-27 13:36:57,761 - __main__ - INFO - Total raw commits: 50
+2026-07-27 13:36:57,762 - __main__ - INFO - Training commits (preliminary): 35
+2026-07-27 13:36:57,762 - __main__ - INFO - Test commits (preliminary):     15
+2026-07-27 13:36:57,762 - __main__ - INFO - ================================================================================
+2026-07-27 13:36:57,762 - __main__ - INFO - BUILDING DATASET
+2026-07-27 13:36:57,762 - __main__ - INFO - ================================================================================
+2026-07-27 13:36:57,762 - __main__ - INFO - 
+Processing sampled commit 1/5 (6f84f652)...
+2026-07-27 13:37:00,577 - embedding_manager - INFO - Loading embedding model: microsoft/unixcoder-base
+2026-07-27 13:37:00,579 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-07-27 13:37:01,262 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/modules.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:37:01,268 - sentence_transformers.base.model - INFO - No modules.json found for microsoft/unixcoder-base, initializing a new SentenceTransformer model.
+2026-07-27 13:37:01,583 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:37:01,883 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:37:01,932 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-07-27 13:37:02,385 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-07-27 13:37:02,796 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-07-27 13:37:03,057 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:37:03,505 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/pytorch_model.bin "HTTP/1.1 302 Found"
+2026-07-27 13:38:53,430 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-07-27 13:38:53,725 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base "HTTP/1.1 200 OK"
+2026-07-27 13:38:54,016 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/commits/main "HTTP/1.1 200 OK"
+2026-07-27 13:38:54,222 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:38:54,323 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/discussions?p=0 "HTTP/1.1 200 OK"
+2026-07-27 13:38:54,547 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:38:54,600 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/commits/refs%2Fpr%2F8 "HTTP/1.1 200 OK"
+2026-07-27 13:38:54,840 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:38:54,908 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/refs%2Fpr%2F8/model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:38:55,128 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:38:55,206 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/refs%2Fpr%2F8/model.safetensors "HTTP/1.1 302 Found"
+2026-07-27 13:38:55,406 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:38:55,667 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-07-27 13:38:55,946 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-07-27 13:38:56,312 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:38:56,347 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-07-27 13:38:56,630 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:38:56,700 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-07-27 13:38:56,976 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:38:57,066 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-07-27 13:38:57,371 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-07-27 13:38:57,768 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-07-27 13:38:58,043 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/vocab.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:38:58,419 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/vocab.json "HTTP/1.1 200 OK"
+2026-07-27 13:38:58,850 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/vocab.json "HTTP/1.1 200 OK"
+2026-07-27 13:39:00,491 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/merges.txt "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:39:00,878 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/merges.txt "HTTP/1.1 200 OK"
+2026-07-27 13:39:01,321 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/merges.txt "HTTP/1.1 200 OK"
+2026-07-27 13:39:02,473 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/tokenizer.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:39:02,936 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/added_tokens.json "HTTP/1.1 404 Not Found"
+2026-07-27 13:39:03,344 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/special_tokens_map.json "HTTP/1.1 307 Temporary Redirect"
+2026-07-27 13:39:03,752 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/special_tokens_map.json "HTTP/1.1 200 OK"
+2026-07-27 13:39:04,130 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/special_tokens_map.json "HTTP/1.1 200 OK"
+2026-07-27 13:39:04,453 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/chat_template.jinja "HTTP/1.1 404 Not Found"
+2026-07-27 13:39:05,092 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base "HTTP/1.1 200 OK"
+2026-07-27 13:39:05,102 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-07-27 13:39:05,103 - embedding_manager - INFO - Generating embeddings for 609 entities
+2026-07-27 13:40:38,985 - __main__ - INFO -   Parsed 609 entities, generated 609 embeddings
+2026-07-27 13:40:39,135 - __main__ - INFO - 
+Processing sampled commit 2/5 (d291c233)...
+2026-07-27 13:40:42,137 - embedding_manager - INFO - Generating embeddings for 612 entities
+2026-07-27 13:41:54,497 - __main__ - INFO -   Parsed 612 entities, generated 612 embeddings
+2026-07-27 13:41:54,498 - __main__ - INFO - Computing drifts and features between 6f84f652 and d291c233...
+2026-07-27 13:41:54,554 - gtd - INFO - [GTD] nodes_added=0.005  edge_churn=0.009  mean_drift=0.0007
+2026-07-27 13:42:16,422 - __main__ - INFO -   Computed drifts for 609 entities
+2026-07-27 13:42:16,423 - __main__ - INFO -   Modified entities: 242
+2026-07-27 13:42:16,581 - __main__ - INFO - 
+Processing sampled commit 3/5 (7bfa35cc)...
+2026-07-27 13:42:20,309 - embedding_manager - INFO - Generating embeddings for 613 entities
+2026-07-27 13:43:34,351 - __main__ - INFO -   Parsed 613 entities, generated 613 embeddings
+2026-07-27 13:43:34,351 - __main__ - INFO - Computing drifts and features between d291c233 and 7bfa35cc...
+2026-07-27 13:43:34,423 - gtd - INFO - [GTD] nodes_added=0.002  edge_churn=0.000  mean_drift=0.0003
+2026-07-27 13:43:46,694 - __main__ - INFO -   Computed drifts for 612 entities
+2026-07-27 13:43:46,694 - __main__ - INFO -   Modified entities: 107
+2026-07-27 13:43:46,848 - __main__ - INFO - 
+Processing sampled commit 4/5 (ddfecf06)...
+2026-07-27 13:43:52,491 - embedding_manager - INFO - Generating embeddings for 628 entities
+2026-07-27 13:45:14,354 - __main__ - INFO -   Parsed 628 entities, generated 628 embeddings
+2026-07-27 13:45:14,356 - __main__ - INFO - Computing drifts and features between 7bfa35cc and ddfecf06...
+2026-07-27 13:45:14,408 - gtd - INFO - [GTD] nodes_added=0.024  edge_churn=0.030  mean_drift=0.0000
+2026-07-27 13:45:24,523 - __main__ - INFO -   Computed drifts for 613 entities
+2026-07-27 13:45:24,524 - __main__ - INFO -   Modified entities: 95
+2026-07-27 13:45:24,678 - __main__ - INFO - 
+Processing sampled commit 5/5 (50ed6221)...
+2026-07-27 13:45:30,908 - embedding_manager - INFO - Generating embeddings for 648 entities
+2026-07-27 13:47:00,028 - __main__ - INFO -   Parsed 648 entities, generated 648 embeddings
+2026-07-27 13:47:00,028 - __main__ - INFO - Computing drifts and features between ddfecf06 and 50ed6221...
+2026-07-27 13:47:00,081 - gtd - INFO - [GTD] nodes_added=0.031  edge_churn=0.027  mean_drift=0.0010
+2026-07-27 13:47:16,707 - __main__ - INFO -   Computed drifts for 628 entities
+2026-07-27 13:47:16,707 - __main__ - INFO -   Modified entities: 218
+2026-07-27 13:47:16,858 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data (stride=10, sampled_commits=5)
+2026-07-27 13:47:16,858 - __main__ - INFO - Building RSDs and finalising stratified train/test split...
+2026-07-27 13:47:16,871 - rsd - INFO - [RSD] Built descriptors for 5 commits
+2026-07-27 13:47:16,876 - rsd - WARNING - [RSD] Falling back to simple temporal split (too few commits or no descriptors)
+2026-07-27 13:47:16,876 - __main__ - INFO - Stratified split -> train=3, test=2
+2026-07-27 13:47:16,877 - __main__ - INFO - 
+RSD Summary:
+Commit      S       T       M       C       E     
+--------------------------------------------------
+6f84f652    0.4402  0.4903  0.0043  0.0192  0.0766
+d291c233    0.4932  0.5322  0.0046  0.0262  0.4317
+7bfa35cc    0.5093  0.5162  0.0046  0.0242  0.5000
+ddfecf06    0.6279  0.4686  0.0024  0.0257  0.5544
+50ed6221    0.8572  0.3330  0.0031  0.0144  0.7800
+2026-07-27 13:47:16,877 - __main__ - INFO - ================================================================================
+2026-07-27 13:47:16,878 - __main__ - INFO - TRAINING MODEL
+2026-07-27 13:47:16,879 - __main__ - INFO - ================================================================================
+2026-07-27 13:47:16,891 - __main__ - INFO - Training on 612 entities with 612 drift values
+2026-07-27 13:47:16,892 - __main__ - INFO - Dynamically adjusted drift threshold to 0.0000 based on 85th percentile of training drifts
+2026-07-27 13:47:16,900 - predictor - INFO - Train set: 428 entities
+2026-07-27 13:47:16,900 - predictor - INFO - Test set: 184 entities
+2026-07-27 13:47:16,900 - predictor - INFO - Training random_forest regression model...
+2026-07-27 13:47:17,113 - predictor - INFO - Training MSE: 0.000014
+2026-07-27 13:47:17,113 - predictor - INFO - Training R²: 0.4706
+2026-07-27 13:47:17,114 - predictor - INFO - Evaluating model on test data...
+2026-07-27 13:47:17,161 - predictor - INFO - Test MSE: 0.000003
+2026-07-27 13:47:17,161 - predictor - INFO - Test RMSE: 0.001657
+2026-07-27 13:47:17,162 - predictor - INFO - Test R²: -575624566.4417
+2026-07-27 13:47:17,162 - predictor - INFO - Test MAE: 0.000430
+2026-07-27 13:47:17,192 - predictor - INFO - Model saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\drift_predictor.pkl
+2026-07-27 13:47:17,192 - __main__ - INFO - Model saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\drift_predictor.pkl
+2026-07-27 13:47:17,193 - __main__ - INFO - Test metrics: {'test_mse': 2.746135571577031e-06, 'test_rmse': np.float64(0.0016571468165425267), 'test_r2': -575624566.4417106, 'test_mae': np.float64(0.00042985044196284063)}
+2026-07-27 13:47:17,193 - __main__ - INFO - ================================================================================
+2026-07-27 13:47:17,193 - __main__ - INFO - EVALUATING STRATEGIES
+2026-07-27 13:47:17,193 - __main__ - INFO - ================================================================================
+2026-07-27 13:47:17,193 - __main__ - INFO - 
+Evaluating commit pair 1/1: ddfecf06 -> 50ed6221
+2026-07-27 13:47:19,127 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-07-27 13:47:19,199 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-07-27 13:47:19,262 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-07-27 13:47:20,767 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-07-27 13:47:22,239 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-07-27 13:47:22,306 - evaluator - INFO - Evaluating Baseline D (PageRank Propagation)...
+2026-07-27 13:47:26,185 - __main__ - INFO - 
+================================================================================
+2026-07-27 13:47:26,185 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-07-27 13:47:26,185 - __main__ - INFO - ================================================================================
+2026-07-27 13:47:26,185 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-07-27 13:47:26,186 - __main__ - INFO -   Recall@5:    1.0000
+2026-07-27 13:47:26,186 - __main__ - INFO -   Recall@10:   1.0000
+2026-07-27 13:47:26,186 - __main__ - INFO -   MRR:         1.0000
+2026-07-27 13:47:26,186 - __main__ - INFO -   nDCG@10:     1.0000
+2026-07-27 13:47:26,187 - __main__ - INFO -   Update %:    30.56%
+2026-07-27 13:47:26,187 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-07-27 13:47:26,187 - __main__ - INFO -   Recall@5:    1.0000
+2026-07-27 13:47:26,188 - __main__ - INFO -   Recall@10:   1.0000
+2026-07-27 13:47:26,188 - __main__ - INFO -   MRR:         1.0000
+2026-07-27 13:47:26,188 - __main__ - INFO -   nDCG@10:     1.0000
+2026-07-27 13:47:26,189 - __main__ - INFO -   Update %:    96.91%
+2026-07-27 13:47:26,189 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-07-27 13:47:26,189 - __main__ - INFO -   Recall@5:    1.0000
+2026-07-27 13:47:26,189 - __main__ - INFO -   Recall@10:   1.0000
+2026-07-27 13:47:26,189 - __main__ - INFO -   MRR:         1.0000
+2026-07-27 13:47:26,190 - __main__ - INFO -   nDCG@10:     1.0000
+2026-07-27 13:47:26,190 - __main__ - INFO -   Update %:    44.60%
+2026-07-27 13:47:26,190 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-07-27 13:47:26,190 - __main__ - INFO -   Recall@5:    1.0000
+2026-07-27 13:47:26,190 - __main__ - INFO -   Recall@10:   1.0000
+2026-07-27 13:47:26,191 - __main__ - INFO -   MRR:         1.0000
+2026-07-27 13:47:26,191 - __main__ - INFO -   nDCG@10:     1.0000
+2026-07-27 13:47:26,191 - __main__ - INFO -   Update %:    48.46%
+2026-07-27 13:47:26,191 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-07-27 13:47:26,192 - __main__ - INFO -   Recall@5:    1.0000
+2026-07-27 13:47:26,192 - __main__ - INFO -   Recall@10:   1.0000
+2026-07-27 13:47:26,192 - __main__ - INFO -   MRR:         1.0000
+2026-07-27 13:47:26,193 - __main__ - INFO -   nDCG@10:     1.0000
+2026-07-27 13:47:26,193 - __main__ - INFO -   Update %:    33.64%
+2026-07-27 13:47:26,193 - __main__ - INFO - 
+BASELINE_D_PAGERANK_PROPAGATION:
+2026-07-27 13:47:26,193 - __main__ - INFO -   Recall@5:    1.0000
+2026-07-27 13:47:26,194 - __main__ - INFO -   Recall@10:   1.0000
+2026-07-27 13:47:26,194 - __main__ - INFO -   MRR:         1.0000
+2026-07-27 13:47:26,194 - __main__ - INFO -   nDCG@10:     1.0000
+2026-07-27 13:47:26,194 - __main__ - INFO -   Update %:    30.56%
+2026-07-27 13:47:26,195 - __main__ - INFO - ================================================================================
+2026-07-27 13:47:26,195 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-07-27 13:47:26,196 - __main__ - INFO - ================================================================================
+2026-07-27 13:47:26,196 - visualize - INFO - Generating drift decay plot...
+2026-07-27 13:47:26,997 - visualize - INFO - Drift decay plot saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\drift_decay.png
+2026-07-27 13:47:27,065 - visualize - INFO - Generating feature importance plot...
+2026-07-27 13:47:28,010 - visualize - INFO - Feature importance plot saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\feature_importance.png
+2026-07-27 13:47:28,010 - visualize - INFO - Generating strategy comparison plot...
+2026-07-27 13:47:28,735 - visualize - INFO - Strategy comparison plot saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\strategy_comparison.png
+2026-07-27 13:47:28,735 - visualize - INFO - Generating ranking metrics plot (MRR + nDCG)...
+2026-07-27 13:47:29,380 - visualize - INFO - Ranking metrics plot saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\ranking_metrics.png
+2026-07-27 13:47:29,393 - visualize - INFO - Generating Pareto frontier plot...
+2026-07-27 13:47:30,139 - visualize - INFO - Pareto frontier plot saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\pareto_frontier.png
+2026-07-27 13:47:30,139 - visualize - INFO - Generating drift distribution plot...
+2026-07-27 13:47:30,850 - visualize - INFO - Drift distribution plot saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\drift_distribution.png
+2026-07-27 13:47:30,851 - visualize - INFO - Generating confusion matrix plot...
+2026-07-27 13:47:31,261 - visualize - INFO - Confusion matrix plot saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\confusion_matrix.png
+2026-07-27 13:47:31,262 - visualize - INFO - Generating summary report...
+2026-07-27 13:47:31,263 - visualize - INFO - Summary report saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\summary_report.txt
+2026-07-27 13:47:31,263 - __main__ - INFO - Visualizations generated successfully
+2026-07-27 13:47:31,265 - __main__ - INFO - Results saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse\results.json
+2026-07-27 13:47:31,265 - __main__ - INFO - ================================================================================
+2026-07-27 13:47:31,266 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 633.57 seconds
+2026-07-27 13:47:31,266 - __main__ - INFO - ================================================================================
+2026-07-27 13:47:31,266 - __main__ - INFO - Results saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse
+2026-07-27 13:47:31,266 - __main__ - INFO - Logs saved to experiment.log

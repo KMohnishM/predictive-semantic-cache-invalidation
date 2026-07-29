@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-from benchmarking.types import BenchmarkConfig, BenchmarkSummary, CommitPair, PerQueryResult, QueryCase
+from src.benchmarking.types import BenchmarkConfig, BenchmarkSummary, CommitPair, PerQueryResult, QueryCase
 
 
 def ensure_output_dir(path: str) -> Path:
@@ -35,6 +35,7 @@ def persist_run(
     queries: Iterable[QueryCase],
     results: Iterable[PerQueryResult],
     summary: BenchmarkSummary,
+    embedding_comparisons: Optional[Iterable[StrategyEmbeddingComparisonResult]] = None,
 ) -> Path:
     run_dir = ensure_output_dir(output_dir)
     write_json(run_dir / "benchmark_config.json", config.to_dict())
@@ -42,4 +43,12 @@ def persist_run(
     write_json(run_dir / "queries.json", [item.to_dict() for item in queries])
     write_jsonl(run_dir / "per_query_results.jsonl", [item.to_dict() for item in results])
     write_json(run_dir / "summary_metrics.json", summary.to_dict())
+
+    if embedding_comparisons:
+        write_json(
+            run_dir / "embedding_comparisons.json",
+            [comp.to_dict() for comp in embedding_comparisons],
+        )
+
     return run_dir
+

@@ -7,7 +7,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Optional
 
-from benchmarking.types import BenchmarkConfig
+from src.benchmarking.types import BenchmarkConfig
 
 
 DEFAULT_REPO_URL = "https://github.com/psf/black.git"
@@ -29,6 +29,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--clean-mode", action="store_true")
     parser.add_argument("--top-k-values", default="1,5,10")
     parser.add_argument("--max-queries-per-entity", type=int, default=2)
+    parser.add_argument("--strategies", default="changed_only", help="Comma-separated list of candidate invalidation strategies")
+    parser.add_argument("--compare-embeddings", action="store_true", default=True, help="Perform direct vector embedding similarity comparison")
+    parser.add_argument("--no-compare-embeddings", action="store_false", dest="compare_embeddings")
+    parser.add_argument("--store-raw-vectors", action="store_true", default=True, help="Include raw full float vectors in comparison output")
+    parser.add_argument("--no-store-raw-vectors", action="store_false", dest="store_raw_vectors")
     return parser
 
 
@@ -37,9 +42,17 @@ def parse_top_k_values(raw_value: str) -> list[int]:
     return sorted({int(value) for value in values})
 
 
+def parse_strategies(raw_value: str) -> list[str]:
+    strategies = [item.strip() for item in raw_value.split(",") if item.strip()]
+    return list(dict.fromkeys(strategies)) if strategies else ["changed_only"]
+
+
 def build_config(args: argparse.Namespace) -> BenchmarkConfig:
     repo_path = str(Path(args.repo_path).resolve())
     output_dir = str(Path(args.output_dir).resolve())
+    raw_strategies = getattr(args, "strategies", "changed_only")
+    compare_embeddings = getattr(args, "compare_embeddings", True)
+    store_raw_vectors = getattr(args, "store_raw_vectors", True)
     return BenchmarkConfig(
         repo_url=args.repo_url,
         repo_path=repo_path,
@@ -55,10 +68,15 @@ def build_config(args: argparse.Namespace) -> BenchmarkConfig:
         clean_mode=args.clean_mode,
         top_k_values=parse_top_k_values(args.top_k_values),
         max_queries_per_entity=args.max_queries_per_entity,
+        strategies=parse_strategies(raw_strategies),
+        compare_embeddings=compare_embeddings,
+        store_raw_vectors=store_raw_vectors,
     )
+
 
 
 def load_config(argv: Optional[list[str]] = None) -> BenchmarkConfig:
     parser = build_parser()
     args = parser.parse_args(argv)
     return build_config(args)
+
