@@ -40,6 +40,12 @@ From the repository root:
 ./venv/Scripts/python.exe benchmark_runner.py --repo-path . --output-dir benchmark_runs --num-commits 2 --query-mode synthetic --max-queries-per-entity 1
 ```
 
+and for specific model
+
+```powershell
+./venv/Scripts/python.exe -m src.benchmarking.runner --model-name microsoft/unixcoder-base --repo-path . --output-dir benchmark_runs --num-commits 2 --query-mode synthetic --max-queries-per-entity 1 --strategies changed_only,full_reindex
+```
+
 Useful flags:
 
 * `--repo-path`: local git repository to benchmark.
@@ -168,4 +174,4 @@ The benchmarking pipeline evaluates retrieval fidelity when employing a selectiv
      - `queries.json`: Test query cases.
      - `per_query_results.jsonl`: Line-by-line detailed retrieval results.
      - `summary_metrics.json`: Aggregate performance metrics and pass criteria status.
-     - `summary_report.md`: Human-readable summary report.
+     - `summary_report.md`: Human-readable summary report.
