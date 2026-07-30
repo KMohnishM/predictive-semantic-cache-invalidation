@@ -82,7 +82,54 @@ def _parse_entities(file_path: str, source: str) -> List[RepositoryEntity]:
     return entities
 
 
-def build_repository_snapshot(git_helper: GitHelper, commit_hash: str) -> RepositorySnapshot:
+def build_repository_snapshot(
+    git_helper: GitHelper,
+    commit_hash: str,
+    parser_mode: str = "ast",
+    joern_session: Optional[object] = None,
+) -> RepositorySnapshot:
+    if parser_mode == "joern_only" and joern_session is not None:
+        # Checkout commit to disk so Joern can parse the files
+        git_helper.checkout_commit(commit_hash)
+
+        # Re-parse directory to update CPG in Joern session
+        if hasattr(joern_session, "_build_cpg") and hasattr(joern_session, "_import_cpg"):
+            try:
+                joern_session.cpg_path = joern_session._build_cpg()
+                joern_session._import_cpg()
+            except Exception as e:
+                import logging
+                logging.getLogger("benchmarking").warning(f"Failed to re-import CPG in Joern: {e}")
+
+        entities: Dict[str, RepositoryEntity] = {}
+        try:
+            files = joern_session.get_all_files()
+            if files:
+                py_files = [f for f in files if isinstance(f, str) and (f.endswith(".py") or not f.startswith("<"))]
+                for file_path in py_files:
+                    true_names = joern_session.get_true_names(file_path)
+                    if true_names:
+                        for name_tuple in true_names:
+                            if isinstance(name_tuple, (list, tuple)) and len(name_tuple) >= 2:
+                                short_name, full_name = name_tuple[0], name_tuple[1]
+                                if full_name.startswith("<") or "<lambda>" in full_name:
+                                    continue
+                                entity_id = f"{file_path}::{full_name}"
+                                entities[entity_id] = RepositoryEntity(
+                                    entity_id=entity_id,
+                                    entity_type="function",
+                                    file_path=file_path,
+                                    lineno=1,
+                                    end_lineno=1,
+                                    name=short_name,
+                                    source_code=f"# Joern parsed entity: {full_name}"
+                                )
+        except Exception as e:
+            import logging
+            logging.getLogger("benchmarking").error(f"Error querying Joern snapshot: {e}")
+
+        return RepositorySnapshot(commit_hash=commit_hash, entities=entities)
+
     entities: Dict[str, RepositoryEntity] = {}
     for file_path in _list_python_files_at_commit(git_helper, commit_hash):
         file_source = git_helper.get_file_content_at_commit(commit_hash, file_path)
