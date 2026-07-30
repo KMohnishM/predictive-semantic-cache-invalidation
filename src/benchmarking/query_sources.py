@@ -18,11 +18,18 @@ def build_synthetic_queries(
     snapshot: RepositorySnapshot,
     commit_pair: CommitPair,
     max_queries_per_entity: int = 2,
+    modified_entity_ids: Optional[Set[str]] = None,
 ) -> List[QueryCase]:
     queries: List[QueryCase] = []
     entities = sorted(snapshot.entities.values(), key=lambda entity: entity.entity_id)
 
     for entity_index, entity in enumerate(entities):
+        is_changed = False
+        if modified_entity_ids is not None:
+            is_changed = entity.entity_id in modified_entity_ids
+        else:
+            is_changed = (entity_index % 2 == 0)
+
         templates = [
             f"What does {entity.entity_id} do after the latest commit?",
             f"Where is {entity.entity_id} implemented in the updated version?",
@@ -34,10 +41,10 @@ def build_synthetic_queries(
                     query_id=query_id,
                     query_text=_normalize_query(template),
                     query_source="synthetic",
-                    category="changed_entity" if entity_index % 2 == 0 else "unchanged_entity",
+                    category="changed_entity" if is_changed else "unchanged_entity",
                     target_entity_id=entity.entity_id,
                     target_entity_name=entity.entity_id.split("::")[-1],
-                    expected_behavior="latest_snapshot" if entity_index % 2 == 0 else "cached_snapshot",
+                    expected_behavior="latest_snapshot" if is_changed else "cached_snapshot",
                     commit_after=commit_pair.commit_after,
                     file_path=entity.file_path,
                     entity_type=entity.entity_type,
@@ -85,11 +92,13 @@ def build_queries(
     query_mode: str,
     curated_queries_path: Optional[str],
     max_queries_per_entity: int,
+    modified_entity_ids: Optional[Set[str]] = None,
 ) -> List[QueryCase]:
     synthetic_queries = build_synthetic_queries(
         snapshot,
         commit_pair,
         max_queries_per_entity=max_queries_per_entity,
+        modified_entity_ids=modified_entity_ids,
     )
     if query_mode == "synthetic":
         return synthetic_queries

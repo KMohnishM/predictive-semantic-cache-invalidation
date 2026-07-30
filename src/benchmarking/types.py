@@ -90,6 +90,8 @@ class BenchmarkConfig:
     strategies: List[str] = field(default_factory=lambda: ["changed_only"])
     compare_embeddings: bool = True
     store_raw_vectors: bool = True
+    parser_mode: str = "ast"
+    predictions_path: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)

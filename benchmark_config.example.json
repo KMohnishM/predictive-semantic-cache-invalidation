@@ -1,0 +1,13 @@
+{
+  "repo_path": "workspace/black",
+  "output_dir": "benchmark_runs",
+  "num_commits": 5,
+  "commit_stride": 10,
+  "sampling_mode": "stride",
+  "query_mode": "synthetic",
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "max_queries_per_entity": 2,
+  "strategies": ["changed_only", "predictive_ml"],
+  "parser_mode": "ast",
+  "predictions_path": "predictions.json"
+}
