@@ -34,15 +34,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-compare-embeddings", action="store_false", dest="compare_embeddings")
     parser.add_argument("--store-raw-vectors", action="store_true", default=True, help="Include raw full float vectors in comparison output")
     parser.add_argument("--no-store-raw-vectors", action="store_false", dest="store_raw_vectors")
+    parser.add_argument("--config", default=None, help="Path to JSON configuration file to load options from")
+    parser.add_argument("--parser-mode", choices=["ast", "joern_only"], default="ast", help="Repository parser mode")
+    parser.add_argument("--predictions-path", default=None, help="Path to JSON file containing precomputed ML predictions mapping entity_id to boolean")
     return parser
 
 
 def parse_top_k_values(raw_value: str) -> list[int]:
+    if isinstance(raw_value, list):
+        return sorted({int(value) for value in raw_value})
     values = [item.strip() for item in raw_value.split(",") if item.strip()]
     return sorted({int(value) for value in values})
 
 
 def parse_strategies(raw_value: str) -> list[str]:
+    if isinstance(raw_value, list):
+        return raw_value
     strategies = [item.strip() for item in raw_value.split(",") if item.strip()]
     return list(dict.fromkeys(strategies)) if strategies else ["changed_only"]
 
@@ -53,6 +60,8 @@ def build_config(args: argparse.Namespace) -> BenchmarkConfig:
     raw_strategies = getattr(args, "strategies", "changed_only")
     compare_embeddings = getattr(args, "compare_embeddings", True)
     store_raw_vectors = getattr(args, "store_raw_vectors", True)
+    parser_mode = getattr(args, "parser_mode", "ast")
+    predictions_path = getattr(args, "predictions_path", None)
     return BenchmarkConfig(
         repo_url=args.repo_url,
         repo_path=repo_path,
@@ -71,12 +80,25 @@ def build_config(args: argparse.Namespace) -> BenchmarkConfig:
         strategies=parse_strategies(raw_strategies),
         compare_embeddings=compare_embeddings,
         store_raw_vectors=store_raw_vectors,
+        parser_mode=parser_mode,
+        predictions_path=predictions_path,
     )
-
 
 
 def load_config(argv: Optional[list[str]] = None) -> BenchmarkConfig:
     parser = build_parser()
     args = parser.parse_args(argv)
+    
+    # If JSON config is specified, load and merge it
+    if args.config:
+        config_path = Path(args.config)
+        if config_path.exists():
+            import json
+            with config_path.open("r", encoding="utf-8") as f:
+                json_config = json.load(f)
+                for key, value in json_config.items():
+                    if hasattr(args, key) and getattr(args, key) == parser.get_default(key):
+                        setattr(args, key, value)
+                        
     return build_config(args)
 

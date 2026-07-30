@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 import sys
 from typing import List
+from dataclasses import replace
 
 # Ensure project root is in sys.path for direct script execution or module runs
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -53,6 +54,30 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
     git_helper = GitHelper(config.repo_path)
     embedding_manager = EmbeddingManager(model_name=config.model_name, clean_mode=config.clean_mode)
 
+    # Initialize Joern Session if joern_only mode is chosen
+    joern_session = None
+    if config.parser_mode == "joern_only":
+        try:
+            sys.path.insert(0, str(project_root / "joern_helper"))
+            from joern_interactive import JoernSession
+            joern_session = JoernSession(config.repo_path)
+            logger.info("Joern session successfully connected for benchmarking.")
+        except Exception as e:
+            logger.warning(f"Failed to connect Joern session: {e}. Falling back to AST parser_mode.")
+            config = replace(config, parser_mode="ast")
+
+    # Load ML predictions if provided
+    ml_predictions = None
+    if config.predictions_path:
+        pred_path = Path(config.predictions_path)
+        if pred_path.exists():
+            import json
+            logger.info(f"Loading ML predictions from {pred_path}")
+            with pred_path.open("r", encoding="utf-8") as f:
+                ml_predictions = json.load(f)
+        else:
+            logger.warning(f"Predictions path {pred_path} does not exist.")
+
     logger.info(f"Sampling commit pairs (num_commits={config.num_commits}, mode='{config.sampling_mode}')...")
     commit_pairs = sample_commit_pairs(
         git_helper,
@@ -73,13 +98,18 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
     for pair_idx, commit_pair in enumerate(commit_pairs, start=1):
         logger.info(f"\n--- [Commit Pair {pair_idx}/{len(commit_pairs)}] {commit_pair.commit_before[:8]} -> {commit_pair.commit_after[:8]} ---")
 
-        logger.info("Parsing AST repository snapshot at commit_before...")
-        before_snapshot = build_repository_snapshot(git_helper, commit_pair.commit_before)
+        logger.info(f"Parsing repository snapshot at commit_before (mode={config.parser_mode})...")
+        before_snapshot = build_repository_snapshot(git_helper, commit_pair.commit_before, parser_mode=config.parser_mode, joern_session=joern_session)
         logger.info(f"  Extracted {len(before_snapshot.entities)} entities at commit {commit_pair.commit_before[:8]}.")
 
-        logger.info("Parsing AST repository snapshot at commit_after...")
-        after_snapshot = build_repository_snapshot(git_helper, commit_pair.commit_after)
+        logger.info(f"Parsing repository snapshot at commit_after (mode={config.parser_mode})...")
+        after_snapshot = build_repository_snapshot(git_helper, commit_pair.commit_after, parser_mode=config.parser_mode, joern_session=joern_session)
         logger.info(f"  Extracted {len(after_snapshot.entities)} entities at commit {commit_pair.commit_after[:8]}.")
+
+        modified_files = set(git_helper.get_modified_files(commit_pair.commit_before, commit_pair.commit_after))
+        changed_entity_ids = [entity_id for entity_id, entity in after_snapshot.entities.items() if entity.file_path in modified_files]
+        all_entity_ids = list(after_snapshot.entities.keys())
+        logger.info(f"  Modified files count: {len(modified_files)}, Modified entities count: {len(changed_entity_ids)}")
 
         logger.info("Generating evaluation queries...")
         queries = build_queries(
@@ -88,6 +118,7 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
             query_mode=config.query_mode,
             curated_queries_path=config.curated_queries_path,
             max_queries_per_entity=config.max_queries_per_entity,
+            modified_entity_ids=set(changed_entity_ids),
         )
         all_queries.extend(queries)
         logger.info(f"  Generated {len(queries)} query case(s).")
@@ -99,11 +130,6 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
         logger.info("Generating Cached index embeddings for commit_before...")
         before_index_snapshot = build_index_snapshot(before_snapshot, embedding_manager)
 
-        modified_files = set(git_helper.get_modified_files(commit_pair.commit_before, commit_pair.commit_after))
-        changed_entity_ids = [entity_id for entity_id, entity in after_snapshot.entities.items() if entity.file_path in modified_files]
-        all_entity_ids = list(after_snapshot.entities.keys())
-        logger.info(f"  Modified files count: {len(modified_files)}, Modified entities count: {len(changed_entity_ids)}")
-
         for strategy_name in config.strategies:
             logger.info(f"\nEvaluating Candidate Strategy: '{strategy_name}'...")
             strategy_decision = decide_updated_entities(
@@ -111,6 +137,7 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
                 changed_entity_ids,
                 len(after_snapshot.entities),
                 all_entity_ids=all_entity_ids,
+                ml_predictions=ml_predictions,
             )
             logger.info(f"  Strategy '{strategy_name}' re-embeds {len(strategy_decision.updated_entity_ids)}/{len(after_snapshot.entities)} entities ({strategy_decision.updated_fraction:.2%}).")
 
