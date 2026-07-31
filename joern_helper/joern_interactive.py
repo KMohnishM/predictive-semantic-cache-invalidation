@@ -135,10 +135,14 @@ class JoernSession:
         return res if isinstance(res, list) else []
 
     def in_degree(self, true_name: str) -> int:
-        return len(self.get_callers(true_name))
+        pattern = self._literal_regex(true_name)
+        res = self.execute(f'cpg.method.fullName("{pattern}").caller.fullName.l.toJson')
+        return len(res) if isinstance(res, list) else 0
 
     def out_degree(self, true_name: str) -> int:
-        return len(self.get_callees(true_name))
+        pattern = self._literal_regex(true_name)
+        res = self.execute(f'cpg.method.fullName("{pattern}").callee.fullName.l.toJson')
+        return len(res) if isinstance(res, list) else 0
 
     # -------------------------------------------------------------------------
     # Control Flow (CFG) Metrics
