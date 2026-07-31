@@ -21,15 +21,33 @@ def write_summary_report(
         f"- Total queries: {summary.total_queries}",
         f"- Changed queries: {summary.changed_query_count}",
         f"- Unchanged queries: {summary.unchanged_query_count}",
-        f"- Freshness success rate: {summary.freshness_success_rate:.4f}",
-        f"- Cache preservation success rate: {summary.cache_preservation_success_rate:.4f}",
-        f"- Candidate update fraction: {summary.candidate_update_fraction:.4f}",
-        f"- Benchmark passed: {summary.benchmark_passed}",
         "",
-        "## Metric Deltas",
+        "## Strategy Performance Comparison",
+        "",
+        "| Strategy | Update Cost (Fraction) | Freshness Success Rate | Cache Preservation Rate | MRR Delta | nDCG@10 Delta | Passed |",
+        "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |"
     ]
-    for key, value in summary.metric_deltas.items():
-        lines.append(f"- {key}: {value:.4f}")
+
+    if hasattr(summary, "strategy_summaries") and summary.strategy_summaries:
+        for name, stats in summary.strategy_summaries.items():
+            deltas = stats.get("metric_deltas", {})
+            mrr_delta = deltas.get("mrr", 0.0)
+            ndcg_delta = deltas.get("ndcg_at_10", 0.0)
+            lines.append(
+                f"| `{name}` | {stats.get('candidate_update_fraction', 0.0):.4f} | "
+                f"{stats.get('freshness_success_rate', 0.0):.4f} | "
+                f"{stats.get('cache_preservation_success_rate', 0.0):.4f} | "
+                f"{mrr_delta:+.4f} | {ndcg_delta:+.4f} | {stats.get('benchmark_passed', False)} |"
+            )
+    else:
+        mrr_delta = summary.metric_deltas.get("mrr", 0.0)
+        ndcg_delta = summary.metric_deltas.get("ndcg_at_10", 0.0)
+        lines.append(
+            f"| `selective` | {summary.candidate_update_fraction:.4f} | "
+            f"{summary.freshness_success_rate:.4f} | "
+            f"{summary.cache_preservation_success_rate:.4f} | "
+            f"{mrr_delta:+.4f} | {ndcg_delta:+.4f} | {summary.benchmark_passed} |"
+        )
 
     if embedding_comparisons:
         lines.extend([

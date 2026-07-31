@@ -188,6 +188,8 @@ class BenchmarkSummary:
     benchmark_passed: bool
     embedding_comparison_summaries: Optional[List[Dict[str, Any]]] = None
 
+    strategy_summaries: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
