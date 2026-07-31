@@ -55,8 +55,10 @@ class JoernRepoParser:
                 return self.graph
 
             # Filter relevant source files
-            py_files = [f for f in files if isinstance(f, str) and (f.endswith(".py") or not f.startswith("<"))]
-
+            py_files = [
+                f for f in files
+                if isinstance(f, str) and f.endswith(".py") and not f.startswith("<")
+            ]
             all_methods = []
             for file_path in py_files:
                 true_names = self.joern_session.get_true_names(file_path)
