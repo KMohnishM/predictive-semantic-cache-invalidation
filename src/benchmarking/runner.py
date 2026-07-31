@@ -8,26 +8,29 @@ import sys
 from typing import List
 from dataclasses import replace
 
-# Ensure project root is in sys.path for direct script execution or module runs
+# Ensure project root and src directory are in sys.path
 project_root = Path(__file__).resolve().parent.parent.parent
+src_dir = project_root / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.embedding_manager import EmbeddingManager
-from src.git_helper import GitHelper
+from embedding_manager import EmbeddingManager
+from git_helper import GitHelper
 
-from src.benchmarking.commit_sampler import sample_commit_pairs
-from src.benchmarking.config import load_config
-from src.benchmarking.dataset_builder import build_dataset
-from src.benchmarking.embedding_comparator import compare_index_snapshots
-from src.benchmarking.index_builder import build_index_snapshot, build_selective_snapshot, retrieve_top_k
-from src.benchmarking.metrics import mean_reciprocal_rank, ndcg_at_k, rank_delta, recall_at_k, score_delta
-from src.benchmarking.query_sources import build_queries
-from src.benchmarking.reporting import write_summary_report
-from src.benchmarking.serialization import persist_run
-from src.benchmarking.strategy_runner import decide_updated_entities
-from src.benchmarking.repository_snapshot import build_repository_snapshot
-from src.benchmarking.types import (
+from benchmarking.commit_sampler import sample_commit_pairs
+from benchmarking.config import load_config
+from benchmarking.dataset_builder import build_dataset
+from benchmarking.embedding_comparator import compare_index_snapshots
+from benchmarking.index_builder import build_index_snapshot, build_selective_snapshot, retrieve_top_k
+from benchmarking.metrics import mean_reciprocal_rank, ndcg_at_k, rank_delta, recall_at_k, score_delta
+from benchmarking.query_sources import build_queries
+from benchmarking.reporting import write_summary_report
+from benchmarking.serialization import persist_run
+from benchmarking.strategy_runner import decide_updated_entities
+from benchmarking.repository_snapshot import build_repository_snapshot
+from benchmarking.types import (
     BenchmarkConfig,
     BenchmarkSummary,
     PerQueryResult,
@@ -202,22 +205,61 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
                 )
 
     logger.info("\nAggregating benchmark results across all commit pairs and strategies...")
+    import numpy as np
+
     total_queries = len(all_results)
     changed_query_count = sum(1 for result in all_results if result.category == "changed_entity")
     unchanged_query_count = total_queries - changed_query_count
-    freshness_success_rate = sum(1 for result in all_results if result.freshness_pass) / total_queries if total_queries else 0.0
-    cache_success_rate = sum(1 for result in all_results if result.cache_preservation_pass) / total_queries if total_queries else 0.0
-    benchmark_passed = freshness_success_rate >= 0.5 and cache_success_rate >= 0.5
 
-    baseline_metrics = {
-        "mrr": float(sum(1.0 / result.baseline_rank for result in all_results) / total_queries) if total_queries else 0.0,
-        "ndcg_at_10": float(sum(1.0 / result.baseline_rank for result in all_results) / total_queries) if total_queries else 0.0,
-    }
-    selective_metrics = {
-        "mrr": float(sum(1.0 / result.selective_rank for result in all_results) / total_queries) if total_queries else 0.0,
-        "ndcg_at_10": float(sum(1.0 / result.selective_rank for result in all_results) / total_queries) if total_queries else 0.0,
-    }
-    metric_deltas = {key: selective_metrics[key] - baseline_metrics[key] for key in baseline_metrics}
+    # Group results by strategy
+    results_by_strategy = {}
+    for result in all_results:
+        results_by_strategy.setdefault(result.strategy_name, []).append(result)
+
+    strategy_summaries = {}
+    for strategy_name, strategy_results in results_by_strategy.items():
+        strat_queries = len(strategy_results)
+        strat_freshness_success = sum(1 for r in strategy_results if r.freshness_pass) / strat_queries if strat_queries else 0.0
+        strat_cache_success = sum(1 for r in strategy_results if r.cache_preservation_pass) / strat_queries if strat_queries else 0.0
+        strat_passed = strat_freshness_success >= 0.5 and strat_cache_success >= 0.5
+
+        strat_baseline_mrr = float(sum(1.0 / r.baseline_rank for r in strategy_results) / strat_queries) if strat_queries else 0.0
+        strat_baseline_ndcg = float(sum(1.0 / np.log2(r.baseline_rank + 1) if r.baseline_rank <= 10 else 0.0 for r in strategy_results) / strat_queries) if strat_queries else 0.0
+
+        strat_selective_mrr = float(sum(1.0 / r.selective_rank for r in strategy_results) / strat_queries) if strat_queries else 0.0
+        strat_selective_ndcg = float(sum(1.0 / np.log2(r.selective_rank + 1) if r.selective_rank <= 10 else 0.0 for r in strategy_results) / strat_queries) if strat_queries else 0.0
+
+        strat_update_fraction = 0.0
+        if all_embedding_comparisons:
+            for comp in all_embedding_comparisons:
+                if comp.strategy_name == strategy_name:
+                    strat_update_fraction = comp.updated_fraction
+                    break
+
+        strategy_summaries[strategy_name] = {
+            "baseline_metrics": {"mrr": strat_baseline_mrr, "ndcg_at_10": strat_baseline_ndcg},
+            "selective_metrics": {"mrr": strat_selective_mrr, "ndcg_at_10": strat_selective_ndcg},
+            "metric_deltas": {
+                "mrr": strat_selective_mrr - strat_baseline_mrr,
+                "ndcg_at_10": strat_selective_ndcg - strat_baseline_ndcg,
+            },
+            "freshness_success_rate": strat_freshness_success,
+            "cache_preservation_success_rate": strat_cache_success,
+            "candidate_update_fraction": strat_update_fraction,
+            "benchmark_passed": strat_passed,
+        }
+
+    # For backward compatibility, default to the first strategy's metrics in the flat fields
+    first_strat = config.strategies[0] if config.strategies else "selective"
+    first_summary = strategy_summaries.get(first_strat, {})
+
+    baseline_metrics = first_summary.get("baseline_metrics", {"mrr": 0.0, "ndcg_at_10": 0.0})
+    selective_metrics = first_summary.get("selective_metrics", {"mrr": 0.0, "ndcg_at_10": 0.0})
+    metric_deltas = first_summary.get("metric_deltas", {"mrr": 0.0, "ndcg_at_10": 0.0})
+    freshness_success_rate = first_summary.get("freshness_success_rate", 0.0)
+    cache_success_rate = first_summary.get("cache_preservation_success_rate", 0.0)
+    candidate_update_fraction = first_summary.get("candidate_update_fraction", 0.0)
+    benchmark_passed = first_summary.get("benchmark_passed", False)
 
     embedding_summaries = [comp.to_dict() for comp in all_embedding_comparisons] if all_embedding_comparisons else None
 
@@ -231,9 +273,10 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
         metric_deltas=metric_deltas,
         freshness_success_rate=freshness_success_rate,
         cache_preservation_success_rate=cache_success_rate,
-        candidate_update_fraction=all_embedding_comparisons[0].updated_fraction if all_embedding_comparisons else 0.0,
+        candidate_update_fraction=candidate_update_fraction,
         benchmark_passed=benchmark_passed,
         embedding_comparison_summaries=embedding_summaries,
+        strategy_summaries=strategy_summaries,
     )
 
     output_dir = Path(config.output_dir).resolve() / run_id

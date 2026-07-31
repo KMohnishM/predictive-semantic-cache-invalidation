@@ -17,7 +17,7 @@ def decide_updated_entities(
 ) -> StrategyDecision:
     if strategy_name == "full_reindex":
         updated = list(all_entity_ids) if all_entity_ids is not None else list(changed_entity_ids)
-        updated_fraction = 1.0 if total_entities else 0.0
+        updated_fraction = len(updated) / total_entities if total_entities else 0.0
     elif strategy_name == "changed_only":
         updated = list(changed_entity_ids)
         updated_fraction = len(updated) / total_entities if total_entities else 0.0
