@@ -2,6 +2,20 @@
 
 This repository contains a research prototype for **Predictive Semantic Cache Invalidation**. The system models software repositories as dependency call graphs, replays historical Git commits sequentially, computes semantic drift in entity embeddings, and trains a machine learning model to selectively re-embed only the entities that are predicted to become semantically stale.
 
+### Quick Start: Benchmarking
+
+Run the standalone benchmarking pipeline from the repository root with the local virtual environment Python:
+
+```powershell
+./venv/Scripts/python.exe benchmark_runner.py --repo-path . --output-dir benchmark_runs --num-commits 2 --query-mode synthetic --max-queries-per-entity 1
+```
+
+Run the benchmark tests with:
+
+```powershell
+./venv/Scripts/python.exe -m unittest discover -s tests -p 'test_benchmark_*.py'
+```
+
 ---
 
 ## 1. Research Problem Statement
@@ -108,3 +122,97 @@ The experiment saves all visual charts and performance summaries to the `results
 * **`pareto_frontier.png`**: Retrieval quality (Recall@10) vs. Index update percentage, showing the optimal frontier.
 * **`strategy_comparison.png`**: Side-by-side comparison of Recall@5, Recall@10, and Rank Correlation across all baselines.
 * **`results.json`**: Raw serialized metric outputs.
+
+---
+
+## 6. Benchmarking Pipeline
+
+This repository also includes a standalone benchmarking pipeline under `src/benchmarking/`. The benchmark is separate from the main experiment and is meant to answer a different question:
+
+> How closely does a selective re-embedding strategy preserve retrieval behavior compared with a full repository re-index?
+
+### What the benchmark does
+
+The benchmark runs the repository through a commit-based evaluation loop and compares two indexing modes on the same query set:
+
+1. **Full re-index baseline**: all entities are embedded again for the later commit snapshot.
+2. **Selective update candidate**: only a subset of entities is updated, while the remaining embeddings are reused.
+
+For each sampled commit pair, the benchmark:
+
+1. Builds a repository snapshot for the commit before and the commit after.
+2. Samples entities and generates query cases.
+3. Builds a full baseline index for the later snapshot.
+4. Builds a selective index that reuses cached embeddings where possible.
+5. Retrieves results for every query against both indices.
+6. Computes retrieval-fidelity metrics and freshness/cached-retention checks.
+7. Writes JSON, JSONL, and markdown artifacts into a dedicated benchmark run directory.
+
+The current implementation is a standalone scaffold and is intentionally isolated from the main experiment pipeline.
+
+### Benchmark flow
+
+The flow is implemented in the following modules:
+
+* `benchmark_runner.py`: top-level entrypoint for running the benchmark from the repository root.
+* `src/benchmarking/runner.py`: orchestrates the benchmark end to end.
+* `src/benchmarking/repository_snapshot.py`: builds commit-specific repository snapshots without mutating the working tree.
+* `src/benchmarking/commit_sampler.py`: selects deterministic commit pairs.
+* `src/benchmarking/query_sources.py`: generates synthetic queries or loads curated queries.
+* `src/benchmarking/index_builder.py`: builds baseline and selective retrieval indices.
+* `src/benchmarking/metrics.py`: computes ranking, freshness, and cache-preservation metrics.
+* `src/benchmarking/serialization.py`: writes run artifacts to disk.
+* `src/benchmarking/reporting.py`: generates the human-readable summary report.
+
+### How to run the benchmark
+
+Run the benchmark from the repository root with the local virtual environment Python:
+
+```powershell
+./venv/Scripts/python.exe benchmark_runner.py --repo-path . --output-dir benchmark_runs --num-commits 2 --query-mode synthetic --max-queries-per-entity 1
+```
+
+Common options:
+
+* `--repo-path`: local git checkout to benchmark.
+* `--output-dir`: root directory for benchmark outputs.
+* `--num-commits`: number of recent commits to sample.
+* `--commit-stride`: stride used when sampling commit pairs.
+* `--sampling-mode`: `adjacent`, `stride`, or `manual`.
+* `--query-mode`: `synthetic`, `curated`, or `hybrid`.
+* `--curated-queries-path`: optional JSON or CSV file for curated query cases.
+* `--model-name`: sentence-transformers model used for embeddings.
+* `--clean-mode`: strip comments and docstrings before embedding.
+* `--top-k-values`: comma-separated K values used by the retrieval metrics.
+
+The run will create a directory such as `benchmark_runs/benchmark_v1.0_seed13_<commit>_<commit>/` containing:
+
+* `benchmark_config.json`
+* `commit_pairs.json`
+* `queries.json`
+* `per_query_results.jsonl`
+* `summary_metrics.json`
+* `summary_report.md`
+
+### How to test the benchmark
+
+Run the benchmark test suite with `unittest`:
+
+```powershell
+./venv/Scripts/python.exe -m unittest discover -s tests -p 'test_benchmark_*.py'
+```
+
+The benchmark tests cover:
+
+* Configuration parsing and normalization.
+* Deterministic commit sampling.
+* Synthetic query generation and curated query loading.
+* Commit-aware repository snapshot extraction.
+* Retrieval metrics and artifact serialization.
+* A smoke test that runs the full pipeline on a temporary git repository.
+
+### Notes on current behavior
+
+* The benchmark is isolated from `run_experiment.py` and does not change the existing experiment outputs.
+* The first run may load the embedding model weights from Hugging Face.
+* Benchmark outputs are ignored by Git via `benchmark_runs/` in `.gitignore`.
