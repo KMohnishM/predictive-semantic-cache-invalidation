@@ -93,7 +93,13 @@ def build_repository_snapshot(
         git_helper.checkout_commit(commit_hash)
 
         # Re-parse directory to update CPG in Joern session
-        if hasattr(joern_session, "_build_cpg") and hasattr(joern_session, "_import_cpg"):
+        if hasattr(joern_session, "rebuild_cpg"):
+            try:
+                joern_session.rebuild_cpg()
+            except Exception as e:
+                import logging
+                logging.getLogger("benchmarking").warning(f"Failed to rebuild CPG in Joern: {e}")
+        elif hasattr(joern_session, "_build_cpg") and hasattr(joern_session, "_import_cpg"):
             try:
                 joern_session.cpg_path = joern_session._build_cpg()
                 joern_session._import_cpg()
