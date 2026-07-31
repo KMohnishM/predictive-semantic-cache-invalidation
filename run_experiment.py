@@ -324,9 +324,22 @@ class Experiment:
             logger.warning(f"Failed to checkout commit {commit_hash[:8]}, skipping...")
             return
 
+        # Rebuild Joern CPG for the current commit disk state
+        if self.parser_mode in ["joern_hybrid", "joern_only"] and self.joern_session:
+            logger.info("Rebuilding Joern CPG for the checked-out commit...")
+            try:
+                self.joern_session.rebuild_cpg()
+            except Exception as e:
+                logger.warning(f"Failed to rebuild Joern CPG: {e}")
+
         # Parse repository
-        self.repo_parser = RepoParser(str(self.repo_path))
-        self.repo_parser.parse_directory(str(self.repo_path))
+        if self.parser_mode == "joern_only" and self.joern_session:
+            from joern_repo_parser import JoernRepoParser
+            self.repo_parser = JoernRepoParser(str(self.repo_path), self.joern_session)
+            self.repo_parser.parse_repository()
+        else:
+            self.repo_parser = RepoParser(str(self.repo_path))
+            self.repo_parser.parse_directory(str(self.repo_path))
 
         # Generate embeddings for all entities
         entities = self.repo_parser.get_all_entities()

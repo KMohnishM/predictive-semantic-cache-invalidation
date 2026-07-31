@@ -374,7 +374,15 @@ class FeatureExtractor:
             }
 
         try:
-            full_name = entity_id.split("::")[-1]
+            parts = entity_id.split("::")
+            file_path = parts[0].replace("\\", "/")
+            if len(parts) == 2 and ":" in parts[1]:
+                full_name = parts[1]
+            elif len(parts) == 3:
+                full_name = f"{file_path}:<module>.{parts[1]}.{parts[2]}"
+            else:
+                full_name = f"{file_path}:<module>.{parts[1]}"
+
             return {
                 "joern_cyclomatic_complexity": float(session.cyclomatic_complexity(full_name)),
                 "joern_cfg_node_count": float(session.cfg_node_count(full_name)),

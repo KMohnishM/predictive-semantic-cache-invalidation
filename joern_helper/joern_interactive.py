@@ -95,6 +95,20 @@ class JoernSession:
 
         print("[INFO] CPG imported successfully.")
 
+    def rebuild_cpg(self):
+        """Forces re-build and re-import of the CPG for the current repository disk state."""
+        parent_dir = os.path.dirname(os.path.abspath(self.repo_path))
+        cpg_path = os.path.normpath(os.path.join(parent_dir, "cpg.bin"))
+        if os.path.exists(cpg_path):
+            try:
+                os.remove(cpg_path)
+                print(f"[INFO] Removed old CPG at {cpg_path} for rebuild.")
+            except Exception as e:
+                print(f"[WARNING] Failed to remove old CPG at {cpg_path}: {e}")
+
+        self.cpg_path = self._build_cpg()
+        self._import_cpg()
+
     def execute(self, query: str):
         """Executes a CPGQL query and returns cleaned output."""
         return self._clean_joern_output(self.client.execute(query))
@@ -122,6 +136,18 @@ class JoernSession:
     # Call Graph Queries
     # -------------------------------------------------------------------------
 
+    def get_direct_callers(self, true_name: str) -> list:
+        pattern = self._literal_regex(true_name)
+        query = f'cpg.method.fullName("{pattern}").caller.fullName.l.toJson'
+        res = self.execute(query)
+        return res if isinstance(res, list) else []
+
+    def get_direct_callees(self, true_name: str) -> list:
+        pattern = self._literal_regex(true_name)
+        query = f'cpg.method.fullName("{pattern}").callee.fullName.l.toJson'
+        res = self.execute(query)
+        return res if isinstance(res, list) else []
+
     def get_callers(self, true_name: str) -> list:
         pattern = self._literal_regex(true_name)
         query = f'cpg.method.fullName("{pattern}").repeat(_.caller)(_.emit).fullName.l.toJson'
@@ -135,14 +161,10 @@ class JoernSession:
         return res if isinstance(res, list) else []
 
     def in_degree(self, true_name: str) -> int:
-        pattern = self._literal_regex(true_name)
-        res = self.execute(f'cpg.method.fullName("{pattern}").caller.fullName.l.toJson')
-        return len(res) if isinstance(res, list) else 0
+        return len(self.get_direct_callers(true_name))
 
     def out_degree(self, true_name: str) -> int:
-        pattern = self._literal_regex(true_name)
-        res = self.execute(f'cpg.method.fullName("{pattern}").callee.fullName.l.toJson')
-        return len(res) if isinstance(res, list) else 0
+        return len(self.get_direct_callees(true_name))
 
     # -------------------------------------------------------------------------
     # Control Flow (CFG) Metrics
@@ -252,14 +274,17 @@ class JoernSession:
         Calculates the minimum hop distance in the call graph from true_name to any node in modified_names.
         Returns -1 if unreachable.
         """
-        callers = self.get_callers(true_name)
-        callees = self.get_callees(true_name) if not directed else []
-        neighbors = set(callers + callees)
-
         for mod_name in modified_names:
             if mod_name == true_name:
                 return 0
-            if mod_name in neighbors:
+
+        # Check immediate direct (1-hop) neighbors
+        direct_callers = self.get_direct_callers(true_name)
+        direct_callees = self.get_direct_callees(true_name) if not directed else []
+        direct_neighbors = set(direct_callers + direct_callees)
+
+        for mod_name in modified_names:
+            if mod_name in direct_neighbors:
                 return 1
 
         # Check multi-hop
