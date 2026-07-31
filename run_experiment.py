@@ -156,11 +156,21 @@ class Experiment:
         # Initialize repository parser based on parser_mode
         if self.parser_mode == "joern_only" and self.joern_session:
             from joern_repo_parser import JoernRepoParser
-            self.repo_parser = JoernRepoParser(str(self.repo_path), self.joern_session)
-            logger.info("Using Pure JoernRepoParser for repository parsing and graph construction")
+            candidate = JoernRepoParser(str(self.repo_path), self.joern_session)
+
+            # Ensure it matches the RepoParser interface expected elsewhere
+            required = ("parse_directory", "get_graph", "get_entity", "get_all_entities")
+            if all(hasattr(candidate, name) for name in required):
+                self.repo_parser = candidate
+                logger.info("Using Pure JoernRepoParser for repository parsing and graph construction")
+            else:
+                logger.warning(
+                    "JoernRepoParser does not implement the RepoParser interface; falling back to AST parser."
+                )
+                self.parser_mode = "ast"
+                self.repo_parser = RepoParser(str(self.repo_path))
         else:
             self.repo_parser = RepoParser(str(self.repo_path))
-
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
         self.feature_extractor = FeatureExtractor(self.repo_parser, joern_session=self.joern_session)
         self.predictor = DriftPredictor(threshold=self.threshold)
