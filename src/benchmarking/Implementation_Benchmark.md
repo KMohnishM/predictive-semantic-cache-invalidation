@@ -129,12 +129,12 @@ The primary objective of this refactor is twofold:
 
 ## 4. Implementation Task Checklist
 
-- [ ] **Task 1**: Update [types.py](file:///c:/Users/adity/OneDrive/Desktop/All%20Folders/Git%20projects/LLM_Cache/predictive-semantic-cache-invalidation/src/benchmarking/types.py) with comparison dataclasses and config fields.
-- [ ] **Task 2**: Update [config.py](file:///c:/Users/adity/OneDrive/Desktop/All%20Folders/Git%20projects/LLM_Cache/predictive-semantic-cache-invalidation/src/benchmarking/config.py) with CLI flags (`--strategies`, `--compare-embeddings`, `--store-raw-vectors`).
-- [ ] **Task 3**: Create [embedding_comparator.py](file:///c:/Users/adity/OneDrive/Desktop/All%20Folders/Git%20projects/LLM_Cache/predictive-semantic-cache-invalidation/src/benchmarking/embedding_comparator.py) containing direct vector dot product comparison and status categorization.
-- [ ] **Task 4**: Update [strategy_runner.py](file:///c:/Users/adity/OneDrive/Desktop/All%20Folders/Git%20projects/LLM_Cache/predictive-semantic-cache-invalidation/src/benchmarking/strategy_runner.py) for strategy dispatching.
-- [ ] **Task 5**: Refactor [runner.py](file:///c:/Users/adity/OneDrive/Desktop/All%20Folders/Git%20projects/LLM_Cache/predictive-semantic-cache-invalidation/src/benchmarking/runner.py) to support the multi-strategy comparative pipeline.
-- [ ] **Task 6**: Update [serialization.py](file:///c:/Users/adity/OneDrive/Desktop/All%20Folders/Git%20projects/LLM_Cache/predictive-semantic-cache-invalidation/src/benchmarking/serialization.py) and [reporting.py](file:///c:/Users/adity/OneDrive/Desktop/All%20Folders/Git%20projects/LLM_Cache/predictive-semantic-cache-invalidation/src/benchmarking/reporting.py) to render vector fidelity metrics and Pareto analysis tables.
+- [ ] **Task 1**: Update [types.py](file:///c:/Users/kmohn/New%20folder/Project-1/src/benchmarking/types.py) with comparison dataclasses and config fields.
+- [ ] **Task 2**: Update [config.py](file:///c:/Users/kmohn/New%20folder/Project-1/src/benchmarking/config.py) with CLI flags (`--strategies`, `--compare-embeddings`, `--store-raw-vectors`).
+- [ ] **Task 3**: Create [embedding_comparator.py](file:///c:/Users/kmohn/New%20folder/Project-1/src/benchmarking/embedding_comparator.py) containing direct vector dot product comparison and status categorization.
+- [ ] **Task 4**: Update [strategy_runner.py](file:///c:/Users/kmohn/New%20folder/Project-1/src/benchmarking/strategy_runner.py) for strategy dispatching.
+- [ ] **Task 5**: Refactor [runner.py](file:///c:/Users/kmohn/New%20folder/Project-1/src/benchmarking/runner.py) to support the multi-strategy comparative pipeline.
+- [ ] **Task 6**: Update [serialization.py](file:///c:/Users/kmohn/New%20folder/Project-1/src/benchmarking/serialization.py) and [reporting.py](file:///c:/Users/kmohn/New%20folder/Project-1/src/benchmarking/reporting.py) to render vector fidelity metrics and Pareto analysis tables.
 - [ ] **Task 7**: Create unit test suite in `tests/test_benchmark_embedding_comparator.py`.
 - [ ] **Task 8**: Execute unit tests and run end-to-end benchmark smoke verification.
 

@@ -169,7 +169,7 @@ The flow is implemented in the following modules:
 Run the benchmark from the repository root with the local virtual environment Python:
 
 ```powershell
-& 'c:/Users/adity/OneDrive/Desktop/All Folders/Git projects/LLM_Cache/predictive-semantic-cache-invalidation/venv/Scripts/python.exe' benchmark_runner.py --repo-path 'c:/Users/adity/OneDrive/Desktop/All Folders/Git projects/LLM_Cache/predictive-semantic-cache-invalidation' --output-dir 'benchmark_runs' --num-commits 2 --query-mode synthetic --max-queries-per-entity 1
+./venv/Scripts/python.exe benchmark_runner.py --repo-path . --output-dir benchmark_runs --num-commits 2 --query-mode synthetic --max-queries-per-entity 1
 ```
 
 Common options:
@@ -199,7 +199,7 @@ The run will create a directory such as `benchmark_runs/benchmark_v1.0_seed13_<c
 Run the benchmark test suite with `unittest`:
 
 ```powershell
-& 'c:/Users/adity/OneDrive/Desktop/All Folders/Git projects/LLM_Cache/predictive-semantic-cache-invalidation/venv/Scripts/python.exe' -m unittest discover -s tests -p 'test_benchmark_*.py'
+./venv/Scripts/python.exe -m unittest discover -s tests -p 'test_benchmark_*.py'
 ```
 
 The benchmark tests cover:

@@ -67,10 +67,10 @@ def compare_index_snapshots(
         file_path = str(metadata.get("file_path", ""))
         entity_type = str(metadata.get("entity_type", "unknown"))
 
-        if file_path in modified_files:
-            status = "modified"
-        elif before_entity_ids is not None and entity_id not in before_entity_ids:
+        if before_entity_ids is not None and entity_id not in before_entity_ids:
             status = "added"
+        elif file_path in modified_files:
+            status = "modified"
         else:
             status = "unchanged"
 
