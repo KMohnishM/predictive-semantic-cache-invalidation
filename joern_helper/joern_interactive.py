@@ -113,7 +113,8 @@ class JoernSession:
         return self.execute(query)
 
     def get_true_names(self, file: str):
-        pattern = self._literal_regex(file)
+        # Match file as a substring of the full path that Joern stores in `filename`
+        pattern = re.escape(file).replace("\\", "\\\\")
         query = f'cpg.method.filename(".*{pattern}").map(m => (m.name, m.fullName)).l.toJson'
         return self.execute(query)
 
