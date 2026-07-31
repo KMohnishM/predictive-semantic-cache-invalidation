@@ -280,8 +280,12 @@ class Experiment:
 
             if is_large_context:
                 # Large context window (8k+): include full docstrings & signatures without hashing
-                doc = getattr(dep_entity, 'docstring', '') or ''
-                doc_block = f'    """{doc}"""\n' if doc else ''
+                doc = (getattr(dep_entity, 'docstring', '') or '').replace('"""', r'\"\"\"')
+                if doc:
+                    doc_indented = textwrap.indent(doc, '    ')
+                    doc_block = f'    """\n{doc_indented}\n    """\n'
+                else:
+                    doc_block = ''
                 stub = f"{sig_dedented}\n{doc_block}    pass"
             else:
                 # Small context window (<8k): use compact MD5 hash stub
