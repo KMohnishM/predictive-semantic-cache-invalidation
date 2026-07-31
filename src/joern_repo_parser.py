@@ -89,14 +89,14 @@ class JoernRepoParser:
                             all_methods.append((entity_id, full_name))
 
             # 2. Extract call edges from Joern
+            full_name_to_id = {meta["full_name"]: eid for eid, meta in self.entities.items()}
             for entity_id, full_name in all_methods:
                 callees = self.joern_session.get_callees(full_name)
                 if callees and isinstance(callees, list):
                     for callee_full in callees:
-                        # Match callee to existing entity_ids
-                        for target_id, target_meta in self.entities.items():
-                            if target_meta["full_name"] == callee_full:
-                                self.graph.add_edge(entity_id, target_id)
+                        target_id = full_name_to_id.get(callee_full)
+                        if target_id is not None:
+                            self.graph.add_edge(entity_id, target_id)
 
             logger.info(
                 f"Joern parsing complete: {self.graph.number_of_nodes()} nodes, "
