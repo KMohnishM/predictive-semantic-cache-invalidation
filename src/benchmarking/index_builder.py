@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from ..embedding_manager import EmbeddingManager
+from embedding_manager import EmbeddingManager
 
 from src.benchmarking.types import IndexSnapshot, RepositorySnapshot
 

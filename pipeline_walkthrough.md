@@ -58,7 +58,18 @@ If running in Joern mode (`joern_hybrid` or `joern_only`), you must have Joern i
 
 ```powershell
 # Starts the Joern CPGQL query server on localhost:8080 (in a separate terminal)
-joern --server
+joern --server 
+```
+Running for a configurable port
+```powershell
+# Starts the Joern CPGQL query server on localhost:<port-number> (in a separate terminal)
+joern --server --server-port <port-number>
+```
+
+Run the joern server on a manually configured port 8081
+```powershell
+# Starts the Joern CPGQL query server on localhost:8081 (in a separate terminal)
+joern --server --server-port 8081
 ```
 
 ---

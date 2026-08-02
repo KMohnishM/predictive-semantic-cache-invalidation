@@ -6,7 +6,7 @@ import ast
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from ..git_helper import GitHelper
+from git_helper import GitHelper
 
 from src.benchmarking.types import RepositoryEntity, RepositorySnapshot
 
