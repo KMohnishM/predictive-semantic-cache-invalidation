@@ -726,7 +726,7 @@ class Experiment:
                     modified_entities.add(entity_id)
 
             # Generate queries from entity docstrings/first lines
-            queries = self._generate_queries()
+            queries = self._generate_queries(drifts=drifts)
 
             # Reset embedding manager's cache to commit_a's embeddings for accurate simulation
             self.embedding_manager.embeddings = self.embeddings_history[commit_a].copy()
@@ -862,25 +862,41 @@ class Experiment:
             'all_labels': all_labels
         }
 
-    def _generate_queries(self, num_queries: int = 20) -> Dict[str, np.ndarray]:
+    def _generate_queries(self, drifts: Dict[str, float] = None, num_queries: int = 20) -> Dict[str, np.ndarray]:
         """
         Generate search queries from entity docstrings and descriptions.
+        Selects a balanced mix of high-drift and low-drift entities to evaluate boundary cases.
 
         Args:
+            drifts: Dictionary of ground-truth cosine drifts
             num_queries: Number of queries to generate
 
         Returns:
             Dictionary mapping query_id to query embedding
         """
         queries = {}
-
         entities = self.repo_parser.get_all_entities()
 
-        # Use first N entities as queries (their source code as query)
-        for i, entity in enumerate(entities[:num_queries]):
-            # Use first few lines of source as query
-            source_lines = entity.source_code.split('\n')[:3]
-            query_text = ' '.join(source_lines)
+        if drifts and len(drifts) >= num_queries:
+            # Sort entities by their actual ground-truth drift
+            sorted_by_drift = sorted(drifts.items(), key=lambda x: x[1], reverse=True)
+            
+            # Select 75% most drifted and 25% least drifted nodes (e.g. 15 and 5)
+            n_drifted = int(num_queries * 0.75)
+            n_fresh = num_queries - n_drifted
+            
+            drifted_ids = [eid for eid, _ in sorted_by_drift[:n_drifted]]
+            fresh_ids = [eid for eid, _ in sorted_by_drift[-n_fresh:]]
+            
+            selected_ids = drifted_ids + fresh_ids
+            selected_entities = [self.repo_parser.get_entity(eid) for eid in selected_ids]
+            selected_entities = [e for e in selected_entities if e is not None]
+        else:
+            selected_entities = entities[:num_queries]
+
+        # Generate template queries from selected entities
+        for i, entity in enumerate(selected_entities):
+            query_text = f"What does {entity.entity_id} do after the latest commit?"
 
             # Generate embedding
             query_embedding = self.embedding_manager.generate_embedding(
