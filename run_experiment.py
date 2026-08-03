@@ -40,6 +40,24 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def normalize_source(code: str) -> str:
+    import ast
+    import re
+    try:
+        tree = ast.parse(code)
+        return ast.dump(tree, annotate_fields=False)
+    except Exception:
+        # Language-agnostic fallback: strip comments and collapse whitespaces
+        # Strip block comments /* ... */
+        code_clean = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+        # Strip C-style line comments // ...
+        code_clean = re.sub(r'//.*', '', code_clean)
+        # Strip Python/Shell-style line comments # ...
+        code_clean = re.sub(r'#.*', '', code_clean)
+        # Collapse whitespaces
+        return " ".join(code_clean.split())
+
+
 class Experiment:
     """Main experiment orchestrator."""
 
@@ -402,7 +420,23 @@ class Experiment:
         for entity in self.repo_parser.get_all_entities():
             if entity.file_path in modified_files:
                 modified_entities.add(entity.entity_id)
+        # Apply AST cosmetic filter to modified_entities
+        semantic_modified_entities = set()
+        parser_prev = self.parsers_history.get(commit_a)
+        for entity_id in modified_entities:
+            entity_prev = parser_prev.entities.get(entity_id) if parser_prev else None
+            entity_curr = self.repo_parser.entities.get(entity_id)
+            if not entity_prev or not entity_curr:
+                semantic_modified_entities.add(entity_id)
+                continue
+            code_prev = entity_prev.source_code
+            code_curr = entity_curr.source_code
+            if normalize_source(code_prev) != normalize_source(code_curr):
+                semantic_modified_entities.add(entity_id)
         
+        logger.info(f"Filtered cosmetic changes: {len(modified_entities)} -> {len(semantic_modified_entities)}")
+        modified_entities = semantic_modified_entities
+
         logger.debug(f"Modified entities count: {len(modified_entities)}")
 
         # Extract features (only for entities in current graph)
@@ -722,7 +756,7 @@ class Experiment:
 
                 from evaluator import (BaselineAChangedOnly, BaselineBFullReindex,
                                        BaselineCFixedHop, BaselineDPageRankPropagation,
-                                       PredictiveStrategy)
+                                       PredictiveStrategy, WeightedBFSDecayStrategy)
                 strategy_re_embeddings = {
                     "changed_only": list(BaselineAChangedOnly().get_entities_to_update(
                         modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold
@@ -740,6 +774,9 @@ class Experiment:
                         modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold
                     )),
                     "pagerank_propagation": list(BaselineDPageRankPropagation(top_fraction=0.3).get_entities_to_update(
+                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                    )),
+                    "weighted_bfs_decay": list(WeightedBFSDecayStrategy(threshold=0.05).get_entities_to_update(
                         modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold, repo_parser=self.repo_parser
                     ))
                 }

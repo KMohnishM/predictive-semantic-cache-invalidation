@@ -1,13 +1,12 @@
-# Tasks - Commit-Pair Diagnostic Logging
+# Tasks - AST Cosmetic Filter & BFS Decay Integration
 
-- [x] Initialize logging directory
-  - [x] Create `results/commit_logs/` inside `run_experiment.py` setup
-- [x] Implement training diagnostic capture
-  - [x] Intercept training commit pairs in `build_dataset()`
-  - [x] Log 25-feature matrix, actual drifts, and call-graph structure
-- [x] Implement evaluation diagnostic capture
-  - [x] Intercept test commit pairs in `evaluate_strategies()`
-  - [x] Log ML predictions, strategy re-embeddings, and search metrics
-- [x] Write diagnostic logs to disk
-  - [x] Implement JSON serialization helper
-  - [x] Verify generated JSON files exist and are well-formed
+- [x] Implement AST Cosmetic Filter
+  - [x] Add `normalize_source` helper to `run_experiment.py`
+  - [x] Apply AST filter to `modified_entities` in `compute_drifts_and_features`
+- [x] Implement Weighted BFS Decay Invalidation Strategy
+  - [x] Define `WeightedBFSDecayStrategy` class in `src/evaluator.py`
+  - [x] Add BFS decay evaluation to `evaluate_all_strategies`
+  - [x] Wire `weighted_bfs_decay` trace into diagnostic log files in `run_experiment.py`
+- [ ] Verify implementation (to be run by user)
+  - [ ] Check `summary_report.txt` contains `weighted_bfs_decay` strategy results
+  - [ ] Verify AST filter filters out cosmetic commits successfully

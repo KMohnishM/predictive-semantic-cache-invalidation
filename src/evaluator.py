@@ -156,6 +156,65 @@ class BaselineDPageRankPropagation(CacheInvalidationStrategy):
         return entities_to_update
 
 
+class WeightedBFSDecayStrategy(CacheInvalidationStrategy):
+    """
+    Strategy: Re-embed nodes determined stale by edge-strength BFS decay.
+    Iteratively propagates outward from modified roots along call graph caller edges.
+    """
+
+    def __init__(self, threshold: float = 0.05, max_hops: int = 6):
+        self.threshold = threshold
+        self.max_hops = max_hops
+
+    def get_entities_to_update(self, modified_entities: Set[str],
+                               predicted_drifts: Dict[str, float],
+                               threshold: float = 0.02,
+                               **kwargs) -> Set[str]:
+        repo_parser = kwargs.get('repo_parser')
+        if not repo_parser:
+            return modified_entities.copy()
+
+        G = repo_parser.get_graph()
+        if G.number_of_nodes() == 0:
+            return modified_entities.copy()
+
+        stale = modified_entities.copy()
+
+        # BFS queue elements: (node_id, propagated_strength, hops)
+        frontier = [(n, 1.0, 0) for n in modified_entities if n in G]
+        visited_strength = {n: 1.0 for n in modified_entities if n in G}
+
+        while frontier:
+            node, strength, hops = frontier.pop(0)
+            if hops >= self.max_hops:
+                continue
+
+            # G.predecessors(node) returns the callers in the call graph
+            for caller in G.predecessors(node):
+                # Call frequency dilution: 1.0 / in_degree of callee
+                in_degree = G.in_degree(node)
+                cf = 1.0 / max(in_degree, 1)
+                
+                # Data flow coupling heuristic: 0.5
+                df = 0.5
+                
+                # Signature change default: 0.0
+                sig = 0.0
+
+                e = 0.5 * df + 0.3 * cf + 0.2 * sig
+                propagated = strength * e
+
+                if propagated < self.threshold:
+                    continue
+
+                if propagated > visited_strength.get(caller, 0.0):
+                    visited_strength[caller] = propagated
+                    stale.add(caller)
+                    frontier.append((caller, propagated, hops + 1))
+
+        return stale
+
+
 class Evaluator:
     """Evaluates cache invalidation strategies."""
 
@@ -449,6 +508,14 @@ class Evaluator:
         strategy_ppr = BaselineDPageRankPropagation(top_fraction=0.3)
         results['baseline_d_pagerank_propagation'] = self.evaluate_strategy(
             strategy_ppr, ground_truth_embeddings, predicted_drifts,
+            modified_entities, queries, threshold, k_values
+        )
+
+        # Weighted BFS Decay Invalidation Strategy
+        logger.info("Evaluating Weighted BFS Decay Strategy...")
+        strategy_bfs = WeightedBFSDecayStrategy(threshold=0.05)
+        results['weighted_bfs_decay'] = self.evaluate_strategy(
+            strategy_bfs, ground_truth_embeddings, predicted_drifts,
             modified_entities, queries, threshold, k_values
         )
 
