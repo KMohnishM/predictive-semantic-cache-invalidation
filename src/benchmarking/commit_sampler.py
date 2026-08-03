@@ -16,7 +16,9 @@ def sample_commit_pairs(
     sampling_mode: str = "adjacent",
     commit_stride: int = 1,
 ) -> List[CommitPair]:
-    commits = git_helper.get_commit_history(count=num_commits)
+    # Auto-adjust count to fetch enough raw commits for stride pairs
+    raw_count = num_commits * commit_stride if sampling_mode == "stride" else num_commits
+    commits = git_helper.get_commit_history(count=raw_count)
     if len(commits) < 2:
         return []
 
