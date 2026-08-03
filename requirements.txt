@@ -8,4 +8,4 @@ matplotlib>=3.7.0
 seaborn>=0.12.0
 scipy>=1.10.0
 torch>=2.0.0
-cpgqls-client>=0.1.1
+cpgqls-client>=0.0.9

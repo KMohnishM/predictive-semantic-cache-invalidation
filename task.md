@@ -1,14 +1,13 @@
-# Tasks - Phase 2: Call-Graph Aware Contextual Chunking
+# Tasks - Commit-Pair Diagnostic Logging
 
-- [x] Implement contextual source builder helper in `run_experiment.py`
-  - [x] Extract signature (first line of `def` or `class`) of direct dependencies
-  - [x] Format as a valid Python stub function block to survive docstring/comment stripping
-  - [x] Append to original entity source code
-- [x] Integrate contextual chunking into the main `build_dataset` pipeline
-  - [x] Retrieve contextual text before batch embedding generation
-- [x] Add command-line argument `--context-chunking` to enable/disable this feature
-- [/ ] Run experiment and verify (to be executed by user):
-  - [ ] Propagation of drift to caller nodes (distance 1 and 2) is non-zero
-  - [ ] Baseline A recall degrades over time as call-graph context changes
-  - [ ] Proposed Predictive Strategy maintains high recall by updating stale callers
-- [x] Update walkthrough artifact with Phase 2 results
+- [x] Initialize logging directory
+  - [x] Create `results/commit_logs/` inside `run_experiment.py` setup
+- [x] Implement training diagnostic capture
+  - [x] Intercept training commit pairs in `build_dataset()`
+  - [x] Log 25-feature matrix, actual drifts, and call-graph structure
+- [x] Implement evaluation diagnostic capture
+  - [x] Intercept test commit pairs in `evaluate_strategies()`
+  - [x] Log ML predictions, strategy re-embeddings, and search metrics
+- [x] Write diagnostic logs to disk
+  - [x] Implement JSON serialization helper
+  - [x] Verify generated JSON files exist and are well-formed

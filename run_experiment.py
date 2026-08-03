@@ -95,6 +95,8 @@ class Experiment:
         )
         self.results_dir = Path("results") / dir_name
         self.results_dir.mkdir(parents=True, exist_ok=True)
+        self.commit_logs_dir = self.results_dir / "commit_logs"
+        self.commit_logs_dir.mkdir(parents=True, exist_ok=True)
 
         # Components (initialized later)
         self.git_helper = None
@@ -487,6 +489,38 @@ class Experiment:
                     self.drifts_history[(commit_prev, commit)] = drifts
                     self.features_history[(commit_prev, commit)] = features
 
+                    # Generate training log diagnostic
+                    try:
+                        modified_files = self.git_helper.get_modified_files(commit_prev, commit)
+                        modified_entities = []
+                        for entity_id in drifts.keys():
+                            entity = self.repo_parser.get_entity(entity_id)
+                            if entity and entity.file_path in modified_files:
+                                modified_entities.append(entity_id)
+                        
+                        parser_prev = self.parsers_history.get(commit_prev)
+                        prev_entities = set(parser_prev.get_graph().nodes()) if (parser_prev and parser_prev.get_graph() is not None) else set()
+                        curr_entities = set(self.repo_parser.get_graph().nodes()) if self.repo_parser.get_graph() is not None else set()
+                        added_entities = list(curr_entities - prev_entities)
+                        removed_entities = list(prev_entities - curr_entities)
+                        
+                        git_changes = {
+                            "added_entities": added_entities,
+                            "modified_entities": modified_entities,
+                            "removed_entities": removed_entities,
+                            "modified_files": modified_files
+                        }
+                        self._save_commit_diagnostic(
+                            commit_a=commit_prev,
+                            commit_b=commit,
+                            type_label="training",
+                            drifts=drifts,
+                            features_df=features,
+                            git_changes=git_changes
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to save training diagnostic for {commit_prev[:8]} -> {commit[:8]}: {e}")
+
             # ---- Add RSD entry for this commit ----
             self.rsd.add_commit(
                 commit_hash=commit,
@@ -677,6 +711,65 @@ class Experiment:
                 k_values=[5, 10],
                 fixed_hop_values=[1, 2]
             )
+
+            # Generate testing log diagnostic
+            try:
+                invalidation_decisions = {
+                    "predicted_stale": [str(eid) for eid, pred in zip(features_df.index, y_pred_class) if pred == 1],
+                    "predicted_fresh": [str(eid) for eid, pred in zip(features_df.index, y_pred_class) if pred == 0],
+                    "raw_predictions": {str(eid): float(val) for eid, val in zip(features_df.index, y_pred)}
+                }
+
+                from evaluator import (BaselineAChangedOnly, BaselineBFullReindex,
+                                       BaselineCFixedHop, BaselineDPageRankPropagation,
+                                       PredictiveStrategy)
+                strategy_re_embeddings = {
+                    "changed_only": list(BaselineAChangedOnly().get_entities_to_update(
+                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold
+                    )),
+                    "full_reindex": list(BaselineBFullReindex().get_entities_to_update(
+                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold
+                    )),
+                    "fixed_hop_k1": list(BaselineCFixedHop(k=1).get_entities_to_update(
+                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                    )),
+                    "fixed_hop_k2": list(BaselineCFixedHop(k=2).get_entities_to_update(
+                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                    )),
+                    "predictive_ml": list(PredictiveStrategy().get_entities_to_update(
+                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold
+                    )),
+                    "pagerank_propagation": list(BaselineDPageRankPropagation(top_fraction=0.3).get_entities_to_update(
+                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                    ))
+                }
+
+                parser_prev = self.parsers_history.get(commit_a)
+                prev_entities = set(parser_prev.get_graph().nodes()) if (parser_prev and parser_prev.get_graph() is not None) else set()
+                curr_entities = set(self.repo_parser.get_graph().nodes()) if self.repo_parser.get_graph() is not None else set()
+                added_entities = list(curr_entities - prev_entities)
+                removed_entities = list(prev_entities - curr_entities)
+
+                git_changes = {
+                    "added_entities": added_entities,
+                    "modified_entities": list(modified_entities),
+                    "removed_entities": removed_entities,
+                    "modified_files": modified_files
+                }
+
+                self._save_commit_diagnostic(
+                    commit_a=commit_a,
+                    commit_b=commit_b,
+                    type_label="testing",
+                    drifts=drifts,
+                    features_df=features_df,
+                    git_changes=git_changes,
+                    invalidation_decisions=invalidation_decisions,
+                    strategy_re_embeddings=strategy_re_embeddings,
+                    strategy_metrics=strategy_results
+                )
+            except Exception as e:
+                logger.warning(f"Failed to save testing diagnostic for {commit_a[:8]} -> {commit_b[:8]}: {e}")
 
             # Accumulate results
             for strategy_name, metrics in strategy_results.items():
@@ -890,6 +983,54 @@ class Experiment:
         except Exception as e:
             logger.error(f"Experiment failed with error: {e}", exc_info=True)
             return False
+
+    def _save_commit_diagnostic(self, commit_a: str, commit_b: str, type_label: str,
+                                 drifts: Dict[str, float], features_df: pd.DataFrame,
+                                 git_changes: Dict[str, List[str]],
+                                 invalidation_decisions: Optional[Dict[str, List[str]]] = None,
+                                 strategy_re_embeddings: Optional[Dict[str, List[str]]] = None,
+                                 strategy_metrics: Optional[Dict[str, Dict[str, float]]] = None) -> None:
+        """
+        Saves a detailed diagnostic log for a commit pair transition (commit_a -> commit_b).
+        """
+        output_file = self.commit_logs_dir / f"commit_from_{commit_a[:8]}_to_{commit_b[:8]}.json"
+
+        # Serialize features dataframe into a dictionary
+        features_dict = {}
+        if not features_df.empty:
+            features_dict = features_df.to_dict(orient="index")
+            # Convert NumPy types in values to native Python types
+            for eid, feature_map in list(features_dict.items()):
+                features_dict[eid] = {
+                    k: float(v) if isinstance(v, (np.floating, np.integer)) else v
+                    for k, v in feature_map.items()
+                }
+
+        # Extract dependency graph
+        parser = self.parsers_history.get(commit_b) or self.repo_parser
+        graph_data = {"nodes": [], "edges": []}
+        if parser and hasattr(parser, "get_graph") and parser.get_graph() is not None:
+            g = parser.get_graph()
+            graph_data["nodes"] = list(g.nodes())
+            graph_data["edges"] = [list(edge) for edge in g.edges()]
+
+        log_data = {
+            "commit_before": commit_a,
+            "commit_after": commit_b,
+            "type": type_label,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "git_changes": git_changes,
+            "dependency_graph": graph_data,
+            "features_matrix": features_dict,
+            "cosine_drifts": {k: float(v) for k, v in drifts.items()},
+            "invalidation_decisions": invalidation_decisions or {},
+            "strategy_re_embeddings": strategy_re_embeddings or {},
+            "strategy_metrics": strategy_metrics or {}
+        }
+
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(log_data, f, indent=2, sort_keys=True)
+        logger.info(f"Saved diagnostic log to {output_file}")
 
     def _save_results(self, results: Dict) -> None:
         """

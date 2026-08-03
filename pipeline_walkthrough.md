@@ -164,3 +164,24 @@ Verify your installation and run the suite of unit/smoke tests:
 ```powershell
 ./venv/Scripts/python.exe -m unittest discover -s tests -p 'test_benchmark_*.py'
 ```
+
+---
+
+## 6. Commit-Pair Diagnostic Logging
+
+This update integrates detailed intermediate-state diagnostic logging for each commit pair transition $(C_t \rightarrow C_{t+1})$:
+
+### 6.1 Diagnostic Output Folders
+During setup, the pipeline creates:
+*   `results/<dir_name>/commit_logs/`: Stores a detailed JSON log for each commit transition.
+
+### 6.2 JSON Log Structure
+Each JSON log file (`commit_from_<commit_a>_to_<commit_b>.json`) contains:
+1.  **`git_changes`**: Lists of added, modified, and removed entity IDs.
+2.  **`dependency_graph`**: The full call graph topological nodes and edges at that commit state.
+3.  **`features_matrix`**: The exact matrix of 25 features calculated for all entities in the repository at that commit.
+4.  **`cosine_drifts`**: The actual cosine drift values.
+5.  **`invalidation_decisions`**: The model's continuous prediction values and binary stale/fresh invalidation decisions.
+6.  **`strategy_re_embeddings`**: Lists of entities re-embedded under `changed_only`, `fixed_hop_k1`, `fixed_hop_k2`, `predictive_ml`, and `full_reindex`.
+7.  **`strategy_metrics`**: Evaluation search scores (Recall@K, MRR, nDCG) for each strategy.
+

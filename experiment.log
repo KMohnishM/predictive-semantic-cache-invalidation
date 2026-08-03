@@ -4206,3 +4206,682 @@ BASELINE_D_PAGERANK_PROPAGATION:
 2026-07-27 13:47:31,266 - __main__ - INFO - ================================================================================
 2026-07-27 13:47:31,266 - __main__ - INFO - Results saved to results\results_unixcoder-base_isolated_commits5_stride10_cleanFalse
 2026-07-27 13:47:31,266 - __main__ - INFO - Logs saved to experiment.log
+2026-08-03 12:38:44,025 - __main__ - INFO - ================================================================================
+2026-08-03 12:38:44,026 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-03 12:38:44,026 - __main__ - INFO - ================================================================================
+2026-08-03 12:38:44,026 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-03 12:38:44,028 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-03 12:38:44,028 - __main__ - INFO - Initializing components...
+2026-08-03 12:38:44,132 - __main__ - WARNING - Failed to initialize Joern session ([WinError 2] The system cannot find the file specified). Falling back to AST parser_mode.
+2026-08-03 12:38:44,133 - __main__ - INFO - Setup complete (parser_mode=ast)
+2026-08-03 12:38:44,134 - __main__ - INFO - ================================================================================
+2026-08-03 12:38:44,134 - __main__ - INFO - HARVESTING COMMITS
+2026-08-03 12:38:44,135 - __main__ - INFO - ================================================================================
+2026-08-03 12:38:44,135 - git_helper - INFO - Retrieving last 300 commits
+2026-08-03 12:38:44,209 - git_helper - INFO - Retrieved 300 commits
+2026-08-03 12:38:44,210 - __main__ - INFO - Total raw commits: 300
+2026-08-03 12:38:44,210 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-03 12:38:44,211 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-03 12:38:44,211 - __main__ - INFO - ================================================================================
+2026-08-03 12:38:44,211 - __main__ - INFO - BUILDING DATASET
+2026-08-03 12:38:44,212 - __main__ - INFO - ================================================================================
+2026-08-03 12:38:44,212 - __main__ - INFO - 
+Processing sampled commit 1/15 (3bb92146)...
+2026-08-03 12:38:48,832 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-03 12:38:48,833 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-03 12:38:49,551 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+2026-08-03 12:38:49,837 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:49,910 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:50,231 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:50,286 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:50,300 - sentence_transformers.base.model - INFO - Loading SentenceTransformer model from sentence-transformers/all-MiniLM-L6-v2.
+2026-08-03 12:38:50,571 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:50,572 - huggingface_hub.utils._http - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-08-03 12:38:50,622 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:50,891 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:50,939 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md "HTTP/1.1 200 OK"
+2026-08-03 12:38:51,249 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:51,297 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:51,598 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:51,646 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:51,974 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:38:52,277 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:52,327 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:52,939 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:38:53,213 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:38:53,488 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:38:53,776 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:38:54,054 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:54,104 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:54,419 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:54,476 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:54,757 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:54,808 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:55,159 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:55,208 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:55,514 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-08-03 12:38:55,798 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-08-03 12:38:56,158 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:38:56,210 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-08-03 12:38:56,503 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-08-03 12:38:56,537 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-03 12:38:56,538 - embedding_manager - INFO - Generating embeddings for 609 entities
+2026-08-03 12:44:32,172 - __main__ - INFO - ================================================================================
+2026-08-03 12:44:32,173 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-03 12:44:32,174 - __main__ - INFO - ================================================================================
+2026-08-03 12:44:32,175 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-03 12:44:32,177 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-03 12:44:32,177 - __main__ - INFO - Initializing components...
+2026-08-03 12:44:32,419 - __main__ - WARNING - Failed to initialize Joern session ([WinError 2] The system cannot find the file specified). Falling back to AST parser_mode.
+2026-08-03 12:44:32,428 - __main__ - INFO - Setup complete (parser_mode=ast)
+2026-08-03 12:44:32,430 - __main__ - INFO - ================================================================================
+2026-08-03 12:44:32,431 - __main__ - INFO - HARVESTING COMMITS
+2026-08-03 12:44:32,433 - __main__ - INFO - ================================================================================
+2026-08-03 12:44:32,434 - git_helper - INFO - Retrieving last 300 commits
+2026-08-03 12:44:32,525 - git_helper - INFO - Retrieved 300 commits
+2026-08-03 12:44:32,526 - __main__ - INFO - Total raw commits: 300
+2026-08-03 12:44:32,526 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-03 12:44:32,526 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-03 12:44:32,527 - __main__ - INFO - ================================================================================
+2026-08-03 12:44:32,528 - __main__ - INFO - BUILDING DATASET
+2026-08-03 12:44:32,529 - __main__ - INFO - ================================================================================
+2026-08-03 12:44:32,529 - __main__ - INFO - 
+Processing sampled commit 1/15 (f066e3fc)...
+2026-08-03 12:44:45,571 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-03 12:44:45,576 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-03 12:44:47,648 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:47,700 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:47,974 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:47,977 - huggingface_hub.utils._http - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-08-03 12:44:48,033 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:48,040 - sentence_transformers.base.model - INFO - Loading SentenceTransformer model from sentence-transformers/all-MiniLM-L6-v2.
+2026-08-03 12:44:48,345 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:48,507 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:48,782 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:48,835 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md "HTTP/1.1 200 OK"
+2026-08-03 12:44:49,111 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:49,164 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:49,452 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:49,508 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:49,788 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:44:50,063 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:50,123 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:51,172 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:44:51,461 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:44:51,741 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:44:52,024 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 12:44:52,314 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:52,367 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:52,708 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:52,833 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:53,367 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:53,420 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:53,752 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:53,801 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:54,098 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-08-03 12:44:54,369 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-08-03 12:44:54,796 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 12:44:54,848 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-08-03 12:44:55,124 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-08-03 12:44:55,142 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-03 12:44:55,143 - embedding_manager - INFO - Generating embeddings for 564 entities
+2026-08-03 12:45:47,959 - __main__ - INFO -   Parsed 564 entities, generated 564 embeddings
+2026-08-03 12:45:48,135 - __main__ - INFO - 
+Processing sampled commit 2/15 (2018e667)...
+2026-08-03 13:00:51,297 - __main__ - INFO - ================================================================================
+2026-08-03 13:00:51,298 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-03 13:00:51,298 - __main__ - INFO - ================================================================================
+2026-08-03 13:00:51,299 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-03 13:00:51,300 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-03 13:00:51,300 - __main__ - INFO - Initializing components...
+2026-08-03 13:00:53,685 - __main__ - WARNING - Failed to initialize Joern session (Command '['joern-parse.bat', 'workspace\\black', '--output', 'C:\\Users\\kmohn\\New folder\\Project-1\\workspace\\cpg.bin']' returned non-zero exit status 1.). Falling back to AST parser_mode.
+2026-08-03 13:00:53,690 - __main__ - INFO - Setup complete (parser_mode=ast)
+2026-08-03 13:00:53,690 - __main__ - INFO - ================================================================================
+2026-08-03 13:00:53,690 - __main__ - INFO - HARVESTING COMMITS
+2026-08-03 13:00:53,693 - __main__ - INFO - ================================================================================
+2026-08-03 13:00:53,697 - git_helper - INFO - Retrieving last 300 commits
+2026-08-03 13:00:53,775 - git_helper - INFO - Retrieved 300 commits
+2026-08-03 13:00:53,776 - __main__ - INFO - Total raw commits: 300
+2026-08-03 13:00:53,776 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-03 13:00:53,777 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-03 13:00:53,777 - __main__ - INFO - ================================================================================
+2026-08-03 13:00:53,778 - __main__ - INFO - BUILDING DATASET
+2026-08-03 13:00:53,778 - __main__ - INFO - ================================================================================
+2026-08-03 13:00:53,779 - __main__ - INFO - 
+Processing sampled commit 1/15 (1af53310)...
+2026-08-03 13:01:02,972 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-03 13:01:02,976 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-03 13:01:04,236 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:04,239 - huggingface_hub.utils._http - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-08-03 13:01:04,286 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:04,561 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:04,610 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:04,617 - sentence_transformers.base.model - INFO - Loading SentenceTransformer model from sentence-transformers/all-MiniLM-L6-v2.
+2026-08-03 13:01:04,888 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:04,935 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:05,211 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:05,266 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md "HTTP/1.1 200 OK"
+2026-08-03 13:01:05,541 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:05,617 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:05,902 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:05,950 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:06,226 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:01:06,497 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:06,550 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:07,353 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:01:07,622 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:01:07,911 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:01:08,197 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:01:08,465 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:08,513 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:08,786 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:08,836 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:09,133 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:09,182 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:09,473 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:09,522 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:09,851 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-08-03 13:01:10,169 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-08-03 13:01:10,640 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:01:10,687 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-08-03 13:01:10,966 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-08-03 13:01:11,086 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-03 13:01:11,088 - embedding_manager - INFO - Generating embeddings for 509 entities
+2026-08-03 13:02:54,068 - __main__ - INFO -   Parsed 509 entities, generated 509 embeddings
+2026-08-03 13:02:54,715 - __main__ - INFO - 
+Processing sampled commit 2/15 (fac498bf)...
+2026-08-03 13:03:03,521 - embedding_manager - INFO - Generating embeddings for 513 entities
+2026-08-03 13:03:59,787 - __main__ - INFO -   Parsed 513 entities, generated 513 embeddings
+2026-08-03 13:03:59,787 - __main__ - INFO - Computing drifts and features between 1af53310 and fac498bf...
+2026-08-03 13:03:59,898 - gtd - INFO - [GTD] nodes_added=0.008  edge_churn=0.009  mean_drift=0.0011
+2026-08-03 13:04:11,407 - __main__ - INFO -   Computed drifts for 509 entities
+2026-08-03 13:04:11,408 - __main__ - INFO -   Modified entities: 59
+2026-08-03 13:04:11,595 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_1af53310_to_fac498bf.json
+2026-08-03 13:04:11,770 - __main__ - INFO - 
+Processing sampled commit 3/15 (0d1b957d)...
+2026-08-03 13:04:20,923 - embedding_manager - INFO - Generating embeddings for 536 entities
+2026-08-03 13:05:28,193 - __main__ - INFO -   Parsed 536 entities, generated 536 embeddings
+2026-08-03 13:05:28,396 - __main__ - INFO - Computing drifts and features between fac498bf and 0d1b957d...
+2026-08-03 13:05:28,585 - gtd - INFO - [GTD] nodes_added=0.045  edge_churn=0.050  mean_drift=0.0031
+2026-08-03 13:06:03,950 - __main__ - INFO -   Computed drifts for 512 entities
+2026-08-03 13:06:03,951 - __main__ - INFO -   Modified entities: 436
+2026-08-03 13:06:04,042 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_fac498bf_to_0d1b957d.json
+2026-08-03 13:06:04,307 - __main__ - INFO - 
+Processing sampled commit 4/15 (0f7cf918)...
+2026-08-03 13:06:07,999 - embedding_manager - INFO - Generating embeddings for 537 entities
+2026-08-03 13:06:41,921 - __main__ - INFO -   Parsed 537 entities, generated 537 embeddings
+2026-08-03 13:06:41,922 - __main__ - INFO - Computing drifts and features between 0d1b957d and 0f7cf918...
+2026-08-03 13:06:42,107 - gtd - INFO - [GTD] nodes_added=0.002  edge_churn=0.002  mean_drift=0.0006
+2026-08-03 13:07:19,221 - __main__ - INFO -   Computed drifts for 536 entities
+2026-08-03 13:07:19,222 - __main__ - INFO -   Modified entities: 209
+2026-08-03 13:07:19,441 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_0d1b957d_to_0f7cf918.json
+2026-08-03 13:07:19,677 - __main__ - INFO - 
+Processing sampled commit 5/15 (3501cefb)...
+2026-08-03 13:07:26,996 - embedding_manager - INFO - Generating embeddings for 540 entities
+2026-08-03 13:08:09,554 - __main__ - INFO -   Parsed 540 entities, generated 540 embeddings
+2026-08-03 13:08:09,555 - __main__ - INFO - Computing drifts and features between 0f7cf918 and 3501cefb...
+2026-08-03 13:08:09,679 - gtd - INFO - [GTD] nodes_added=0.006  edge_churn=0.005  mean_drift=0.0010
+2026-08-03 13:08:31,723 - __main__ - INFO -   Computed drifts for 537 entities
+2026-08-03 13:08:31,724 - __main__ - INFO -   Modified entities: 205
+2026-08-03 13:08:31,825 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_0f7cf918_to_3501cefb.json
+2026-08-03 13:08:46,074 - __main__ - INFO - ================================================================================
+2026-08-03 13:08:46,074 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-03 13:08:46,074 - __main__ - INFO - ================================================================================
+2026-08-03 13:08:46,075 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-03 13:08:46,076 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-03 13:08:46,076 - __main__ - INFO - Initializing components...
+2026-08-03 13:10:28,949 - __main__ - WARNING - Failed to initialize Joern session ([WinError 1225] The remote computer refused the network connection). Falling back to AST parser_mode.
+2026-08-03 13:10:28,952 - __main__ - INFO - Setup complete (parser_mode=ast)
+2026-08-03 13:10:28,952 - __main__ - INFO - ================================================================================
+2026-08-03 13:10:28,953 - __main__ - INFO - HARVESTING COMMITS
+2026-08-03 13:10:28,953 - __main__ - INFO - ================================================================================
+2026-08-03 13:10:28,953 - git_helper - INFO - Retrieving last 300 commits
+2026-08-03 13:10:29,020 - git_helper - INFO - Retrieved 300 commits
+2026-08-03 13:10:29,020 - __main__ - INFO - Total raw commits: 300
+2026-08-03 13:10:29,020 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-03 13:10:29,021 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-03 13:10:29,021 - __main__ - INFO - ================================================================================
+2026-08-03 13:10:29,021 - __main__ - INFO - BUILDING DATASET
+2026-08-03 13:10:29,021 - __main__ - INFO - ================================================================================
+2026-08-03 13:10:29,021 - __main__ - INFO - 
+Processing sampled commit 1/15 (afc8c326)...
+2026-08-03 13:10:37,040 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-03 13:10:37,041 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-03 13:10:37,830 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:37,832 - huggingface_hub.utils._http - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-08-03 13:10:37,882 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:38,196 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:38,246 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:38,247 - sentence_transformers.base.model - INFO - Loading SentenceTransformer model from sentence-transformers/all-MiniLM-L6-v2.
+2026-08-03 13:10:38,525 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:38,578 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:38,869 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:38,921 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md "HTTP/1.1 200 OK"
+2026-08-03 13:10:39,230 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:39,282 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:39,579 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:39,705 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:39,996 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:10:40,284 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:40,337 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:40,911 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:10:41,207 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:10:41,486 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:10:41,789 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:10:42,073 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:42,125 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:42,420 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:42,475 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:42,757 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:42,809 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:43,084 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:43,133 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:43,435 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-08-03 13:10:43,720 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-08-03 13:10:44,107 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:10:44,159 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-08-03 13:10:44,465 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-08-03 13:10:44,562 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-03 13:10:44,564 - embedding_manager - INFO - Generating embeddings for 478 entities
+2026-08-03 13:12:59,437 - __main__ - INFO - ================================================================================
+2026-08-03 13:12:59,437 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-03 13:12:59,438 - __main__ - INFO - ================================================================================
+2026-08-03 13:12:59,438 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-03 13:12:59,439 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-03 13:12:59,439 - __main__ - INFO - Initializing components...
+2026-08-03 13:13:41,013 - __main__ - INFO - Joern session connected successfully for mode: joern_hybrid
+2026-08-03 13:13:41,018 - __main__ - INFO - Setup complete (parser_mode=joern_hybrid)
+2026-08-03 13:13:41,018 - __main__ - INFO - ================================================================================
+2026-08-03 13:13:41,019 - __main__ - INFO - HARVESTING COMMITS
+2026-08-03 13:13:41,021 - __main__ - INFO - ================================================================================
+2026-08-03 13:13:41,021 - git_helper - INFO - Retrieving last 300 commits
+2026-08-03 13:13:41,096 - git_helper - INFO - Retrieved 300 commits
+2026-08-03 13:13:41,096 - __main__ - INFO - Total raw commits: 300
+2026-08-03 13:13:41,097 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-03 13:13:41,097 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-03 13:13:41,097 - __main__ - INFO - ================================================================================
+2026-08-03 13:13:41,097 - __main__ - INFO - BUILDING DATASET
+2026-08-03 13:13:41,097 - __main__ - INFO - ================================================================================
+2026-08-03 13:13:41,098 - __main__ - INFO - 
+Processing sampled commit 1/15 (788f87cb)...
+2026-08-03 13:13:45,780 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-03 13:13:45,782 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-03 13:13:46,559 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:46,561 - huggingface_hub.utils._http - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-08-03 13:13:46,610 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:46,883 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:46,938 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:46,939 - sentence_transformers.base.model - INFO - Loading SentenceTransformer model from sentence-transformers/all-MiniLM-L6-v2.
+2026-08-03 13:13:47,234 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:47,283 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:47,567 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:47,619 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md "HTTP/1.1 200 OK"
+2026-08-03 13:13:47,947 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:47,995 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:48,291 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:48,345 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:48,632 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:13:48,937 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:48,988 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:49,378 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:13:49,652 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:13:49,927 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:13:50,198 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:13:50,472 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:50,522 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:50,815 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:50,872 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:51,168 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:51,226 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:51,502 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:51,555 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:51,854 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-08-03 13:13:52,150 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-08-03 13:13:52,597 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:13:52,650 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-08-03 13:13:52,925 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-08-03 13:13:53,035 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-03 13:13:53,036 - embedding_manager - INFO - Generating embeddings for 342 entities
+2026-08-03 13:14:06,064 - __main__ - INFO -   Parsed 342 entities, generated 342 embeddings
+2026-08-03 13:14:06,209 - __main__ - INFO - 
+Processing sampled commit 2/15 (a6d86699)...
+2026-08-03 13:14:10,708 - embedding_manager - INFO - Generating embeddings for 342 entities
+2026-08-03 13:14:28,359 - __main__ - INFO -   Parsed 342 entities, generated 342 embeddings
+2026-08-03 13:14:28,359 - __main__ - INFO - Computing drifts and features between 788f87cb and a6d86699...
+2026-08-03 13:14:28,435 - gtd - INFO - [GTD] nodes_added=0.003  edge_churn=0.000  mean_drift=0.0010
+2026-08-03 13:38:42,888 - __main__ - INFO - ================================================================================
+2026-08-03 13:38:42,889 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-03 13:38:42,889 - __main__ - INFO - ================================================================================
+2026-08-03 13:38:42,889 - __main__ - INFO - Cloning repository from https://github.com/KMohnishM/predictive-semantic-cache-invalidation...
+2026-08-03 13:38:42,890 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-03 13:38:42,890 - __main__ - INFO - Initializing components...
+2026-08-03 13:51:24,985 - __main__ - INFO - ================================================================================
+2026-08-03 13:51:24,986 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-03 13:51:24,986 - __main__ - INFO - ================================================================================
+2026-08-03 13:51:24,986 - __main__ - INFO - Cloning repository from https://github.com/KMohnishM/predictive-semantic-cache-invalidation...
+2026-08-03 13:51:24,986 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-03 13:51:24,986 - __main__ - INFO - Initializing components...
+2026-08-03 13:51:29,161 - __main__ - WARNING - Failed to initialize Joern session ([WinError 1225] The remote computer refused the network connection). Falling back to AST parser_mode.
+2026-08-03 13:51:29,162 - __main__ - INFO - Setup complete (parser_mode=ast)
+2026-08-03 13:51:29,162 - __main__ - INFO - ================================================================================
+2026-08-03 13:51:29,162 - __main__ - INFO - HARVESTING COMMITS
+2026-08-03 13:51:29,162 - __main__ - INFO - ================================================================================
+2026-08-03 13:51:29,163 - git_helper - INFO - Retrieving last 300 commits
+2026-08-03 13:51:29,245 - git_helper - INFO - Retrieved 300 commits
+2026-08-03 13:51:29,245 - __main__ - INFO - Total raw commits: 300
+2026-08-03 13:51:29,245 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-03 13:51:29,246 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-03 13:51:29,246 - __main__ - INFO - ================================================================================
+2026-08-03 13:51:29,246 - __main__ - INFO - BUILDING DATASET
+2026-08-03 13:51:29,246 - __main__ - INFO - ================================================================================
+2026-08-03 13:51:29,246 - __main__ - INFO - 
+Processing sampled commit 1/15 (041ec995)...
+2026-08-03 13:51:31,428 - embedding_manager - INFO - Loading embedding model: microsoft/unixcoder-base
+2026-08-03 13:51:31,430 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-03 13:51:32,287 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/modules.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:51:32,307 - sentence_transformers.base.model - INFO - No modules.json found for microsoft/unixcoder-base, initializing a new SentenceTransformer model.
+2026-08-03 13:51:32,590 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:51:32,874 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:51:32,926 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:51:33,433 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-08-03 13:51:33,434 - huggingface_hub.utils._http - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-08-03 13:51:33,717 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base "HTTP/1.1 200 OK"
+2026-08-03 13:51:34,016 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/commits/main "HTTP/1.1 200 OK"
+2026-08-03 13:51:34,046 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:51:34,300 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/discussions?p=0 "HTTP/1.1 200 OK"
+2026-08-03 13:51:34,361 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:51:34,582 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/commits/refs%2Fpr%2F8 "HTTP/1.1 200 OK"
+2026-08-03 13:51:34,630 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:51:34,923 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/refs%2Fpr%2F8/model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:51:34,924 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 13:51:35,198 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/refs%2Fpr%2F8/model.safetensors "HTTP/1.1 302 Found"
+2026-08-03 13:51:35,215 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:51:35,290 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:51:35,589 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:51:35,668 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:51:35,959 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:51:36,007 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-08-03 13:51:36,300 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 13:51:36,385 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 13:51:36,963 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-08-03 13:51:37,323 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-08-03 13:51:37,821 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base "HTTP/1.1 200 OK"
+2026-08-03 13:51:37,826 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-03 13:51:37,826 - embedding_manager - INFO - Generating embeddings for 313 entities
+2026-08-03 13:53:29,079 - __main__ - INFO -   Parsed 313 entities, generated 313 embeddings
+2026-08-03 13:53:29,514 - __main__ - INFO - 
+Processing sampled commit 2/15 (489d00ed)...
+2026-08-03 13:53:32,022 - embedding_manager - INFO - Generating embeddings for 317 entities
+2026-08-03 13:55:29,454 - __main__ - INFO -   Parsed 317 entities, generated 317 embeddings
+2026-08-03 13:55:29,454 - __main__ - INFO - Computing drifts and features between 041ec995 and 489d00ed...
+2026-08-03 13:55:29,540 - gtd - INFO - [GTD] nodes_added=0.013  edge_churn=0.009  mean_drift=0.0012
+2026-08-03 13:55:43,675 - __main__ - INFO -   Computed drifts for 313 entities
+2026-08-03 13:55:43,676 - __main__ - INFO -   Modified entities: 146
+2026-08-03 13:55:43,787 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_041ec995_to_489d00ed.json
+2026-08-03 13:55:43,904 - __main__ - INFO - 
+Processing sampled commit 3/15 (2cf125a9)...
+2026-08-03 13:55:48,979 - embedding_manager - INFO - Generating embeddings for 319 entities
+2026-08-03 13:57:47,555 - __main__ - INFO -   Parsed 319 entities, generated 319 embeddings
+2026-08-03 13:57:47,556 - __main__ - INFO - Computing drifts and features between 489d00ed and 2cf125a9...
+2026-08-03 13:57:47,627 - gtd - INFO - [GTD] nodes_added=0.006  edge_churn=0.030  mean_drift=0.0015
+2026-08-03 13:58:07,075 - __main__ - INFO -   Computed drifts for 317 entities
+2026-08-03 13:58:07,076 - __main__ - INFO -   Modified entities: 220
+2026-08-03 13:58:07,193 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_489d00ed_to_2cf125a9.json
+2026-08-03 13:58:07,308 - __main__ - INFO - 
+Processing sampled commit 4/15 (41240e9a)...
+2026-08-03 13:58:12,044 - embedding_manager - INFO - Generating embeddings for 314 entities
+2026-08-03 14:00:01,733 - __main__ - INFO -   Parsed 314 entities, generated 314 embeddings
+2026-08-03 14:00:01,734 - __main__ - INFO - Computing drifts and features between 2cf125a9 and 41240e9a...
+2026-08-03 14:00:01,801 - gtd - INFO - [GTD] nodes_added=0.027  edge_churn=0.086  mean_drift=0.0017
+2026-08-03 14:00:18,234 - __main__ - INFO -   Computed drifts for 305 entities
+2026-08-03 14:00:18,235 - __main__ - INFO -   Modified entities: 158
+2026-08-03 14:00:18,396 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_2cf125a9_to_41240e9a.json
+2026-08-03 14:00:18,545 - __main__ - INFO - 
+Processing sampled commit 5/15 (2a357b36)...
+2026-08-03 14:00:29,200 - embedding_manager - INFO - Generating embeddings for 318 entities
+2026-08-03 14:02:37,087 - __main__ - INFO -   Parsed 318 entities, generated 318 embeddings
+2026-08-03 14:02:37,088 - __main__ - INFO - Computing drifts and features between 41240e9a and 2a357b36...
+2026-08-03 14:02:37,142 - gtd - INFO - [GTD] nodes_added=0.013  edge_churn=0.003  mean_drift=0.0006
+2026-08-03 14:02:58,269 - __main__ - INFO -   Computed drifts for 314 entities
+2026-08-03 14:02:58,269 - __main__ - INFO -   Modified entities: 145
+2026-08-03 14:02:58,390 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_41240e9a_to_2a357b36.json
+2026-08-03 14:02:58,525 - __main__ - INFO - 
+Processing sampled commit 6/15 (08f1cdd0)...
+2026-08-03 14:03:04,186 - embedding_manager - INFO - Generating embeddings for 318 entities
+2026-08-03 14:05:04,964 - __main__ - INFO -   Parsed 318 entities, generated 318 embeddings
+2026-08-03 14:05:04,965 - __main__ - INFO - Computing drifts and features between 2a357b36 and 08f1cdd0...
+2026-08-03 14:05:05,027 - gtd - INFO - [GTD] nodes_added=0.000  edge_churn=0.014  mean_drift=0.0015
+2026-08-03 14:05:20,012 - __main__ - INFO -   Computed drifts for 318 entities
+2026-08-03 14:05:20,012 - __main__ - INFO -   Modified entities: 167
+2026-08-03 14:05:20,085 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_2a357b36_to_08f1cdd0.json
+2026-08-03 14:05:20,201 - __main__ - INFO - 
+Processing sampled commit 7/15 (913915d1)...
+2026-08-03 14:05:26,321 - embedding_manager - INFO - Generating embeddings for 322 entities
+2026-08-03 14:07:45,907 - __main__ - INFO -   Parsed 322 entities, generated 322 embeddings
+2026-08-03 14:07:45,908 - __main__ - INFO - Computing drifts and features between 08f1cdd0 and 913915d1...
+2026-08-03 14:07:45,974 - gtd - INFO - [GTD] nodes_added=0.012  edge_churn=0.014  mean_drift=0.0035
+2026-08-03 14:08:17,050 - __main__ - INFO -   Computed drifts for 318 entities
+2026-08-03 14:08:17,050 - __main__ - INFO -   Modified entities: 151
+2026-08-03 14:08:17,192 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_08f1cdd0_to_913915d1.json
+2026-08-03 14:08:17,341 - __main__ - INFO - 
+Processing sampled commit 8/15 (0b40a7ba)...
+2026-08-03 14:08:27,883 - embedding_manager - INFO - Generating embeddings for 324 entities
+2026-08-03 14:10:53,112 - __main__ - INFO -   Parsed 324 entities, generated 324 embeddings
+2026-08-03 14:10:53,113 - __main__ - INFO - Computing drifts and features between 913915d1 and 0b40a7ba...
+2026-08-03 14:10:53,175 - gtd - INFO - [GTD] nodes_added=0.006  edge_churn=0.008  mean_drift=0.0027
+2026-08-03 14:11:18,493 - __main__ - INFO -   Computed drifts for 322 entities
+2026-08-03 14:11:18,494 - __main__ - INFO -   Modified entities: 153
+2026-08-03 14:11:18,588 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_913915d1_to_0b40a7ba.json
+2026-08-03 14:11:18,715 - __main__ - INFO - 
+Processing sampled commit 9/15 (118b6120)...
+2026-08-03 14:11:26,936 - embedding_manager - INFO - Generating embeddings for 332 entities
+2026-08-03 14:13:29,662 - __main__ - INFO -   Parsed 332 entities, generated 332 embeddings
+2026-08-03 14:13:29,663 - __main__ - INFO - Computing drifts and features between 0b40a7ba and 118b6120...
+2026-08-03 14:13:29,736 - gtd - INFO - [GTD] nodes_added=0.033  edge_churn=0.024  mean_drift=0.0088
+2026-08-03 14:13:54,283 - __main__ - INFO -   Computed drifts for 321 entities
+2026-08-03 14:13:54,284 - __main__ - INFO -   Modified entities: 181
+2026-08-03 14:13:54,402 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_0b40a7ba_to_118b6120.json
+2026-08-03 14:13:54,526 - __main__ - INFO - 
+Processing sampled commit 10/15 (026c81b8)...
+2026-08-03 14:14:03,006 - embedding_manager - INFO - Generating embeddings for 333 entities
+2026-08-03 14:16:23,290 - __main__ - INFO -   Parsed 333 entities, generated 333 embeddings
+2026-08-03 14:16:23,290 - __main__ - INFO - Computing drifts and features between 118b6120 and 026c81b8...
+2026-08-03 14:16:23,355 - gtd - INFO - [GTD] nodes_added=0.006  edge_churn=0.005  mean_drift=0.0030
+2026-08-03 14:16:49,034 - __main__ - INFO -   Computed drifts for 331 entities
+2026-08-03 14:16:49,034 - __main__ - INFO -   Modified entities: 180
+2026-08-03 14:16:49,156 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_118b6120_to_026c81b8.json
+2026-08-03 14:16:49,304 - __main__ - INFO - 
+Processing sampled commit 11/15 (e7a44296)...
+2026-08-03 14:16:57,631 - embedding_manager - INFO - Generating embeddings for 333 entities
+2026-08-03 14:18:58,225 - __main__ - INFO -   Parsed 333 entities, generated 333 embeddings
+2026-08-03 14:18:58,227 - __main__ - INFO - Computing drifts and features between 026c81b8 and e7a44296...
+2026-08-03 14:18:58,310 - gtd - INFO - [GTD] nodes_added=0.000  edge_churn=0.000  mean_drift=0.0026
+2026-08-03 14:19:22,633 - __main__ - INFO -   Computed drifts for 333 entities
+2026-08-03 14:19:22,634 - __main__ - INFO -   Modified entities: 161
+2026-08-03 14:19:22,742 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_026c81b8_to_e7a44296.json
+2026-08-03 14:19:22,879 - __main__ - INFO - 
+Processing sampled commit 12/15 (957ba24b)...
+2026-08-03 14:19:30,225 - embedding_manager - INFO - Generating embeddings for 336 entities
+2026-08-03 14:21:34,683 - __main__ - INFO -   Parsed 336 entities, generated 336 embeddings
+2026-08-03 14:21:34,683 - __main__ - INFO - Computing drifts and features between e7a44296 and 957ba24b...
+2026-08-03 14:21:34,750 - gtd - INFO - [GTD] nodes_added=0.009  edge_churn=0.008  mean_drift=0.0035
+2026-08-03 14:22:03,026 - __main__ - INFO -   Computed drifts for 333 entities
+2026-08-03 14:22:03,026 - __main__ - INFO -   Modified entities: 203
+2026-08-03 14:22:03,193 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_e7a44296_to_957ba24b.json
+2026-08-03 14:22:03,352 - __main__ - INFO - 
+Processing sampled commit 13/15 (f3bb22a8)...
+2026-08-03 14:22:14,089 - embedding_manager - INFO - Generating embeddings for 337 entities
+2026-08-03 14:26:34,286 - __main__ - INFO -   Parsed 337 entities, generated 337 embeddings
+2026-08-03 14:26:34,291 - __main__ - INFO - Computing drifts and features between 957ba24b and f3bb22a8...
+2026-08-03 14:26:34,429 - gtd - INFO - [GTD] nodes_added=0.003  edge_churn=0.031  mean_drift=0.0009
+2026-08-03 14:27:22,754 - __main__ - INFO -   Computed drifts for 336 entities
+2026-08-03 14:27:22,755 - __main__ - INFO -   Modified entities: 234
+2026-08-03 14:27:22,920 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_957ba24b_to_f3bb22a8.json
+2026-08-03 14:27:23,076 - __main__ - INFO - 
+Processing sampled commit 14/15 (3dc461a4)...
+2026-08-03 14:27:31,310 - embedding_manager - INFO - Generating embeddings for 403 entities
+2026-08-03 14:30:53,942 - __main__ - INFO -   Parsed 403 entities, generated 403 embeddings
+2026-08-03 14:30:53,942 - __main__ - INFO - Computing drifts and features between f3bb22a8 and 3dc461a4...
+2026-08-03 14:30:54,016 - gtd - INFO - [GTD] nodes_added=0.166  edge_churn=0.126  mean_drift=0.0035
+2026-08-03 14:31:24,037 - __main__ - INFO -   Computed drifts for 336 entities
+2026-08-03 14:31:24,039 - __main__ - INFO -   Modified entities: 266
+2026-08-03 14:31:24,130 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_f3bb22a8_to_3dc461a4.json
+2026-08-03 14:31:24,252 - __main__ - INFO - 
+Processing sampled commit 15/15 (7b11f04d)...
+2026-08-03 14:31:29,482 - embedding_manager - INFO - Generating embeddings for 342 entities
+2026-08-03 14:33:37,312 - __main__ - INFO -   Parsed 342 entities, generated 342 embeddings
+2026-08-03 14:33:37,314 - __main__ - INFO - Computing drifts and features between 3dc461a4 and 7b11f04d...
+2026-08-03 14:33:37,422 - gtd - INFO - [GTD] nodes_added=0.007  edge_churn=0.126  mean_drift=0.0002
+2026-08-03 14:34:05,206 - __main__ - INFO -   Computed drifts for 339 entities
+2026-08-03 14:34:05,206 - __main__ - INFO -   Modified entities: 203
+2026-08-03 14:34:05,333 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_3dc461a4_to_7b11f04d.json
+2026-08-03 14:34:05,470 - __main__ - INFO - 
+Dataset built: 14 commit pairs with data (stride=20, sampled_commits=15)
+2026-08-03 14:34:05,471 - __main__ - INFO - Building RSDs and finalising stratified train/test split...
+2026-08-03 14:34:05,506 - rsd - INFO - [RSD] Built descriptors for 15 commits
+2026-08-03 14:34:08,704 - __main__ - INFO - Stratified split -> train=9, test=6
+2026-08-03 14:34:08,705 - __main__ - INFO - 
+RSD Summary:
+Commit      S       T       M       C       E     
+--------------------------------------------------
+041ec995    0.4368  0.4660  0.0020  0.4095  0.1518
+489d00ed    0.4646  0.4486  0.0033  0.4096  0.4151
+2cf125a9    0.4695  0.4933  0.0024  0.4704  0.5552
+41240e9a    0.4050  0.4933  0.0035  0.5682  0.4562
+2a357b36    0.4176  0.4647  0.0044  0.5268  0.4190
+08f1cdd0    0.4489  0.5571  0.0045  0.6160  0.4806
+913915d1    0.4650  0.5285  0.0034  0.5439  0.4994
+0b40a7ba    0.4482  0.5025  0.0033  0.4907  0.4929
+118b6120    0.4922  0.4984  0.0020  0.3577  0.6388
+026c81b8    0.5008  0.4907  0.0026  0.3546  0.5559
+e7a44296    0.5083  0.4907  0.0027  0.3663  0.5232
+957ba24b    0.5647  0.4729  0.0033  0.3866  0.6190
+f3bb22a8    0.5987  0.5306  0.0027  0.4609  0.6288
+3dc461a4    0.9609  0.3212  0.0025  0.6371  0.7347
+7b11f04d    0.6523  0.5030  0.0024  0.4763  0.5986
+2026-08-03 14:34:08,705 - __main__ - INFO - ================================================================================
+2026-08-03 14:34:08,706 - __main__ - INFO - TRAINING MODEL
+2026-08-03 14:34:08,706 - __main__ - INFO - ================================================================================
+2026-08-03 14:34:08,722 - __main__ - INFO - Training on 349 entities with 349 drift values
+2026-08-03 14:34:08,723 - __main__ - INFO - Dynamically adjusted drift threshold to 0.0000 based on 85th percentile of training drifts
+2026-08-03 14:34:08,727 - predictor - INFO - Train set: 244 entities
+2026-08-03 14:34:08,727 - predictor - INFO - Test set: 105 entities
+2026-08-03 14:34:08,728 - predictor - INFO - Training random_forest regression model...
+2026-08-03 14:34:08,987 - predictor - INFO - Training MSE: 0.000214
+2026-08-03 14:34:08,988 - predictor - INFO - Training R²: 0.4714
+2026-08-03 14:34:08,988 - predictor - INFO - Evaluating model on test data...
+2026-08-03 14:34:09,023 - predictor - INFO - Test MSE: 0.000214
+2026-08-03 14:34:09,024 - predictor - INFO - Test RMSE: 0.014620
+2026-08-03 14:34:09,024 - predictor - INFO - Test R²: -35683165134.6390
+2026-08-03 14:34:09,024 - predictor - INFO - Test MAE: 0.004406
+2026-08-03 14:34:09,062 - predictor - INFO - Model saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\drift_predictor.pkl
+2026-08-03 14:34:09,062 - __main__ - INFO - Model saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\drift_predictor.pkl
+2026-08-03 14:34:09,063 - __main__ - INFO - Test metrics: {'test_mse': 0.00021375898054280622, 'test_rmse': np.float64(0.014620498642071215), 'test_r2': -35683165134.63899, 'test_mae': np.float64(0.004405851341338661)}
+2026-08-03 14:34:09,063 - __main__ - INFO - ================================================================================
+2026-08-03 14:34:09,063 - __main__ - INFO - EVALUATING STRATEGIES
+2026-08-03 14:34:09,063 - __main__ - INFO - ================================================================================
+2026-08-03 14:34:09,065 - __main__ - INFO - 
+Evaluating commit pair 1/5: 08f1cdd0 -> 913915d1
+2026-08-03 14:34:11,207 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-08-03 14:34:11,315 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-08-03 14:34:11,387 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-08-03 14:34:12,528 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-08-03 14:34:13,426 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-08-03 14:34:13,481 - evaluator - INFO - Evaluating Baseline D (PageRank Propagation)...
+2026-08-03 14:34:15,479 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_08f1cdd0_to_913915d1.json
+2026-08-03 14:34:16,847 - __main__ - INFO - 
+Evaluating commit pair 2/5: 913915d1 -> 0b40a7ba
+2026-08-03 14:34:18,603 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-08-03 14:34:18,691 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-08-03 14:34:18,764 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-08-03 14:34:19,702 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-08-03 14:34:20,608 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-08-03 14:34:20,678 - evaluator - INFO - Evaluating Baseline D (PageRank Propagation)...
+2026-08-03 14:34:22,389 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_913915d1_to_0b40a7ba.json
+2026-08-03 14:34:23,445 - __main__ - INFO - 
+Evaluating commit pair 3/5: 0b40a7ba -> 957ba24b
+2026-08-03 14:34:23,446 - __main__ - WARNING - No data for commit pair 0b40a7ba -> 957ba24b
+2026-08-03 14:34:23,447 - __main__ - INFO - 
+Evaluating commit pair 4/5: 957ba24b -> f3bb22a8
+2026-08-03 14:34:25,484 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-08-03 14:34:25,569 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-08-03 14:34:25,641 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-08-03 14:34:27,034 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-08-03 14:34:28,393 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-08-03 14:34:28,463 - evaluator - INFO - Evaluating Baseline D (PageRank Propagation)...
+2026-08-03 14:34:31,386 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_957ba24b_to_f3bb22a8.json
+2026-08-03 14:34:32,195 - __main__ - INFO - 
+Evaluating commit pair 5/5: f3bb22a8 -> 7b11f04d
+2026-08-03 14:34:32,196 - __main__ - WARNING - No data for commit pair f3bb22a8 -> 7b11f04d
+2026-08-03 14:34:32,197 - __main__ - INFO - 
+================================================================================
+2026-08-03 14:34:32,198 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-08-03 14:34:32,198 - __main__ - INFO - ================================================================================
+2026-08-03 14:34:32,199 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-08-03 14:34:32,199 - __main__ - INFO -   Recall@5:    0.9967
+2026-08-03 14:34:32,200 - __main__ - INFO -   Recall@10:   0.9983
+2026-08-03 14:34:32,201 - __main__ - INFO -   MRR:         1.0000
+2026-08-03 14:34:32,201 - __main__ - INFO -   nDCG@10:     0.9989
+2026-08-03 14:34:32,202 - __main__ - INFO -   Update %:    52.87%
+2026-08-03 14:34:32,203 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-08-03 14:34:32,204 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-03 14:34:32,205 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-03 14:34:32,206 - __main__ - INFO -   MRR:         1.0000
+2026-08-03 14:34:32,206 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-03 14:34:32,208 - __main__ - INFO -   Update %:    99.28%
+2026-08-03 14:34:32,208 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-08-03 14:34:32,209 - __main__ - INFO -   Recall@5:    0.9967
+2026-08-03 14:34:32,210 - __main__ - INFO -   Recall@10:   0.9983
+2026-08-03 14:34:32,211 - __main__ - INFO -   MRR:         1.0000
+2026-08-03 14:34:32,212 - __main__ - INFO -   nDCG@10:     0.9989
+2026-08-03 14:34:32,213 - __main__ - INFO -   Update %:    61.21%
+2026-08-03 14:34:32,214 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-08-03 14:34:32,215 - __main__ - INFO -   Recall@5:    0.9967
+2026-08-03 14:34:32,216 - __main__ - INFO -   Recall@10:   0.9983
+2026-08-03 14:34:32,216 - __main__ - INFO -   MRR:         1.0000
+2026-08-03 14:34:32,218 - __main__ - INFO -   nDCG@10:     0.9989
+2026-08-03 14:34:32,219 - __main__ - INFO -   Update %:    65.38%
+2026-08-03 14:34:32,220 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-08-03 14:34:32,221 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-03 14:34:32,222 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-03 14:34:32,222 - __main__ - INFO -   MRR:         1.0000
+2026-08-03 14:34:32,222 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-03 14:34:32,223 - __main__ - INFO -   Update %:    98.79%
+2026-08-03 14:34:32,224 - __main__ - INFO - 
+BASELINE_D_PAGERANK_PROPAGATION:
+2026-08-03 14:34:32,225 - __main__ - INFO -   Recall@5:    0.9967
+2026-08-03 14:34:32,226 - __main__ - INFO -   Recall@10:   0.9983
+2026-08-03 14:34:32,227 - __main__ - INFO -   MRR:         1.0000
+2026-08-03 14:34:32,227 - __main__ - INFO -   nDCG@10:     0.9989
+2026-08-03 14:34:32,227 - __main__ - INFO -   Update %:    52.87%
+2026-08-03 14:34:32,227 - __main__ - INFO - ================================================================================
+2026-08-03 14:34:32,228 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-08-03 14:34:32,228 - __main__ - INFO - ================================================================================
+2026-08-03 14:34:32,228 - visualize - INFO - Generating drift decay plot...
+2026-08-03 14:34:33,481 - visualize - INFO - Drift decay plot saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\drift_decay.png
+2026-08-03 14:34:33,550 - visualize - INFO - Generating feature importance plot...
+2026-08-03 14:34:35,170 - visualize - INFO - Feature importance plot saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\feature_importance.png
+2026-08-03 14:34:35,171 - visualize - INFO - Generating strategy comparison plot...
+2026-08-03 14:34:36,310 - visualize - INFO - Strategy comparison plot saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\strategy_comparison.png
+2026-08-03 14:34:36,311 - visualize - INFO - Generating ranking metrics plot (MRR + nDCG)...
+2026-08-03 14:34:37,461 - visualize - INFO - Ranking metrics plot saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\ranking_metrics.png
+2026-08-03 14:34:37,493 - visualize - INFO - Generating Pareto frontier plot...
+2026-08-03 14:34:38,744 - visualize - INFO - Pareto frontier plot saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\pareto_frontier.png
+2026-08-03 14:34:38,758 - visualize - INFO - Generating drift distribution plot...
+2026-08-03 14:34:39,853 - visualize - INFO - Drift distribution plot saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\drift_distribution.png
+2026-08-03 14:34:39,854 - visualize - INFO - Generating confusion matrix plot...
+2026-08-03 14:34:40,742 - visualize - INFO - Confusion matrix plot saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\confusion_matrix.png
+2026-08-03 14:34:40,742 - visualize - INFO - Generating summary report...
+2026-08-03 14:34:40,744 - visualize - INFO - Summary report saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\summary_report.txt
+2026-08-03 14:34:40,746 - __main__ - INFO - Visualizations generated successfully
+2026-08-03 14:34:40,748 - __main__ - INFO - Results saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse\results.json
+2026-08-03 14:34:40,749 - __main__ - INFO - ================================================================================
+2026-08-03 14:34:40,749 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 2595.76 seconds
+2026-08-03 14:34:40,749 - __main__ - INFO - ================================================================================
+2026-08-03 14:34:40,750 - __main__ - INFO - Results saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse
+2026-08-03 14:34:40,750 - __main__ - INFO - Logs saved to experiment.log
