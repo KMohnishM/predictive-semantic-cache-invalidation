@@ -9,6 +9,13 @@ import logging
 from typing import Dict, Any, List, Set
 import networkx as nx
 from pathlib import Path
+from typing import Optional
+
+# Import Entity from repo_parser to produce compatible objects
+try:
+    from repo_parser import Entity
+except Exception:
+    Entity = None
 
 # Add joern_helper to path for session import
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "joern_helper"))
@@ -107,6 +114,62 @@ class JoernRepoParser:
             logger.error(f"Error parsing repository with Joern: {e}", exc_info=True)
 
         return self.graph
+
+    # --- Adapter methods to match RepoParser interface ---
+    def parse_directory(self, directory: str) -> None:
+        """
+        Adapter for RepoParser.parse_directory: trigger Joern parse.
+        """
+        # Joern parsing does not need the directory arg because the CPG
+        # already contains the repository snapshot; call parse_repository.
+        self.parse_repository()
+
+    def get_graph(self) -> nx.DiGraph:
+        """Return the constructed call graph (NetworkX DiGraph)."""
+        return self.graph
+
+    def get_entity(self, entity_id: str) -> Optional[Entity]:
+        """Return an Entity-like object for the given entity_id, or None."""
+        meta = self.entities.get(entity_id)
+        if not meta:
+            return None
+
+        # If repo_parser.Entity is available, construct one for compatibility
+        if Entity is not None:
+            try:
+                # Joern doesn't expose lineno info here; use 0 as placeholder
+                return Entity(entity_id=meta.get("entity_id", entity_id),
+                              entity_type=meta.get("type", "function"),
+                              file_path=meta.get("file_path", ""),
+                              lineno=0,
+                              end_lineno=0,
+                              source_code=meta.get("source", ""))
+            except Exception:
+                pass
+
+        # Fallback: return a simple object with expected attributes
+        class _SimpleEntity:
+            def __init__(self, eid, etype, fpath, src):
+                self.entity_id = eid
+                self.entity_type = etype
+                self.file_path = fpath
+                self.lineno = 0
+                self.end_lineno = 0
+                self.source_code = src
+
+        return _SimpleEntity(meta.get("entity_id", entity_id),
+                             meta.get("type", "function"),
+                             meta.get("file_path", ""),
+                             meta.get("source", ""))
+
+    def get_all_entities(self) -> List[Any]:
+        """Return all entities as a list of Entity-like objects."""
+        result = []
+        for eid, meta in self.entities.items():
+            ent = self.get_entity(eid)
+            if ent is not None:
+                result.append(ent)
+        return result
 
     def get_entity_source(self, entity_id: str) -> str:
         """Get source code for an entity (fallback to stub)."""

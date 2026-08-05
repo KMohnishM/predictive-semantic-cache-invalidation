@@ -1,0 +1,12 @@
+{
+  "repo_url": "https://github.com/psf/black.git",
+  "model_name": "microsoft/unixcoder-base",
+  "parser_mode": "joern_only",
+  "num_commits": 100,
+  "commit_stride": 10,
+  "train_ratio": 0.7,
+  "threshold": 0.02,
+  "threshold_mode": "dynamic",
+  "clean_mode": false,
+  "context_chunking": false
+}

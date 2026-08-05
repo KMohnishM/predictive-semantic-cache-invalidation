@@ -20,13 +20,13 @@
   // - "ast": local Python parser only (no Joern server required)
   // - "joern_hybrid": uses Joern CPG + local AST fallbacks (requires Joern server)
   // - "joern_only": uses pure Joern parser and Graph database (requires Joern server)
-  "parser_mode": "joern_hybrid",
+  "parser_mode": "joern_only",
 
   // Total number of commit snapshots to extract and analyze
-  "num_commits": 15,
+  "num_commits": 100,
 
   // Stride (step size) between sampled commits in history
-  "commit_stride": 20,
+  "commit_stride": 10,
 
   // Ratio of commits to use for training the machine learning model (rest for testing)
   "train_ratio": 0.7,
