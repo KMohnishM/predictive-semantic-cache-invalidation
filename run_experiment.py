@@ -497,9 +497,22 @@ class Experiment:
                 logger.warning(f"Failed to checkout commit {commit[:8]}, skipping...")
                 continue
 
+            # Rebuild Joern CPG for the current commit disk state
+            if self.parser_mode in ["joern_hybrid", "joern_only"] and self.joern_session:
+                logger.info("Rebuilding Joern CPG for the checked-out commit...")
+                try:
+                    self.joern_session.rebuild_cpg()
+                except Exception as e:
+                    logger.warning(f"Failed to rebuild Joern CPG: {e}")
+
             # Parse repository
-            self.repo_parser = RepoParser(str(self.repo_path))
-            self.repo_parser.parse_directory(str(self.repo_path))
+            if self.parser_mode == "joern_only" and self.joern_session:
+                from joern_repo_parser import JoernRepoParser
+                self.repo_parser = JoernRepoParser(str(self.repo_path), self.joern_session)
+                self.repo_parser.parse_repository()
+            else:
+                self.repo_parser = RepoParser(str(self.repo_path))
+                self.repo_parser.parse_directory(str(self.repo_path))
             self.parsers_history[commit] = self.repo_parser
 
             # Generate embeddings for all entities
@@ -1209,8 +1222,47 @@ def main():
         if config_path.exists():
             logger.info(f"Loading configuration from JSON file: {config_path}")
             import json
+            def strip_json_comments(text: str) -> str:
+                result = []
+                in_string = False
+                escape = False
+                i, n = 0, len(text)
+                while i < n:
+                    char = text[i]
+                    if escape:
+                        result.append(char)
+                        escape = False
+                        i += 1
+                        continue
+                    if char == '\\':
+                        result.append(char)
+                        escape = True
+                        i += 1
+                        continue
+                    if char == '"':
+                        in_string = not in_string
+                        result.append(char)
+                        i += 1
+                        continue
+                    if not in_string:
+                        if i + 1 < n and text[i:i+2] == '//':
+                            while i < n and text[i] not in ('\r', '\n'):
+                                i += 1
+                            continue
+                        if i + 1 < n and text[i:i+2] == '/*':
+                            i += 2
+                            while i + 1 < n and text[i:i+2] != '*/':
+                                i += 1
+                            i += 2
+                            continue
+                    result.append(char)
+                    i += 1
+                return "".join(result)
+
             with config_path.open("r", encoding="utf-8") as f:
-                json_config = json.load(f)
+                raw_content = f.read()
+                clean_content = strip_json_comments(raw_content)
+                json_config = json.loads(clean_content)
                 for key, value in json_config.items():
                     if hasattr(args, key) and getattr(args, key) == parser.get_default(key):
                         setattr(args, key, value)
