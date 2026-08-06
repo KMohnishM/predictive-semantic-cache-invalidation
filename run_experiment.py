@@ -167,7 +167,8 @@ class Experiment:
             try:
                 sys.path.insert(0, str(Path(__file__).resolve().parent / "joern_helper"))
                 from joern_interactive import JoernSession
-                self.joern_session = JoernSession(str(self.repo_path))
+                endpoint = getattr(self, "joern_endpoint", None) or os.getenv("JOERN_ENDPOINT")
+                self.joern_session = JoernSession(str(self.repo_path), endpoint=endpoint)
                 logger.info(f"Joern session connected successfully for mode: {self.parser_mode}")
             except Exception as e:
                 logger.warning(f"Failed to initialize Joern session ({e}). Falling back to AST parser_mode.")
@@ -182,6 +183,7 @@ class Experiment:
             required = ("parse_directory", "get_graph", "get_entity", "get_all_entities")
             if all(hasattr(candidate, name) for name in required):
                 self.repo_parser = candidate
+                self.repo_parser.parse_repository()
                 logger.info("Using Pure JoernRepoParser for repository parsing and graph construction")
             else:
                 logger.warning(

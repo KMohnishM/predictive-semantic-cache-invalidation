@@ -1,11 +1,15 @@
-from cpgqls_client import CPGQLSClient
-from cpgqls_client import import_code_query
+from cpgqls_client import CPGQLSClient, CPGQLSTransport, import_code_query
 import re
 import json
 import subprocess
 import os
 import sys
 import uuid
+import base64
+import websockets
+
+
+import inspect
 
 
 class JoernConsoleError(RuntimeError):
@@ -16,27 +20,85 @@ class JoernResultError(RuntimeError):
     """Raised when a Joern query does not return the expected scalar result."""
 
 
+class AuthenticatedCPGQLSTransport(CPGQLSTransport):
+    """
+    CPGQLS Transport wrapper supporting HTTP Basic Authentication headers
+    during WebSocket connection handshakes and HTTP requests.
+    """
+    def __init__(self, auth_credentials=None):
+        super().__init__()
+        self.auth_credentials = auth_credentials
+
+    def connect(self, endpoint):
+        headers = {}
+        if self.auth_credentials and isinstance(self.auth_credentials, (tuple, list)) and len(self.auth_credentials) >= 2:
+            user_pass = f"{self.auth_credentials[0]}:{self.auth_credentials[1]}"
+            b64_creds = base64.b64encode(user_pass.encode("utf-8")).decode("utf-8")
+            headers["Authorization"] = f"Basic {b64_creds}"
+
+        sig = inspect.signature(websockets.connect)
+        kwargs = {"ping_interval": None}
+        if headers:
+            if "additional_headers" in sig.parameters:
+                kwargs["additional_headers"] = headers
+            elif "extra_headers" in sig.parameters:
+                kwargs["extra_headers"] = headers
+
+        self._ws_conn = websockets.connect(endpoint, **kwargs)
+        return self._ws_conn
+
+
 class JoernSession:
     """
-    Session wrapper for interacting with a Joern server (localhost:8080)
+    Session wrapper for interacting with a Joern server (e.g. localhost:8080 or localhost:8081)
     to query Code Property Graph (CPG) metrics, control flow, and data flow.
     """
 
-    def __init__(self, repo_path: str, endpoint: str = "localhost:8080"):
+    def __init__(self, repo_path: str, endpoint: str = None, auth_credentials: tuple = None):
         self.repo_path = repo_path
-        self.endpoint = endpoint
         self.project_name = f"joern_{uuid.uuid4().hex[:8]}"
-        
-        try:
-            self.client = CPGQLSClient(endpoint)
-            print(f"[INFO] Connected to Joern server at {endpoint}")
-        except Exception as e:
-            raise ConnectionError(
-                f"Failed to connect to Joern server at {endpoint}. "
-                "Ensure Joern is running via 'joern --server'."
-            ) from e
 
-        self._import_cpg()
+        # Resolve auth credentials from parameter or environment variables
+        if auth_credentials is None:
+            user = os.getenv("JOERN_AUTH_USERNAME") or os.getenv("JOERN_USERNAME") or os.getenv("JOERN_USER")
+            password = os.getenv("JOERN_AUTH_PASSWORD") or os.getenv("JOERN_PASSWORD") or os.getenv("JOERN_PASS")
+            if user and password:
+                auth_credentials = (user, password)
+        self.auth_credentials = auth_credentials
+
+        # Candidate endpoints to try
+        endpoints_to_try = []
+        if endpoint:
+            endpoints_to_try.append(endpoint)
+        env_endpoint = os.getenv("JOERN_ENDPOINT") or os.getenv("JOERN_SERVER")
+        if env_endpoint and env_endpoint not in endpoints_to_try:
+            endpoints_to_try.append(env_endpoint)
+        for default_ep in ["localhost:8080", "localhost:8081"]:
+            if default_ep not in endpoints_to_try:
+                endpoints_to_try.append(default_ep)
+
+        connected = False
+        last_error = None
+
+        for ep in endpoints_to_try:
+            try:
+                transport = AuthenticatedCPGQLSTransport(auth_credentials=self.auth_credentials)
+                self.client = CPGQLSClient(ep, transport=transport, auth_credentials=self.auth_credentials)
+                self.endpoint = ep
+                print(f"[INFO] Connected to Joern server at {ep}")
+                self._import_cpg()
+                connected = True
+                break
+            except Exception as e:
+                last_error = e
+                print(f"[INFO] Failed to initialize Joern session on {ep} ({e}). Trying fallback...")
+
+        if not connected:
+            raise ConnectionError(
+                f"Failed to connect to Joern server. Last error: {last_error}\n"
+                "Ensure Joern is running via 'joern --server' (default port 8080/8081) "
+                "and set JOERN_AUTH_USERNAME / JOERN_AUTH_PASSWORD if server requires basic auth."
+            ) from last_error
 
     def _clean_joern_output(self, response: dict):
         """
@@ -156,10 +218,28 @@ class JoernSession:
         query = 'cpg.file.name.l.toJson'
         return self.execute(query)
 
+    def get_all_methods_with_files(self) -> list:
+        """
+        Returns all methods in the CPG along with short name, full name, and filename.
+        Filters out internal compiler wrappers.
+        """
+        query = 'cpg.method.filterNot(m => m.name.startsWith("<") || m.name.contains("<lambda>")).map(m => (m.name, m.fullName, m.filename)).l.toJson'
+        res = self.execute(query)
+        return res if isinstance(res, list) else []
+
+    def get_all_call_edges(self) -> list:
+        """
+        Returns all call graph edges in the CPG as (caller_fullName, list_of_callee_fullNames).
+        """
+        query = 'cpg.method.filterNot(m => m.name.startsWith("<") || m.name.contains("<lambda>")).map(m => (m.fullName, m.callee.filterNot(c => c.name.startsWith("<") || c.name.contains("<lambda>")).fullName.l)).l.toJson'
+        res = self.execute(query)
+        return res if isinstance(res, list) else []
+
     def get_true_names(self, file: str):
-        # Match file as a substring of the full path that Joern stores in `filename`
-        pattern = re.escape(file).replace("\\", "\\\\")
-        query = f'cpg.method.filename(".*{pattern}").map(m => (m.name, m.fullName)).l.toJson'
+        # Match file as a substring of the full path using forward slashes
+        clean_file = str(file).replace("\\", "/").strip("./")
+        pattern = re.escape(clean_file)
+        query = f'cpg.method.filename(".*{pattern}.*").map(m => (m.name, m.fullName)).l.toJson'
         return self.execute(query)
 
     # -------------------------------------------------------------------------
