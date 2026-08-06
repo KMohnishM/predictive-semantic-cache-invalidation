@@ -108,6 +108,7 @@ def build_repository_snapshot(
                 logging.getLogger("benchmarking").warning(f"Failed to re-import CPG in Joern: {e}")
 
         entities: Dict[str, RepositoryEntity] = {}
+        parsed_entity_count = 0
         try:
             files = joern_session.get_all_files()
             if files:
@@ -130,6 +131,11 @@ def build_repository_snapshot(
                                     name=short_name,
                                     source_code=f"# Joern parsed entity: {full_name}"
                                 )
+                                parsed_entity_count += 1
+            import logging
+            logging.getLogger("benchmarking").info(
+                f"Recovered {parsed_entity_count} Joern entities for commit {commit_hash[:8]}"
+            )
         except Exception as e:
             import logging
             logging.getLogger("benchmarking").error(f"Error querying Joern snapshot: {e}")

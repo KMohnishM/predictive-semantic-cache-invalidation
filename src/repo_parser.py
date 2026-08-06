@@ -154,6 +154,7 @@ class RepoParser:
         rel_path = self._get_relative_path(file_path)
         entities = []
         symbol_table = self._build_symbol_table(tree, rel_path, source_lines)
+        parsed_entity_count = 0
 
         # First pass: collect all class and function definitions
         for node in ast.walk(tree):
@@ -170,6 +171,8 @@ class RepoParser:
                     source_code=class_source
                 )
                 entities.append(class_entity)
+                parsed_entity_count += 1
+                logger.debug(f"Parsed class entity: {class_entity.entity_id}")
 
                 # Create method entities
                 for item in node.body:
@@ -185,6 +188,8 @@ class RepoParser:
                             source_code=method_source
                         )
                         entities.append(method_entity)
+                        parsed_entity_count += 1
+                        logger.debug(f"Parsed method entity: {method_entity.entity_id}")
 
             elif isinstance(node, ast.FunctionDef):
                 # Module-level function
@@ -208,6 +213,10 @@ class RepoParser:
                         source_code=func_source
                     )
                     entities.append(func_entity)
+                    parsed_entity_count += 1
+                    logger.debug(f"Parsed function entity: {func_entity.entity_id}")
+
+        logger.info(f"Parsed {parsed_entity_count} entities from {rel_path}")
 
         return entities, symbol_table
 
@@ -429,6 +438,7 @@ class RepoParser:
             py_files.append(str(py_file.resolve()))
 
         # Pass 1: Parse files to populate self.entities and self.symbol_table
+        total_entities_before = len(self.entities)
         for py_file in py_files:
             entities, symbol_table = self._parse_file(py_file)
             
@@ -446,6 +456,10 @@ class RepoParser:
             # Update symbol table
             rel_path = self._get_relative_path(py_file)
             self.symbol_table[rel_path] = symbol_table
+
+        logger.info(
+            f"Completed AST parse for {len(py_files)} files; added {len(self.entities) - total_entities_before} entities"
+        )
 
         # Pass 2: Extract and add edges
         for py_file in py_files:

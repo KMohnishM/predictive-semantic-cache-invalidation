@@ -1,9 +1,19 @@
 from cpgqls_client import CPGQLSClient
+from cpgqls_client import import_code_query
 import re
 import json
 import subprocess
 import os
 import sys
+import uuid
+
+
+class JoernConsoleError(RuntimeError):
+    """Raised when Joern returns a console error payload in stdout."""
+
+
+class JoernResultError(RuntimeError):
+    """Raised when a Joern query does not return the expected scalar result."""
 
 
 class JoernSession:
@@ -15,6 +25,7 @@ class JoernSession:
     def __init__(self, repo_path: str, endpoint: str = "localhost:8080"):
         self.repo_path = repo_path
         self.endpoint = endpoint
+        self.project_name = f"joern_{uuid.uuid4().hex[:8]}"
         
         try:
             self.client = CPGQLSClient(endpoint)
@@ -25,7 +36,6 @@ class JoernSession:
                 "Ensure Joern is running via 'joern --server'."
             ) from e
 
-        self.cpg_path = self._build_cpg()
         self._import_cpg()
 
     def _clean_joern_output(self, response: dict):
@@ -37,6 +47,9 @@ class JoernSession:
             raise RuntimeError(f"Joern query failed:\n{response}")
 
         stdout = response.get("stdout", "")
+
+        if "io.joern.console.Error" in stdout or "No projects loaded" in stdout:
+            raise JoernConsoleError(stdout.strip())
 
         # Remove ANSI colour sequences
         stdout = re.sub(r"\x1B\[[0-?]*[ -/]*[@-~]", "", stdout).strip()
@@ -85,28 +98,45 @@ class JoernSession:
         return cpg_path
 
     def _import_cpg(self):
-        """Imports the generated CPG into the active Joern server session."""
-        escaped = str(self.cpg_path).replace("\\", "\\\\")
-        print("[INFO] Importing CPG...")
+        """Imports the repository into the active Joern server session."""
+        repo_input_path = os.path.abspath(self.repo_path).replace("\\", "/")
+        print(f"[INFO] Importing Joern project {self.project_name} from {repo_input_path}...")
 
-        result = self.client.execute(f'importCpg("{escaped}")')
-        if not result.get("success"):
-            raise RuntimeError("Failed to import CPG.")
+        import_query = import_code_query(repo_input_path, self.project_name)
+        result = self.client.execute(import_query)
+        stdout = result.get("stdout", "")
+        stderr = result.get("stderr", "")
+        if not result.get("success") or (stderr and "error" in stderr.lower()) or "Error:" in stdout:
+            raise RuntimeError(
+                "Failed to import Joern project:\n"
+                f"stdout: {stdout}\n"
+                f"stderr: {stderr}"
+            )
 
-        print("[INFO] CPG imported successfully.")
+        # Smoke-check that the imported project is actually usable before feature queries run.
+        smoke_result = self.execute("cpg.method.size")
+        try:
+            int(smoke_result)
+        except (TypeError, ValueError) as e:
+            raise JoernResultError(
+                f"Imported CPG did not respond with a numeric method count: {smoke_result!r}"
+            ) from e
+
+        print("[INFO] Joern project imported successfully.")
+
+    def _execute_int(self, query: str, description: str) -> int:
+        """Execute a Joern query and require an integer scalar response."""
+        result = self.execute(query)
+        try:
+            return int(result)
+        except (TypeError, ValueError) as e:
+            raise JoernResultError(
+                f"{description} returned a non-numeric result: {result!r}"
+            ) from e
 
     def rebuild_cpg(self):
-        """Forces re-build and re-import of the CPG for the current repository disk state."""
-        parent_dir = os.path.dirname(os.path.abspath(self.repo_path))
-        cpg_path = os.path.normpath(os.path.join(parent_dir, "cpg.bin"))
-        if os.path.exists(cpg_path):
-            try:
-                os.remove(cpg_path)
-                print(f"[INFO] Removed old CPG at {cpg_path} for rebuild.")
-            except Exception as e:
-                print(f"[WARNING] Failed to remove old CPG at {cpg_path}: {e}")
-
-        self.cpg_path = self._build_cpg()
+        """Re-imports the current repository snapshot into a fresh Joern project."""
+        self.project_name = f"joern_{uuid.uuid4().hex[:8]}"
         self._import_cpg()
 
     def execute(self, query: str):
@@ -174,13 +204,13 @@ class JoernSession:
         """Counts total control flow instruction nodes in the function."""
         safe_name = self._literal_regex(true_name)
         query = f'cpg.method.fullName("{safe_name}").cfgNode.size'
-        return int(self.execute(query))
+        return self._execute_int(query, "CFG node count")
 
     def cyclomatic_complexity(self, true_name: str) -> int:
         """Computes McCabe's Cyclomatic Complexity (M = decision_points + 1)."""
         safe_name = self._literal_regex(true_name)
         query = f'cpg.method.fullName("{safe_name}").controlStructure.size'
-        return int(self.execute(query)) + 1
+        return self._execute_int(query, "Cyclomatic complexity") + 1
 
     def cfg_nesting_depth(self, true_name: str) -> list:
         """
@@ -202,7 +232,7 @@ class JoernSession:
             f'cpg.method.fullName("{safe_name}").controlStructure.map(cs => '
             f'cs.inAstMinusLeaf.isControlStructure.size).l.maxOption.getOrElse(0)'
         )
-        return int(self.execute(query))
+        return self._execute_int(query, "Max CFG nesting depth")
 
     # -------------------------------------------------------------------------
     # Data Flow (PDG) & Taint Reachability Queries
@@ -251,8 +281,7 @@ class JoernSession:
     .reachableByFlows({source_target})
     .size
     '''
-        result = self.execute(query)
-        return int(result)
+        return self._execute_int(query, "Modified data dependencies count")
 
     def taint_reachability_score(self, true_name: str, modified_name: str = None) -> float:
         """Returns 1.0 if modified data flows into true_name, else 0.0."""

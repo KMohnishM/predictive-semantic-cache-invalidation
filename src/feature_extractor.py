@@ -6,6 +6,15 @@ import networkx as nx
 import pandas as pd
 import logging
 
+try:
+    from joern_interactive import JoernConsoleError, JoernResultError
+except Exception:
+    class JoernConsoleError(RuntimeError):
+        pass
+
+    class JoernResultError(RuntimeError):
+        pass
+
 if TYPE_CHECKING:
     from gtd import GraphTransitionDescriptor
 
@@ -375,6 +384,17 @@ class FeatureExtractor:
 
         try:
             parts = entity_id.split("::")
+            if len(parts) < 2:
+                logger.warning(f"Skipping Joern features for malformed entity id: {entity_id}")
+                return {
+                    "joern_cyclomatic_complexity": 0.0,
+                    "joern_cfg_node_count": 0.0,
+                    "joern_max_cfg_nesting_depth": 0.0,
+                    "joern_data_flow_distance": 0.0,
+                    "joern_modified_data_deps_count": 0.0,
+                    "joern_taint_reachability_score": 0.0,
+                }
+
             file_path = parts[0].replace("\\", "/")
             if len(parts) == 2 and ":" in parts[1]:
                 full_name = parts[1]
@@ -382,6 +402,19 @@ class FeatureExtractor:
                 full_name = f"{file_path}:<module>.{parts[1]}.{parts[2]}"
             else:
                 full_name = f"{file_path}:<module>.{parts[1]}"
+
+            method_pattern = session._literal_regex(full_name)
+            method_count = int(session.execute(f'cpg.method.fullName("{method_pattern}").size'))
+            if method_count == 0:
+                logger.warning(f"Skipping Joern features for unresolved method in CPG: {entity_id} -> {full_name}")
+                return {
+                    "joern_cyclomatic_complexity": 0.0,
+                    "joern_cfg_node_count": 0.0,
+                    "joern_max_cfg_nesting_depth": 0.0,
+                    "joern_data_flow_distance": 0.0,
+                    "joern_modified_data_deps_count": 0.0,
+                    "joern_taint_reachability_score": 0.0,
+                }
 
             return {
                 "joern_cyclomatic_complexity": float(session.cyclomatic_complexity(full_name)),
@@ -392,6 +425,15 @@ class FeatureExtractor:
                 "joern_taint_reachability_score": float(session.taint_reachability_score(full_name)),
             }
         except Exception as e:
+            message = str(e)
+            exception_name = e.__class__.__name__
+            if (
+                exception_name in {"JoernConsoleError", "JoernResultError"}
+                or "io.joern.console.Error" in message
+                or "No projects loaded" in message
+            ):
+                logger.error(f"Joern returned an error while harvesting features for {entity_id}")
+                raise
             logger.warning(f"Failed to harvest Joern features for {entity_id}: {e}")
             return {
                 "joern_cyclomatic_complexity": 0.0,

@@ -46,6 +46,7 @@ class JoernRepoParser:
         logger.info(f"Parsing repository using Joern CPG at {self.repo_path}...")
         self.graph.clear()
         self.entities.clear()
+        parsed_entity_count = 0
 
         try:
             # 1. Fetch all files from Joern
@@ -87,6 +88,8 @@ class JoernRepoParser:
                                 type="function"
                             )
                             all_methods.append((entity_id, full_name))
+                            parsed_entity_count += 1
+                            logger.debug(f"Parsed Joern entity: {entity_id}")
 
             # 2. Extract call edges from Joern
             full_name_to_id = {meta["full_name"]: eid for eid, meta in self.entities.items()}
@@ -102,10 +105,28 @@ class JoernRepoParser:
                 f"Joern parsing complete: {self.graph.number_of_nodes()} nodes, "
                 f"{self.graph.number_of_edges()} edges extracted."
             )
+            logger.info(f"Parsed {parsed_entity_count} Joern entities from {self.repo_path}")
 
         except Exception as e:
             logger.error(f"Error parsing repository with Joern: {e}", exc_info=True)
 
+        return self.graph
+
+    def parse_directory(self, directory: str) -> nx.DiGraph:
+        """RepoParser-compatible entry point that reparses the current repository snapshot."""
+        self.repo_path = Path(directory)
+        return self.parse_repository()
+
+    def get_entity(self, entity_id: str):
+        """RepoParser-compatible entity lookup."""
+        return self.entities.get(entity_id)
+
+    def get_all_entities(self):
+        """RepoParser-compatible bulk entity lookup."""
+        return list(self.entities.values())
+
+    def get_graph(self) -> nx.DiGraph:
+        """RepoParser-compatible graph accessor."""
         return self.graph
 
     def get_entity_source(self, entity_id: str) -> str:
