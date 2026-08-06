@@ -6,15 +6,16 @@ Constructs NetworkX call graphs and extracts code entities directly from Joern C
 import os
 import sys
 import logging
-from typing import Dict, Any, List, Set
+from typing import Dict, Any, List, Set, Optional
 import networkx as nx
 from pathlib import Path
-from typing import Optional
 
-# Import Entity from repo_parser to produce compatible objects
+# Add src directory to path if needed for imports
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
-    from repo_parser import Entity
+    from repo_parser import RepoParser, Entity
 except Exception:
+    RepoParser = object
     Entity = None
 
 # Add joern_helper to path for session import
@@ -27,17 +28,20 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class JoernRepoParser:
+class JoernRepoParser(RepoParser):
     """
     Parses repository files and constructs a directed Call Graph G=(V, E)
     using a Joern CPG session instead of Python's built-in ast module.
     """
 
     def __init__(self, repo_path: str, joern_session: Any = None):
-        self.repo_path = Path(repo_path)
+        if RepoParser is not object:
+            super().__init__(repo_path)
+        else:
+            self.repo_path = Path(repo_path)
+            self.graph = nx.DiGraph()
+            self.entities: Dict[str, Dict[str, Any]] = {}
         self.joern_session = joern_session
-        self.graph = nx.DiGraph()
-        self.entities: Dict[str, Dict[str, Any]] = {}  # entity_id -> metadata dict
 
     def parse_repository(self) -> nx.DiGraph:
         """
@@ -53,62 +57,160 @@ class JoernRepoParser:
         logger.info(f"Parsing repository using Joern CPG at {self.repo_path}...")
         self.graph.clear()
         self.entities.clear()
+        parsed_entity_count = 0
 
         try:
-            # 1. Fetch all files from Joern
-            files = self.joern_session.get_all_files()
-            if not files or not isinstance(files, list):
-                logger.warning("No files found in Joern CPG.")
-                return self.graph
+            # 1. Bulk-fetch methods from Joern if supported
+            methods_data = []
+            if hasattr(self.joern_session, "get_all_methods_with_files"):
+                methods_data = self.joern_session.get_all_methods_with_files()
 
-            # Filter relevant source files
-            py_files = [
-                f for f in files
-                if isinstance(f, str) and f.endswith(".py") and not f.startswith("<")
-            ]
+            if not methods_data or not isinstance(methods_data, list):
+                logger.info("  [JOERN ENTITY STATE] Querying Joern CPG files individually...")
+                files = self.joern_session.get_all_files()
+                if isinstance(files, list):
+                    py_files = [f for f in files if isinstance(f, str) and f.endswith(".py") and not f.startswith("<")]
+                    logger.info(f"  [JOERN ENTITY STATE] Found {len(py_files)} Python source files in Joern CPG")
+                    for file_path in py_files:
+                        logger.info(f"  [JOERN ENTITY STATE] Attempting to parse file: {file_path}")
+                        true_names = self.joern_session.get_true_names(file_path)
+                        if true_names and isinstance(true_names, list):
+                            logger.info(f"  [JOERN ENTITY STATE] Found {len(true_names)} raw method nodes in file {file_path}")
+                            for name_tuple in true_names:
+                                if isinstance(name_tuple, (list, tuple)) and len(name_tuple) >= 2:
+                                    short_name, full_name = str(name_tuple[0]), str(name_tuple[1])
+                                    methods_data.append((short_name, full_name, file_path))
+                                    logger.info(f"  [JOERN ENTITY FOUND] Found raw method node: short_name={short_name}, full_name={full_name}")
+                        else:
+                            logger.info(f"  [JOERN ENTITY STATE] No methods extracted for file {file_path}")
+
             all_methods = []
-            for file_path in py_files:
-                true_names = self.joern_session.get_true_names(file_path)
-                if true_names and isinstance(true_names, list):
-                    for name_tuple in true_names:
-                        if isinstance(name_tuple, (list, tuple)) and len(name_tuple) >= 2:
-                            short_name, full_name = name_tuple[0], name_tuple[1]
-                            
-                            # Filter out internal compiler wrappers
-                            if full_name.startswith("<") or "<lambda>" in full_name:
-                                continue
+            for item in methods_data:
+                if not isinstance(item, (list, tuple)) or len(item) < 3:
+                    continue
+                short_name, full_name, file_path = str(item[0]), str(item[1]), str(item[2])
 
-                            entity_id = f"{file_path}::{full_name}"
-                            self.entities[entity_id] = {
-                                "entity_id": entity_id,
-                                "name": short_name,
-                                "full_name": full_name,
-                                "file_path": file_path,
-                                "type": "function",
-                                "source": f"# Joern parsed entity: {full_name}"
-                            }
-                            self.graph.add_node(
-                                entity_id,
-                                name=short_name,
-                                file_path=file_path,
-                                type="function"
-                            )
-                            all_methods.append((entity_id, full_name))
+                # Filter compiler wrappers / internal lambdas
+                if full_name.startswith("<") or "<lambda>" in full_name or not file_path.endswith(".py"):
+                    logger.info(f"  [JOERN ENTITY SKIPPED] Filtered out compiler wrapper/internal entity: {full_name}")
+                    continue
+
+                file_path_clean = file_path.replace("\\", "/")
+                try:
+                    p = Path(file_path_clean)
+                    if p.is_absolute():
+                        rel_file_path = str(p.relative_to(self.repo_path)).replace("\\", "/")
+                    else:
+                        repo_name = self.repo_path.name
+                        if repo_name in p.parts:
+                            idx = p.parts.index(repo_name)
+                            rel_file_path = "/".join(p.parts[idx+1:])
+                        else:
+                            rel_file_path = str(p).replace("\\", "/")
+                except Exception:
+                    rel_file_path = file_path_clean.replace("\\", "/")
+
+                # Standardize entity_id to match AST format: file_path::[Class::]func
+                clean_name = full_name
+                if ":<module>." in full_name:
+                    clean_name = full_name.split(":<module>.", 1)[1].replace(".", "::")
+                elif ":<module>" in full_name:
+                    clean_name = full_name.split(":<module>", 1)[1].strip(".").replace(".", "::")
+                
+                if not clean_name:
+                    clean_name = short_name
+
+                entity_id = f"{rel_file_path}::{clean_name}"
+
+                source_code = f"# Joern parsed entity: {full_name}"
+                lineno = 1
+                end_lineno = 1
+                abs_file_path = self.repo_path / rel_file_path
+                if abs_file_path.exists():
+                    try:
+                        with open(abs_file_path, "r", encoding="utf-8", errors="ignore") as f:
+                            lines = f.readlines()
+                            if lines:
+                                lineno = 1
+                                end_lineno = len(lines)
+                                source_code = "".join(lines)
+                    except Exception:
+                        pass
+
+                entity_type = "method" if "::" in clean_name else "function"
+
+                if Entity is not None:
+                    try:
+                        entity = Entity(
+                            entity_id=entity_id,
+                            entity_type=entity_type,
+                            file_path=rel_file_path,
+                            lineno=lineno,
+                            end_lineno=end_lineno,
+                            source_code=source_code
+                        )
+                    except Exception:
+                        entity = {
+                            "entity_id": entity_id,
+                            "name": short_name,
+                            "full_name": full_name,
+                            "file_path": rel_file_path,
+                            "type": entity_type,
+                            "source": source_code
+                        }
+                else:
+                    entity = {
+                        "entity_id": entity_id,
+                        "name": short_name,
+                        "full_name": full_name,
+                        "file_path": rel_file_path,
+                        "type": entity_type,
+                        "source": source_code
+                    }
+
+                self.entities[entity_id] = entity
+                self.graph.add_node(
+                    entity_id,
+                    name=short_name,
+                    file_path=rel_file_path,
+                    type=entity_type
+                )
+                all_methods.append((entity_id, full_name))
+                parsed_entity_count += 1
+                logger.info(f"  [JOERN ENTITY PARSED SUCCESS] Successfully parsed & indexed entity #{parsed_entity_count}: {entity_id} (type={entity_type}, file={rel_file_path})")
 
             # 2. Extract call edges from Joern
-            full_name_to_id = {meta["full_name"]: eid for eid, meta in self.entities.items()}
-            for entity_id, full_name in all_methods:
-                callees = self.joern_session.get_callees(full_name)
-                if callees and isinstance(callees, list):
-                    for callee_full in callees:
-                        target_id = full_name_to_id.get(callee_full)
-                        if target_id is not None:
-                            self.graph.add_edge(entity_id, target_id)
+            full_name_to_id = {full_name: eid for eid, full_name in all_methods}
+            call_edges_data = []
+            if hasattr(self.joern_session, "get_all_call_edges"):
+                call_edges_data = self.joern_session.get_all_call_edges()
+
+            if call_edges_data and isinstance(call_edges_data, list):
+                for edge_entry in call_edges_data:
+                    if isinstance(edge_entry, (list, tuple)) and len(edge_entry) >= 2:
+                        caller_full, callees = str(edge_entry[0]), edge_entry[1]
+                        caller_id = full_name_to_id.get(caller_full)
+                        if caller_id and isinstance(callees, list):
+                            for callee_full in callees:
+                                target_id = full_name_to_id.get(str(callee_full))
+                                if target_id is not None:
+                                    self.graph.add_edge(caller_id, target_id)
+                                    logger.info(f"  [JOERN EDGE STATE] Added call edge: {caller_id} -> {target_id}")
+            else:
+                for entity_id, full_name in all_methods:
+                    callees = self.joern_session.get_callees(full_name)
+                    if callees and isinstance(callees, list):
+                        for callee_full in callees:
+                            target_id = full_name_to_id.get(str(callee_full))
+                            if target_id is not None:
+                                self.graph.add_edge(entity_id, target_id)
+                                logger.info(f"  [JOERN EDGE STATE] Added call edge: {entity_id} -> {target_id}")
 
             logger.info(
-                f"Joern parsing complete: {self.graph.number_of_nodes()} nodes, "
-                f"{self.graph.number_of_edges()} edges extracted."
+                f"[JOERN PARSING COMPLETE] {self.graph.number_of_nodes()} nodes, "
+                f"{self.graph.number_of_edges()} edges extracted from Joern CPG."
             )
+            logger.info(f"[JOERN PARSING SUMMARY] Parsed {parsed_entity_count} Joern entities from {self.repo_path}")
 
         except Exception as e:
             logger.error(f"Error parsing repository with Joern: {e}", exc_info=True)
@@ -116,62 +218,28 @@ class JoernRepoParser:
         return self.graph
 
     # --- Adapter methods to match RepoParser interface ---
-    def parse_directory(self, directory: str) -> None:
-        """
-        Adapter for RepoParser.parse_directory: trigger Joern parse.
-        """
-        # Joern parsing does not need the directory arg because the CPG
-        # already contains the repository snapshot; call parse_repository.
+    def parse_directory(self, directory: Optional[str] = None) -> None:
+        if directory:
+            self.repo_path = Path(directory)
         self.parse_repository()
 
     def get_graph(self) -> nx.DiGraph:
-        """Return the constructed call graph (NetworkX DiGraph)."""
         return self.graph
 
-    def get_entity(self, entity_id: str) -> Optional[Entity]:
-        """Return an Entity-like object for the given entity_id, or None."""
-        meta = self.entities.get(entity_id)
-        if not meta:
-            return None
-
-        # If repo_parser.Entity is available, construct one for compatibility
-        if Entity is not None:
-            try:
-                # Joern doesn't expose lineno info here; use 0 as placeholder
-                return Entity(entity_id=meta.get("entity_id", entity_id),
-                              entity_type=meta.get("type", "function"),
-                              file_path=meta.get("file_path", ""),
-                              lineno=0,
-                              end_lineno=0,
-                              source_code=meta.get("source", ""))
-            except Exception:
-                pass
-
-        # Fallback: return a simple object with expected attributes
-        class _SimpleEntity:
-            def __init__(self, eid, etype, fpath, src):
-                self.entity_id = eid
-                self.entity_type = etype
-                self.file_path = fpath
-                self.lineno = 0
-                self.end_lineno = 0
-                self.source_code = src
-
-        return _SimpleEntity(meta.get("entity_id", entity_id),
-                             meta.get("type", "function"),
-                             meta.get("file_path", ""),
-                             meta.get("source", ""))
+    def get_entity(self, entity_id: str) -> Optional[Any]:
+        entity = self.entities.get(entity_id)
+        if entity is not None:
+            return entity
+        return None
 
     def get_all_entities(self) -> List[Any]:
-        """Return all entities as a list of Entity-like objects."""
-        result = []
-        for eid, meta in self.entities.items():
-            ent = self.get_entity(eid)
-            if ent is not None:
-                result.append(ent)
-        return result
+        return list(self.entities.values())
 
     def get_entity_source(self, entity_id: str) -> str:
-        """Get source code for an entity (fallback to stub)."""
-        entity = self.entities.get(entity_id, {})
-        return entity.get("source", "")
+        entity = self.entities.get(entity_id)
+        if entity is not None:
+            if hasattr(entity, "source_code"):
+                return entity.source_code
+            if isinstance(entity, dict):
+                return entity.get("source", "")
+        return ""

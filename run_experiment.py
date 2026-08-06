@@ -182,15 +182,17 @@ class Experiment:
             required = ("parse_directory", "get_graph", "get_entity", "get_all_entities")
             if all(hasattr(candidate, name) for name in required):
                 self.repo_parser = candidate
-                logger.info("Using Pure JoernRepoParser for repository parsing and graph construction")
+                self.repo_parser.parse_repository()
+                logger.info(f"[PARSER STATUS] Sticking to JoernRepoParser (parser_mode={self.parser_mode})")
             else:
                 logger.warning(
-                    "JoernRepoParser does not implement the RepoParser interface; falling back to AST parser."
+                    f"[PARSER STATUS] JoernRepoParser does not implement full interface; falling back to AST parser (parser_mode={self.parser_mode})."
                 )
                 self.parser_mode = "ast"
                 self.repo_parser = RepoParser(str(self.repo_path))
         else:
             self.repo_parser = RepoParser(str(self.repo_path))
+            logger.info(f"[PARSER STATUS] Using AST RepoParser (parser_mode={self.parser_mode})")
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
         self.feature_extractor = FeatureExtractor(self.repo_parser, joern_session=self.joern_session)
         self.predictor = DriftPredictor(threshold=self.threshold)
@@ -357,12 +359,24 @@ class Experiment:
             from joern_repo_parser import JoernRepoParser
             self.repo_parser = JoernRepoParser(str(self.repo_path), self.joern_session)
             self.repo_parser.parse_repository()
+            logger.info(f"  [PARSER STATUS] Sticking to JoernRepoParser for commit {commit_hash[:8]} (parser_mode={self.parser_mode})")
         else:
             self.repo_parser = RepoParser(str(self.repo_path))
             self.repo_parser.parse_directory(str(self.repo_path))
+            logger.info(f"  [PARSER STATUS] Using AST RepoParser for commit {commit_hash[:8]} (parser_mode={self.parser_mode})")
 
         # Generate embeddings for all entities
         entities = self.repo_parser.get_all_entities()
+        parser_name = type(self.repo_parser).__name__
+        graph = self.repo_parser.get_graph()
+        node_count = graph.number_of_nodes() if graph is not None else 0
+        edge_count = graph.number_of_edges() if graph is not None else 0
+
+        logger.info(
+            f"  [PARSER EXTRACTION] {parser_name} successfully extracted {len(entities)} entities, "
+            f"{node_count} nodes, and {edge_count} edges for commit {commit_hash[:8]}"
+        )
+
         entity_sources = {e.entity_id: self._get_contextual_source(e) for e in entities}
 
         if entity_sources:
@@ -497,13 +511,39 @@ class Experiment:
                 logger.warning(f"Failed to checkout commit {commit[:8]}, skipping...")
                 continue
 
+            # Rebuild Joern CPG for the current commit disk state if using Joern
+            if self.parser_mode in ["joern_hybrid", "joern_only"] and self.joern_session:
+                logger.info("  Rebuilding Joern CPG for sampled commit...")
+                try:
+                    self.joern_session.rebuild_cpg()
+                except Exception as e:
+                    logger.warning(f"  Failed to rebuild Joern CPG: {e}")
+
             # Parse repository
-            self.repo_parser = RepoParser(str(self.repo_path))
-            self.repo_parser.parse_directory(str(self.repo_path))
+            if self.parser_mode == "joern_only" and self.joern_session:
+                from joern_repo_parser import JoernRepoParser
+                self.repo_parser = JoernRepoParser(str(self.repo_path), self.joern_session)
+                self.repo_parser.parse_repository()
+                logger.info(f"  [PARSER STATUS] Using Pure JoernRepoParser for commit {commit[:8]} (parser_mode={self.parser_mode})")
+            else:
+                self.repo_parser = RepoParser(str(self.repo_path))
+                self.repo_parser.parse_directory(str(self.repo_path))
+                logger.info(f"  [PARSER STATUS] Using AST RepoParser for commit {commit[:8]} (parser_mode={self.parser_mode})")
+
             self.parsers_history[commit] = self.repo_parser
 
             # Generate embeddings for all entities
             entities = self.repo_parser.get_all_entities()
+            parser_name = type(self.repo_parser).__name__
+            graph = self.repo_parser.get_graph()
+            node_count = graph.number_of_nodes() if graph is not None else 0
+            edge_count = graph.number_of_edges() if graph is not None else 0
+
+            logger.info(
+                f"  [PARSER EXTRACTION] {parser_name} successfully extracted {len(entities)} entities, "
+                f"{node_count} nodes, and {edge_count} edges for commit {commit[:8]}"
+            )
+
             entity_sources = {e.entity_id: self._get_contextual_source(e) for e in entities}
 
             if entity_sources:

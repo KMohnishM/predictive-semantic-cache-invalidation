@@ -12,7 +12,7 @@ class JoernSession:
     to query Code Property Graph (CPG) metrics, control flow, and data flow.
     """
 
-    def __init__(self, repo_path: str, endpoint: str = "localhost:8080"):
+    def __init__(self, repo_path: str, endpoint: str = "localhost:8081"):
         self.repo_path = repo_path
         self.endpoint = endpoint
         
@@ -126,10 +126,29 @@ class JoernSession:
         query = 'cpg.file.name.l.toJson'
         return self.execute(query)
 
+    def get_all_methods_with_files(self) -> list:
+        """
+        Returns all methods in the CPG along with short name, full name, and filename.
+        Uses List(...) for json4s serialization compatibility.
+        """
+        query = 'cpg.method.map(m => List(m.name, m.fullName, m.filename)).l.toJson'
+        res = self.execute(query)
+        return res if isinstance(res, list) else []
+
+    def get_all_call_edges(self) -> list:
+        """
+        Returns all call graph edges in the CPG as (caller_fullName, list_of_callee_fullNames).
+        Uses List(...) for json4s serialization compatibility.
+        """
+        query = 'cpg.method.map(m => List(m.fullName, m.callee.fullName.l)).l.toJson'
+        res = self.execute(query)
+        return res if isinstance(res, list) else []
+
     def get_true_names(self, file: str):
-        # Match file as a substring of the full path that Joern stores in `filename`
-        pattern = re.escape(file).replace("\\", "\\\\")
-        query = f'cpg.method.filename(".*{pattern}").map(m => (m.name, m.fullName)).l.toJson'
+        # Match file as a substring of the full path using forward slashes
+        clean_file = str(file).replace("\\", "/").strip("./")
+        pattern = re.escape(clean_file)
+        query = f'cpg.method.filename(".*{pattern}.*").map(m => List(m.name, m.fullName)).l.toJson'
         return self.execute(query)
 
     # -------------------------------------------------------------------------
