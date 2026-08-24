@@ -56,7 +56,9 @@ class StrategyEmbeddingComparisonResult:
     min_cosine_similarity: float
     p95_cosine_similarity: float
     updated_fraction: float
-    per_entity_comparisons: List[EntityEmbeddingComparison]
+    decision_latency_seconds: float = 0.0
+    total_e2e_time_seconds: float = 0.0
+    per_entity_comparisons: List[EntityEmbeddingComparison] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -66,6 +68,8 @@ class StrategyEmbeddingComparisonResult:
             "min_cosine_similarity": self.min_cosine_similarity,
             "p95_cosine_similarity": self.p95_cosine_similarity,
             "updated_fraction": self.updated_fraction,
+            "decision_latency_seconds": self.decision_latency_seconds,
+            "total_e2e_time_seconds": self.total_e2e_time_seconds,
             "per_entity_comparisons": [item.to_dict() for item in self.per_entity_comparisons],
         }
 
@@ -139,6 +143,7 @@ class StrategyDecision:
     strategy_name: str
     updated_entity_ids: List[str]
     updated_fraction: float
+    decision_latency_seconds: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)

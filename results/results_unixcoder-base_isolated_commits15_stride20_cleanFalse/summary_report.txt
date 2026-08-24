@@ -1,0 +1,77 @@
+================================================================================
+PREDICTIVE SEMANTIC CACHE INVALIDATION - EXPERIMENT SUMMARY
+================================================================================
+
+TOP 10 FEATURE IMPORTANCES
+--------------------------------------------------------------------------------
+1. entity_size: 0.7351
+2. modified_dependencies_count: 0.1342
+3. pagerank: 0.0423
+4. out_degree: 0.0198
+5. gtd_change_class: 0.0151
+6. previous_drift: 0.0147
+7. modification_frequency: 0.0101
+8. gtd_drift_variance: 0.0082
+9. gtd_mean_drift: 0.0078
+10. pagerank_impact: 0.0063
+
+STRATEGY COMPARISON
+--------------------------------------------------------------------------------
+
+BASELINE_A_CHANGED_ONLY
+  Entities Updated: 174.0 / 327.6666666666667 (52.87%)
+  Recall@5:          0.9967
+  Recall@10:         0.9983
+  MRR:               1.0000
+  nDCG@10:           0.9989
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+BASELINE_B_FULL_REINDEX
+  Entities Updated: 325.3333333333333 / 327.6666666666667 (99.28%)
+  Recall@5:          1.0000
+  Recall@10:         1.0000
+  MRR:               1.0000
+  nDCG@10:           1.0000
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+BASELINE_C_FIXED_HOP_K1
+  Entities Updated: 201.33333333333334 / 327.6666666666667 (61.21%)
+  Recall@5:          0.9967
+  Recall@10:         0.9983
+  MRR:               1.0000
+  nDCG@10:           0.9989
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+BASELINE_C_FIXED_HOP_K2
+  Entities Updated: 215.0 / 327.6666666666667 (65.38%)
+  Recall@5:          0.9967
+  Recall@10:         0.9983
+  MRR:               1.0000
+  nDCG@10:           0.9989
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+PROPOSED_PREDICTIVE
+  Entities Updated: 323.6666666666667 / 327.6666666666667 (98.79%)
+  Recall@5:          1.0000
+  Recall@10:         1.0000
+  MRR:               1.0000
+  nDCG@10:           1.0000
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+BASELINE_D_PAGERANK_PROPAGATION
+  Entities Updated: 174.0 / 327.6666666666667 (52.87%)
+  Recall@5:          0.9967
+  Recall@10:         0.9983
+  MRR:               1.0000
+  nDCG@10:           0.9989
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+================================================================================
+END OF REPORT
+================================================================================

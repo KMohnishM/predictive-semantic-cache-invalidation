@@ -1,0 +1,65 @@
+{
+  "strategy_results": {
+    "baseline_a_changed_only": {
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "rank_correlation": 1.0,
+      "update_percentage": 0.0,
+      "entities_updated": 0.0,
+      "total_entities": 690.0
+    },
+    "baseline_b_full_reindex": {
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "rank_correlation": 1.0,
+      "update_percentage": 100.0,
+      "entities_updated": 690.0,
+      "total_entities": 690.0
+    },
+    "baseline_c_fixed_hop_k1": {
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "rank_correlation": 1.0,
+      "update_percentage": 0.0,
+      "entities_updated": 0.0,
+      "total_entities": 690.0
+    },
+    "baseline_c_fixed_hop_k2": {
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "rank_correlation": 1.0,
+      "update_percentage": 0.0,
+      "entities_updated": 0.0,
+      "total_entities": 690.0
+    },
+    "proposed_predictive": {
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "rank_correlation": 1.0,
+      "update_percentage": 0.0,
+      "entities_updated": 0.0,
+      "total_entities": 690.0
+    },
+    "baseline_d_pagerank_propagation": {
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "rank_correlation": 1.0,
+      "update_percentage": 0.0,
+      "entities_updated": 0.0,
+      "total_entities": 690.0
+    }
+  },
+  "drift_by_distance": {}
+}

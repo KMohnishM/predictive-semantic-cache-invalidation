@@ -4965,3 +4965,813 @@ Processing sampled commit 1/15 (fd9bd07f)...
 2026-08-05 15:26:51,167 - __main__ - INFO - 
 Processing sampled commit 1/14 (e74117f1)...
 2026-08-05 15:26:51,361 - __main__ - INFO - Rebuilding Joern CPG for the checked-out commit...
+2026-08-24 08:10:14,456 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-24 08:10:14,460 - __main__ - INFO - ================================================================================
+2026-08-24 08:10:14,460 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-24 08:10:14,460 - __main__ - INFO - ================================================================================
+2026-08-24 08:10:14,461 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-24 08:10:14,462 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-24 08:10:14,463 - __main__ - INFO - Initializing components...
+2026-08-24 08:10:14,469 - __main__ - INFO - Using TreeSitterRepoParser for repository parsing and graph construction
+2026-08-24 08:10:14,472 - __main__ - INFO - Setup complete (parser_mode=tree_sitter)
+2026-08-24 08:10:14,472 - __main__ - INFO - ================================================================================
+2026-08-24 08:10:14,472 - __main__ - INFO - HARVESTING COMMITS
+2026-08-24 08:10:14,473 - __main__ - INFO - ================================================================================
+2026-08-24 08:10:14,473 - git_helper - INFO - Retrieving last 300 commits
+2026-08-24 08:10:14,560 - git_helper - INFO - Retrieved 1 commits
+2026-08-24 08:10:14,560 - __main__ - ERROR - Not enough commits found for stride=20: 1 raw commits
+2026-08-24 08:10:52,068 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-24 08:10:52,070 - __main__ - INFO - ================================================================================
+2026-08-24 08:10:52,070 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-24 08:10:52,070 - __main__ - INFO - ================================================================================
+2026-08-24 08:10:52,071 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-24 08:10:52,071 - git_helper - INFO - Cloning repository from https://github.com/psf/black.git to C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-24 08:11:07,619 - git_helper - INFO - Repository cloned successfully
+2026-08-24 08:11:07,619 - __main__ - INFO - Initializing components...
+2026-08-24 08:11:07,623 - __main__ - INFO - Using TreeSitterRepoParser for repository parsing and graph construction
+2026-08-24 08:11:07,626 - __main__ - INFO - Setup complete (parser_mode=tree_sitter)
+2026-08-24 08:11:07,626 - __main__ - INFO - ================================================================================
+2026-08-24 08:11:07,626 - __main__ - INFO - HARVESTING COMMITS
+2026-08-24 08:11:07,626 - __main__ - INFO - ================================================================================
+2026-08-24 08:11:07,626 - git_helper - INFO - Retrieving last 300 commits
+2026-08-24 08:11:07,709 - git_helper - INFO - Retrieved 300 commits
+2026-08-24 08:11:07,710 - __main__ - INFO - Total raw commits: 300
+2026-08-24 08:11:07,710 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-24 08:11:07,710 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-24 08:11:07,710 - __main__ - INFO - ================================================================================
+2026-08-24 08:11:07,710 - __main__ - INFO - BUILDING DATASET
+2026-08-24 08:11:07,710 - __main__ - INFO - ================================================================================
+2026-08-24 08:11:07,710 - __main__ - INFO - 
+Processing sampled commit 1/15 (203fd6b5)...
+2026-08-24 08:11:17,826 - embedding_manager - INFO - Loading embedding model: microsoft/unixcoder-base
+2026-08-24 08:11:17,829 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-08-24 08:11:17,829 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: microsoft/unixcoder-base
+2026-08-24 08:11:18,923 - sentence_transformers.SentenceTransformer - WARNING - No sentence-transformers model found with name microsoft/unixcoder-base. Creating a new one with mean pooling.
+2026-08-24 08:11:21,774 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-24 08:11:21,775 - embedding_manager - INFO - Generating embeddings for 662 entities
+2026-08-24 08:16:58,142 - __main__ - INFO -   Parsed 662 entities, generated 662 embeddings
+2026-08-24 08:16:58,366 - __main__ - INFO - 
+Processing sampled commit 2/15 (ce9c7fff)...
+2026-08-24 08:17:10,118 - embedding_manager - INFO - Generating embeddings for 665 entities
+2026-08-24 08:22:07,904 - __main__ - INFO -   Parsed 665 entities, generated 665 embeddings
+2026-08-24 08:22:07,905 - __main__ - INFO - Computing drifts and features between 203fd6b5 and ce9c7fff...
+2026-08-24 08:22:08,024 - gtd - INFO - [GTD] nodes_added=0.005  edge_churn=0.008  mean_drift=0.0011
+2026-08-24 08:22:08,726 - __main__ - INFO - Filtered cosmetic changes: 299 -> 26
+2026-08-24 08:22:08,728 - __main__ - ERROR - Experiment failed with error: FeatureExtractor.__init__() got an unexpected keyword argument 'joern_session'
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 984, in run
+    if not self.build_dataset():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 493, in build_dataset
+    drifts, features = self.compute_drifts_and_features(commit_prev, commit)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 419, in compute_drifts_and_features
+    self.feature_extractor = FeatureExtractor(self.repo_parser, joern_session=self.joern_session)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: FeatureExtractor.__init__() got an unexpected keyword argument 'joern_session'
+2026-08-24 08:22:39,275 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-24 08:22:39,277 - __main__ - INFO - ================================================================================
+2026-08-24 08:22:39,277 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-24 08:22:39,277 - __main__ - INFO - ================================================================================
+2026-08-24 08:22:39,277 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-24 08:22:39,279 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-24 08:22:39,279 - __main__ - INFO - Initializing components...
+2026-08-24 08:22:39,283 - __main__ - INFO - Using TreeSitterRepoParser for repository parsing and graph construction
+2026-08-24 08:22:39,287 - __main__ - INFO - Setup complete (parser_mode=tree_sitter)
+2026-08-24 08:22:39,287 - __main__ - INFO - ================================================================================
+2026-08-24 08:22:39,288 - __main__ - INFO - HARVESTING COMMITS
+2026-08-24 08:22:39,288 - __main__ - INFO - ================================================================================
+2026-08-24 08:22:39,288 - git_helper - INFO - Retrieving last 300 commits
+2026-08-24 08:22:39,363 - git_helper - INFO - Retrieved 300 commits
+2026-08-24 08:22:39,363 - __main__ - INFO - Total raw commits: 300
+2026-08-24 08:22:39,364 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-24 08:22:39,364 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-24 08:22:39,364 - __main__ - INFO - ================================================================================
+2026-08-24 08:22:39,364 - __main__ - INFO - BUILDING DATASET
+2026-08-24 08:22:39,365 - __main__ - INFO - ================================================================================
+2026-08-24 08:22:39,365 - __main__ - INFO - 
+Processing sampled commit 1/15 (80a166f2)...
+2026-08-24 08:22:50,660 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 08:22:50,663 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-08-24 08:22:50,664 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 08:22:55,964 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-24 08:22:55,964 - embedding_manager - INFO - Generating embeddings for 632 entities
+2026-08-24 08:23:40,064 - __main__ - INFO -   Parsed 632 entities, generated 632 embeddings
+2026-08-24 08:23:40,254 - __main__ - INFO - 
+Processing sampled commit 2/15 (67b23d71)...
+2026-08-24 08:23:49,639 - embedding_manager - INFO - Generating embeddings for 635 entities
+2026-08-24 08:24:33,470 - __main__ - INFO -   Parsed 635 entities, generated 635 embeddings
+2026-08-24 08:24:33,471 - __main__ - INFO - Computing drifts and features between 80a166f2 and 67b23d71...
+2026-08-24 08:24:33,589 - gtd - INFO - [GTD] nodes_added=0.008  edge_churn=0.020  mean_drift=0.0009
+2026-08-24 08:24:34,112 - __main__ - INFO - Filtered cosmetic changes: 268 -> 33
+2026-08-24 08:24:34,341 - __main__ - ERROR - Experiment failed with error: 'GraphTransitionDescriptor' object has no attribute 'get_entity_features'
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 984, in run
+    if not self.build_dataset():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 493, in build_dataset
+    drifts, features = self.compute_drifts_and_features(commit_prev, commit)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 421, in compute_drifts_and_features
+    features_df = self.feature_extractor.extract_features_batch(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\feature_extractor.py", line 307, in extract_features_batch
+    features = self.extract_features(
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\feature_extractor.py", line 293, in extract_features
+    features.update(self._get_gtd_features(entity_id, gtd))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\feature_extractor.py", line 212, in _get_gtd_features
+    return gtd.get_entity_features(entity_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'GraphTransitionDescriptor' object has no attribute 'get_entity_features'. Did you mean: 'get_node_features'?
+2026-08-24 08:24:57,732 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-24 08:24:57,737 - __main__ - INFO - ================================================================================
+2026-08-24 08:24:57,737 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-24 08:24:57,737 - __main__ - INFO - ================================================================================
+2026-08-24 08:24:57,737 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-24 08:24:57,740 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-24 08:24:57,741 - __main__ - INFO - Initializing components...
+2026-08-24 08:24:57,746 - __main__ - INFO - Using TreeSitterRepoParser for repository parsing and graph construction
+2026-08-24 08:24:57,749 - __main__ - INFO - Setup complete (parser_mode=tree_sitter)
+2026-08-24 08:24:57,749 - __main__ - INFO - ================================================================================
+2026-08-24 08:24:57,749 - __main__ - INFO - HARVESTING COMMITS
+2026-08-24 08:24:57,749 - __main__ - INFO - ================================================================================
+2026-08-24 08:24:57,749 - git_helper - INFO - Retrieving last 300 commits
+2026-08-24 08:24:57,826 - git_helper - INFO - Retrieved 300 commits
+2026-08-24 08:24:57,827 - __main__ - INFO - Total raw commits: 300
+2026-08-24 08:24:57,827 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-24 08:24:57,827 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-24 08:24:57,828 - __main__ - INFO - ================================================================================
+2026-08-24 08:24:57,828 - __main__ - INFO - BUILDING DATASET
+2026-08-24 08:24:57,828 - __main__ - INFO - ================================================================================
+2026-08-24 08:24:57,828 - __main__ - INFO - 
+Processing sampled commit 1/15 (d4a85643)...
+2026-08-24 08:25:08,030 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 08:25:08,034 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-08-24 08:25:08,034 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 08:25:14,006 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-24 08:25:14,007 - embedding_manager - INFO - Generating embeddings for 552 entities
+2026-08-24 08:25:51,529 - __main__ - INFO -   Parsed 552 entities, generated 552 embeddings
+2026-08-24 08:25:51,705 - __main__ - INFO - 
+Processing sampled commit 2/15 (cd9fef8b)...
+2026-08-24 08:25:59,672 - embedding_manager - INFO - Generating embeddings for 557 entities
+2026-08-24 08:26:36,965 - __main__ - INFO -   Parsed 557 entities, generated 557 embeddings
+2026-08-24 08:26:36,966 - __main__ - INFO - Computing drifts and features between d4a85643 and cd9fef8b...
+2026-08-24 08:26:37,057 - gtd - INFO - [GTD] nodes_added=0.011  edge_churn=0.050  mean_drift=0.0007
+2026-08-24 08:26:37,474 - __main__ - INFO - Filtered cosmetic changes: 184 -> 20
+2026-08-24 08:26:45,487 - __main__ - INFO -   Computed drifts for 551 entities
+2026-08-24 08:26:45,487 - __main__ - INFO -   Modified entities: 20
+2026-08-24 08:26:45,601 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_d4a85643_to_cd9fef8b.json
+2026-08-24 08:26:45,733 - __main__ - INFO - 
+Processing sampled commit 3/15 (7e6d3fac)...
+2026-08-24 08:26:53,457 - embedding_manager - INFO - Generating embeddings for 562 entities
+2026-08-24 08:27:29,690 - __main__ - INFO -   Parsed 562 entities, generated 562 embeddings
+2026-08-24 08:27:29,690 - __main__ - INFO - Computing drifts and features between cd9fef8b and 7e6d3fac...
+2026-08-24 08:27:29,771 - gtd - INFO - [GTD] nodes_added=0.009  edge_churn=0.048  mean_drift=0.0023
+2026-08-24 08:27:30,230 - __main__ - INFO - Filtered cosmetic changes: 234 -> 35
+2026-08-24 08:27:39,206 - __main__ - INFO -   Computed drifts for 557 entities
+2026-08-24 08:27:39,206 - __main__ - INFO -   Modified entities: 35
+2026-08-24 08:27:39,351 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_cd9fef8b_to_7e6d3fac.json
+2026-08-24 08:27:39,523 - __main__ - INFO - 
+Processing sampled commit 4/15 (9c8464ca)...
+2026-08-24 08:27:48,047 - embedding_manager - INFO - Generating embeddings for 572 entities
+2026-08-24 08:28:23,698 - __main__ - INFO -   Parsed 572 entities, generated 572 embeddings
+2026-08-24 08:28:23,698 - __main__ - INFO - Computing drifts and features between 7e6d3fac and 9c8464ca...
+2026-08-24 08:28:23,794 - gtd - INFO - [GTD] nodes_added=0.017  edge_churn=0.041  mean_drift=0.0020
+2026-08-24 08:28:24,232 - __main__ - INFO - Filtered cosmetic changes: 249 -> 56
+2026-08-24 08:28:34,135 - __main__ - INFO -   Computed drifts for 562 entities
+2026-08-24 08:28:34,136 - __main__ - INFO -   Modified entities: 56
+2026-08-24 08:28:34,244 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_7e6d3fac_to_9c8464ca.json
+2026-08-24 08:28:34,376 - __main__ - INFO - 
+Processing sampled commit 5/15 (bf5abdb0)...
+2026-08-24 08:28:43,640 - embedding_manager - INFO - Generating embeddings for 581 entities
+2026-08-24 08:29:20,552 - __main__ - INFO -   Parsed 581 entities, generated 581 embeddings
+2026-08-24 08:29:20,552 - __main__ - INFO - Computing drifts and features between 9c8464ca and bf5abdb0...
+2026-08-24 08:29:20,645 - gtd - INFO - [GTD] nodes_added=0.017  edge_churn=0.018  mean_drift=0.0021
+2026-08-24 08:29:21,132 - __main__ - INFO - Filtered cosmetic changes: 330 -> 38
+2026-08-24 08:29:30,621 - __main__ - INFO -   Computed drifts for 571 entities
+2026-08-24 08:29:30,621 - __main__ - INFO -   Modified entities: 38
+2026-08-24 08:29:30,738 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_9c8464ca_to_bf5abdb0.json
+2026-08-24 08:29:30,871 - __main__ - INFO - 
+Processing sampled commit 6/15 (c99417ff)...
+2026-08-24 08:29:40,355 - embedding_manager - INFO - Generating embeddings for 581 entities
+2026-08-24 08:30:19,142 - __main__ - INFO -   Parsed 581 entities, generated 581 embeddings
+2026-08-24 08:30:19,143 - __main__ - INFO - Computing drifts and features between bf5abdb0 and c99417ff...
+2026-08-24 08:30:19,228 - gtd - INFO - [GTD] nodes_added=0.000  edge_churn=0.000  mean_drift=0.0008
+2026-08-24 08:30:19,613 - __main__ - INFO - Filtered cosmetic changes: 238 -> 17
+2026-08-24 08:30:27,486 - __main__ - INFO -   Computed drifts for 581 entities
+2026-08-24 08:30:27,486 - __main__ - INFO -   Modified entities: 17
+2026-08-24 08:30:27,594 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits15_stride20_cleanFalse\commit_logs\commit_from_bf5abdb0_to_c99417ff.json
+2026-08-24 08:30:27,724 - __main__ - INFO - 
+Processing sampled commit 7/15 (63481bb9)...
+2026-08-24 08:31:49,099 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-24 08:31:49,102 - __main__ - INFO - ================================================================================
+2026-08-24 08:31:49,102 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-24 08:31:49,102 - __main__ - INFO - ================================================================================
+2026-08-24 08:31:49,102 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-24 08:31:49,102 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-24 08:31:49,102 - __main__ - INFO - Initializing components...
+2026-08-24 08:31:49,104 - __main__ - INFO - Using TreeSitterRepoParser for repository parsing and graph construction
+2026-08-24 08:31:49,105 - __main__ - INFO - Setup complete (parser_mode=tree_sitter)
+2026-08-24 08:31:49,105 - __main__ - INFO - ================================================================================
+2026-08-24 08:31:49,105 - __main__ - INFO - HARVESTING COMMITS
+2026-08-24 08:31:49,105 - __main__ - INFO - ================================================================================
+2026-08-24 08:31:49,105 - git_helper - INFO - Retrieving last 100 commits
+2026-08-24 08:31:49,155 - git_helper - INFO - Retrieved 100 commits
+2026-08-24 08:31:49,155 - __main__ - INFO - Total raw commits: 100
+2026-08-24 08:31:49,155 - __main__ - INFO - Training commits (preliminary): 70
+2026-08-24 08:31:49,155 - __main__ - INFO - Test commits (preliminary):     30
+2026-08-24 08:31:49,155 - __main__ - INFO - ================================================================================
+2026-08-24 08:31:49,155 - __main__ - INFO - BUILDING DATASET
+2026-08-24 08:31:49,155 - __main__ - INFO - ================================================================================
+2026-08-24 08:31:49,155 - __main__ - INFO - 
+Processing sampled commit 1/5 (9ce75726)...
+2026-08-24 08:31:54,612 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 08:31:54,614 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-08-24 08:31:54,614 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 08:32:09,874 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-24 08:32:09,875 - embedding_manager - INFO - Generating embeddings for 557 entities
+2026-08-24 08:32:41,020 - __main__ - INFO -   Parsed 557 entities, generated 557 embeddings
+2026-08-24 08:32:41,171 - __main__ - INFO - 
+Processing sampled commit 2/5 (18fb8848)...
+2026-08-24 08:32:47,248 - embedding_manager - INFO - Generating embeddings for 562 entities
+2026-08-24 08:33:21,125 - __main__ - INFO -   Parsed 562 entities, generated 562 embeddings
+2026-08-24 08:33:21,125 - __main__ - INFO - Computing drifts and features between 9ce75726 and 18fb8848...
+2026-08-24 08:33:21,188 - gtd - INFO - [GTD] nodes_added=0.009  edge_churn=0.048  mean_drift=0.0023
+2026-08-24 08:33:21,504 - __main__ - INFO - Filtered cosmetic changes: 234 -> 36
+2026-08-24 08:33:27,980 - __main__ - INFO -   Computed drifts for 557 entities
+2026-08-24 08:33:27,980 - __main__ - INFO -   Modified entities: 36
+2026-08-24 08:33:28,080 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\commit_logs\commit_from_9ce75726_to_18fb8848.json
+2026-08-24 08:33:28,204 - __main__ - INFO - 
+Processing sampled commit 3/5 (d9b8a640)...
+2026-08-24 08:33:34,398 - embedding_manager - INFO - Generating embeddings for 572 entities
+2026-08-24 08:34:08,428 - __main__ - INFO -   Parsed 572 entities, generated 572 embeddings
+2026-08-24 08:34:08,428 - __main__ - INFO - Computing drifts and features between 18fb8848 and d9b8a640...
+2026-08-24 08:34:08,507 - gtd - INFO - [GTD] nodes_added=0.017  edge_churn=0.041  mean_drift=0.0020
+2026-08-24 08:34:08,897 - __main__ - INFO - Filtered cosmetic changes: 249 -> 55
+2026-08-24 08:34:15,645 - __main__ - INFO -   Computed drifts for 562 entities
+2026-08-24 08:34:15,645 - __main__ - INFO -   Modified entities: 55
+2026-08-24 08:34:15,767 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\commit_logs\commit_from_18fb8848_to_d9b8a640.json
+2026-08-24 08:34:15,903 - __main__ - INFO - 
+Processing sampled commit 4/5 (9b2b0486)...
+2026-08-24 08:34:22,284 - embedding_manager - INFO - Generating embeddings for 581 entities
+2026-08-24 08:35:01,387 - __main__ - INFO -   Parsed 581 entities, generated 581 embeddings
+2026-08-24 08:35:01,387 - __main__ - INFO - Computing drifts and features between d9b8a640 and 9b2b0486...
+2026-08-24 08:35:01,482 - gtd - INFO - [GTD] nodes_added=0.017  edge_churn=0.018  mean_drift=0.0021
+2026-08-24 08:35:01,980 - __main__ - INFO - Filtered cosmetic changes: 330 -> 38
+2026-08-24 08:35:09,190 - __main__ - INFO -   Computed drifts for 571 entities
+2026-08-24 08:35:09,190 - __main__ - INFO -   Modified entities: 38
+2026-08-24 08:35:09,291 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\commit_logs\commit_from_d9b8a640_to_9b2b0486.json
+2026-08-24 08:35:09,423 - __main__ - INFO - 
+Processing sampled commit 5/5 (f95b43d6)...
+2026-08-24 08:35:17,056 - embedding_manager - INFO - Generating embeddings for 581 entities
+2026-08-24 08:35:54,966 - __main__ - INFO -   Parsed 581 entities, generated 581 embeddings
+2026-08-24 08:35:54,966 - __main__ - INFO - Computing drifts and features between 9b2b0486 and f95b43d6...
+2026-08-24 08:35:55,033 - gtd - INFO - [GTD] nodes_added=0.000  edge_churn=0.000  mean_drift=0.0008
+2026-08-24 08:35:55,373 - __main__ - INFO - Filtered cosmetic changes: 238 -> 17
+2026-08-24 08:36:01,831 - __main__ - INFO -   Computed drifts for 581 entities
+2026-08-24 08:36:01,831 - __main__ - INFO -   Modified entities: 17
+2026-08-24 08:36:01,920 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\commit_logs\commit_from_9b2b0486_to_f95b43d6.json
+2026-08-24 08:36:02,046 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data (stride=20, sampled_commits=5)
+2026-08-24 08:36:02,046 - __main__ - INFO - Building RSDs and finalising stratified train/test split...
+2026-08-24 08:36:02,061 - rsd - INFO - [RSD] Built descriptors for 5 commits
+2026-08-24 08:36:02,062 - rsd - WARNING - [RSD] Falling back to simple temporal split (too few commits or no descriptors)
+2026-08-24 08:36:02,062 - __main__ - INFO - Stratified split -> train=3, test=2
+2026-08-24 08:36:02,062 - __main__ - INFO - 
+RSD Summary:
+Commit      S       T       M       C       E     
+--------------------------------------------------
+9ce75726    0.0214  0.3026  0.0067  0.1376  0.0883
+18fb8848    0.0425  0.4419  0.0072  0.4159  0.4482
+d9b8a640    0.0307  0.4782  0.0033  0.4773  0.5251
+9b2b0486    0.0363  0.5300  0.0050  0.5334  0.5669
+f95b43d6    0.0394  0.5300  0.0051  0.5446  0.5428
+2026-08-24 08:36:02,062 - __main__ - INFO - ================================================================================
+2026-08-24 08:36:02,062 - __main__ - INFO - TRAINING MODEL
+2026-08-24 08:36:02,062 - __main__ - INFO - ================================================================================
+2026-08-24 08:36:02,068 - __main__ - INFO - Training on 562 entities with 562 drift values
+2026-08-24 08:36:02,070 - __main__ - INFO - Dynamically adjusted drift threshold to 0.0000 based on 85th percentile of training drifts
+2026-08-24 08:36:02,076 - predictor - INFO - Train set: 393 entities
+2026-08-24 08:36:02,076 - predictor - INFO - Test set: 169 entities
+2026-08-24 08:36:02,076 - predictor - INFO - Training random_forest regression model...
+2026-08-24 08:36:02,280 - predictor - INFO - Training MSE: 0.000111
+2026-08-24 08:36:02,280 - predictor - INFO - Training R²: 0.4366
+2026-08-24 08:36:02,280 - predictor - INFO - Evaluating model on test data...
+2026-08-24 08:36:02,313 - predictor - INFO - Test MSE: 0.000018
+2026-08-24 08:36:02,314 - predictor - INFO - Test RMSE: 0.004265
+2026-08-24 08:36:02,314 - predictor - INFO - Test R²: -4375590951.5662
+2026-08-24 08:36:02,315 - predictor - INFO - Test MAE: 0.002145
+2026-08-24 08:36:02,337 - predictor - INFO - Model saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\drift_predictor.pkl
+2026-08-24 08:36:02,337 - __main__ - INFO - Model saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\drift_predictor.pkl
+2026-08-24 08:36:02,338 - __main__ - INFO - Test metrics: {'test_mse': 1.8186619594139374e-05, 'test_rmse': np.float64(0.004264577305447678), 'test_r2': -4375590951.56624, 'test_mae': np.float64(0.0021448222414825625)}
+2026-08-24 08:36:02,338 - __main__ - INFO - ================================================================================
+2026-08-24 08:36:02,338 - __main__ - INFO - EVALUATING STRATEGIES
+2026-08-24 08:36:02,338 - __main__ - INFO - ================================================================================
+2026-08-24 08:36:02,338 - __main__ - INFO - 
+Evaluating commit pair 1/1: 9b2b0486 -> f95b43d6
+2026-08-24 08:36:03,235 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-08-24 08:36:03,293 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-08-24 08:36:03,342 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-08-24 08:36:04,803 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-08-24 08:36:06,228 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-08-24 08:36:06,264 - evaluator - INFO - Evaluating Baseline D (PageRank Propagation)...
+2026-08-24 08:36:06,302 - evaluator - INFO - Evaluating Weighted BFS Decay Strategy...
+2026-08-24 08:36:09,173 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\commit_logs\commit_from_9b2b0486_to_f95b43d6.json
+2026-08-24 08:36:11,779 - __main__ - INFO - 
+================================================================================
+2026-08-24 08:36:11,780 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-08-24 08:36:11,780 - __main__ - INFO - ================================================================================
+2026-08-24 08:36:11,780 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-08-24 08:36:11,780 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 08:36:11,780 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 08:36:11,780 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 08:36:11,780 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 08:36:11,780 - __main__ - INFO -   Update %:    40.96%
+2026-08-24 08:36:11,780 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-08-24 08:36:11,781 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   Update %:    100.00%
+2026-08-24 08:36:11,781 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-08-24 08:36:11,781 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   Update %:    54.04%
+2026-08-24 08:36:11,781 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-08-24 08:36:11,781 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 08:36:11,781 - __main__ - INFO -   Update %:    60.59%
+2026-08-24 08:36:11,781 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-08-24 08:36:11,781 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 08:36:11,782 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 08:36:11,782 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 08:36:11,782 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 08:36:11,782 - __main__ - INFO -   Update %:    82.79%
+2026-08-24 08:36:11,782 - __main__ - INFO - 
+BASELINE_D_PAGERANK_PROPAGATION:
+2026-08-24 08:36:11,783 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 08:36:11,783 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 08:36:11,783 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 08:36:11,783 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 08:36:11,783 - __main__ - INFO -   Update %:    40.96%
+2026-08-24 08:36:11,784 - __main__ - INFO - 
+WEIGHTED_BFS_DECAY:
+2026-08-24 08:36:11,784 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 08:36:11,784 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 08:36:11,784 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 08:36:11,784 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 08:36:11,784 - __main__ - INFO -   Update %:    61.10%
+2026-08-24 08:36:11,785 - __main__ - INFO - ================================================================================
+2026-08-24 08:36:11,785 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-08-24 08:36:11,786 - __main__ - INFO - ================================================================================
+2026-08-24 08:36:11,786 - visualize - INFO - Generating drift decay plot...
+2026-08-24 08:36:12,413 - visualize - INFO - Drift decay plot saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\drift_decay.png
+2026-08-24 08:36:12,454 - visualize - INFO - Generating feature importance plot...
+2026-08-24 08:36:13,127 - visualize - INFO - Feature importance plot saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\feature_importance.png
+2026-08-24 08:36:13,127 - visualize - INFO - Generating strategy comparison plot...
+2026-08-24 08:36:13,748 - visualize - INFO - Strategy comparison plot saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\strategy_comparison.png
+2026-08-24 08:36:13,749 - visualize - INFO - Generating ranking metrics plot (MRR + nDCG)...
+2026-08-24 08:36:14,268 - visualize - INFO - Ranking metrics plot saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\ranking_metrics.png
+2026-08-24 08:36:14,279 - visualize - INFO - Generating Pareto frontier plot...
+2026-08-24 08:36:14,925 - visualize - INFO - Pareto frontier plot saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\pareto_frontier.png
+2026-08-24 08:36:14,926 - visualize - INFO - Generating drift distribution plot...
+2026-08-24 08:36:15,441 - visualize - INFO - Drift distribution plot saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\drift_distribution.png
+2026-08-24 08:36:15,441 - visualize - INFO - Generating confusion matrix plot...
+2026-08-24 08:36:15,784 - visualize - INFO - Confusion matrix plot saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\confusion_matrix.png
+2026-08-24 08:36:15,784 - visualize - INFO - Generating summary report...
+2026-08-24 08:36:15,785 - visualize - INFO - Summary report saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\summary_report.txt
+2026-08-24 08:36:15,785 - __main__ - INFO - Visualizations generated successfully
+2026-08-24 08:36:15,787 - __main__ - INFO - Results saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse\results.json
+2026-08-24 08:36:15,788 - __main__ - INFO - ================================================================================
+2026-08-24 08:36:15,788 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 266.69 seconds
+2026-08-24 08:36:15,788 - __main__ - INFO - ================================================================================
+2026-08-24 08:36:15,788 - __main__ - INFO - Results saved to results\results_all-MiniLM-L6-v2_isolated_commits5_stride20_cleanFalse
+2026-08-24 08:36:15,788 - __main__ - INFO - Logs saved to experiment.log
+2026-08-24 14:27:47,276 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-24 14:27:47,284 - __main__ - INFO - ================================================================================
+2026-08-24 14:27:47,284 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-24 14:27:47,285 - __main__ - INFO - ================================================================================
+2026-08-24 14:27:47,285 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-24 14:27:47,288 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-24 14:27:47,288 - __main__ - INFO - Initializing components...
+2026-08-24 14:27:47,420 - __main__ - INFO - Using TreeSitterRepoParser for repository parsing and graph construction
+2026-08-24 14:27:47,427 - __main__ - INFO - Setup complete (parser_mode=tree_sitter)
+2026-08-24 14:27:47,428 - __main__ - INFO - ================================================================================
+2026-08-24 14:27:47,428 - __main__ - INFO - HARVESTING COMMITS
+2026-08-24 14:27:47,428 - __main__ - INFO - ================================================================================
+2026-08-24 14:27:47,429 - git_helper - INFO - Retrieving last 100 commits
+2026-08-24 14:27:47,669 - git_helper - INFO - Retrieved 100 commits
+2026-08-24 14:27:47,671 - __main__ - INFO - Total raw commits: 100
+2026-08-24 14:27:47,671 - __main__ - INFO - Training commits (preliminary): 70
+2026-08-24 14:27:47,671 - __main__ - INFO - Test commits (preliminary):     30
+2026-08-24 14:27:47,672 - __main__ - INFO - ================================================================================
+2026-08-24 14:27:47,672 - __main__ - INFO - BUILDING DATASET
+2026-08-24 14:27:47,672 - __main__ - INFO - ================================================================================
+2026-08-24 14:27:47,672 - __main__ - INFO - 
+Processing sampled commit 1/5 (9ace064d)...
+2026-08-24 14:28:02,699 - embedding_manager - INFO - Loading embedding model: microsoft/unixcoder-base
+2026-08-24 14:28:02,702 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-08-24 14:28:02,703 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: microsoft/unixcoder-base
+2026-08-24 14:28:04,804 - sentence_transformers.SentenceTransformer - WARNING - No sentence-transformers model found with name microsoft/unixcoder-base. Creating a new one with mean pooling.
+2026-08-24 14:28:10,538 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-24 14:28:10,539 - embedding_manager - INFO - Generating embeddings for 552 entities
+2026-08-24 14:33:27,254 - __main__ - INFO -   Parsed 552 entities, generated 552 embeddings
+2026-08-24 14:33:27,791 - __main__ - INFO - 
+Processing sampled commit 2/5 (1e8217fd)...
+2026-08-24 14:33:41,229 - embedding_manager - INFO - Generating embeddings for 557 entities
+2026-08-24 14:38:50,705 - __main__ - INFO -   Parsed 557 entities, generated 557 embeddings
+2026-08-24 14:38:50,705 - __main__ - INFO - Computing drifts and features between 9ace064d and 1e8217fd...
+2026-08-24 14:38:50,850 - gtd - INFO - [GTD] nodes_added=0.011  edge_churn=0.050  mean_drift=0.0009
+2026-08-24 14:38:51,733 - __main__ - INFO - Filtered cosmetic changes: 184 -> 22
+2026-08-24 14:39:10,417 - __main__ - INFO -   Computed drifts for 551 entities
+2026-08-24 14:39:10,418 - __main__ - INFO -   Modified entities: 22
+2026-08-24 14:39:10,647 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\commit_logs\commit_from_9ace064d_to_1e8217fd.json
+2026-08-24 14:39:10,826 - __main__ - INFO - 
+Processing sampled commit 3/5 (91e1e132)...
+2026-08-24 14:39:23,036 - embedding_manager - INFO - Generating embeddings for 564 entities
+2026-08-24 14:44:49,841 - __main__ - INFO -   Parsed 564 entities, generated 564 embeddings
+2026-08-24 14:44:49,842 - __main__ - INFO - Computing drifts and features between 1e8217fd and 91e1e132...
+2026-08-24 14:44:49,962 - gtd - INFO - [GTD] nodes_added=0.012  edge_churn=0.067  mean_drift=0.0033
+2026-08-24 14:44:50,846 - __main__ - INFO - Filtered cosmetic changes: 236 -> 45
+2026-08-24 14:45:05,104 - __main__ - INFO -   Computed drifts for 557 entities
+2026-08-24 14:45:05,105 - __main__ - INFO -   Modified entities: 45
+2026-08-24 14:45:05,377 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\commit_logs\commit_from_1e8217fd_to_91e1e132.json
+2026-08-24 14:45:05,578 - __main__ - INFO - 
+Processing sampled commit 4/5 (25d886f5)...
+2026-08-24 14:45:16,497 - embedding_manager - INFO - Generating embeddings for 572 entities
+2026-08-24 14:50:38,003 - __main__ - INFO -   Parsed 572 entities, generated 572 embeddings
+2026-08-24 14:50:38,003 - __main__ - INFO - Computing drifts and features between 91e1e132 and 25d886f5...
+2026-08-24 14:50:38,123 - gtd - INFO - [GTD] nodes_added=0.014  edge_churn=0.023  mean_drift=0.0018
+2026-08-24 14:50:38,798 - __main__ - INFO - Filtered cosmetic changes: 249 -> 48
+2026-08-24 14:51:00,747 - __main__ - INFO -   Computed drifts for 564 entities
+2026-08-24 14:51:00,747 - __main__ - INFO -   Modified entities: 48
+2026-08-24 14:51:00,915 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\commit_logs\commit_from_91e1e132_to_25d886f5.json
+2026-08-24 14:51:01,111 - __main__ - INFO - 
+Processing sampled commit 5/5 (bf7a1625)...
+2026-08-24 14:51:12,386 - embedding_manager - INFO - Generating embeddings for 581 entities
+2026-08-24 14:57:08,968 - __main__ - INFO -   Parsed 581 entities, generated 581 embeddings
+2026-08-24 14:57:08,968 - __main__ - INFO - Computing drifts and features between 25d886f5 and bf7a1625...
+2026-08-24 14:57:09,134 - gtd - INFO - [GTD] nodes_added=0.017  edge_churn=0.018  mean_drift=0.0019
+2026-08-24 14:57:10,355 - __main__ - INFO - Filtered cosmetic changes: 330 -> 38
+2026-08-24 14:57:26,142 - __main__ - INFO -   Computed drifts for 571 entities
+2026-08-24 14:57:26,143 - __main__ - INFO -   Modified entities: 38
+2026-08-24 14:57:26,260 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\commit_logs\commit_from_25d886f5_to_bf7a1625.json
+2026-08-24 14:57:26,405 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data (stride=20, sampled_commits=5)
+2026-08-24 14:57:26,405 - __main__ - INFO - Building RSDs and finalising stratified train/test split...
+2026-08-24 14:57:26,433 - rsd - INFO - [RSD] Built descriptors for 5 commits
+2026-08-24 14:57:26,439 - rsd - WARNING - [RSD] Falling back to simple temporal split (too few commits or no descriptors)
+2026-08-24 14:57:26,440 - __main__ - INFO - Stratified split -> train=3, test=2
+2026-08-24 14:57:26,441 - __main__ - INFO - 
+RSD Summary:
+Commit      S       T       M       C       E     
+--------------------------------------------------
+9ace064d    0.0289  0.5063  0.0048  0.0133  0.0916
+1e8217fd    0.0377  0.4923  0.0055  0.0153  0.3700
+91e1e132    0.0685  0.6505  0.0044  0.0223  0.5511
+25d886f5    0.0497  0.4216  0.0028  0.0212  0.5366
+bf7a1625    0.0578  0.2079  0.0033  0.0225  0.5843
+2026-08-24 14:57:26,441 - __main__ - INFO - ================================================================================
+2026-08-24 14:57:26,441 - __main__ - INFO - TRAINING MODEL
+2026-08-24 14:57:26,441 - __main__ - INFO - ================================================================================
+2026-08-24 14:57:26,460 - __main__ - INFO - Training on 557 entities with 557 drift values
+2026-08-24 14:57:26,463 - __main__ - INFO - Dynamically adjusted drift threshold to 0.0000 based on 85th percentile of training drifts
+2026-08-24 14:57:26,470 - predictor - INFO - Train set: 389 entities
+2026-08-24 14:57:26,471 - predictor - INFO - Test set: 168 entities
+2026-08-24 14:57:26,471 - predictor - INFO - Training random_forest regression model...
+2026-08-24 14:57:26,787 - predictor - INFO - Training MSE: 0.000321
+2026-08-24 14:57:26,787 - predictor - INFO - Training R²: 0.4801
+2026-08-24 14:57:26,787 - predictor - INFO - Evaluating model on test data...
+2026-08-24 14:57:26,856 - predictor - INFO - Test MSE: 0.000065
+2026-08-24 14:57:26,857 - predictor - INFO - Test RMSE: 0.008081
+2026-08-24 14:57:26,857 - predictor - INFO - Test R²: -11202648144.2573
+2026-08-24 14:57:26,857 - predictor - INFO - Test MAE: 0.004536
+2026-08-24 14:57:26,914 - predictor - INFO - Model saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\drift_predictor.pkl
+2026-08-24 14:57:26,915 - __main__ - INFO - Model saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\drift_predictor.pkl
+2026-08-24 14:57:26,915 - __main__ - INFO - Test metrics: {'test_mse': 6.530500985721833e-05, 'test_rmse': np.float64(0.008081151518021322), 'test_r2': -11202648144.257256, 'test_mae': np.float64(0.004535551812684904)}
+2026-08-24 14:57:26,917 - __main__ - INFO - ================================================================================
+2026-08-24 14:57:26,917 - __main__ - INFO - EVALUATING STRATEGIES
+2026-08-24 14:57:26,917 - __main__ - INFO - ================================================================================
+2026-08-24 14:57:26,917 - __main__ - INFO - 
+Evaluating commit pair 1/1: 25d886f5 -> bf7a1625
+2026-08-24 14:57:29,841 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-08-24 14:57:29,945 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-08-24 14:57:30,032 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-08-24 14:57:33,385 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-08-24 14:57:37,422 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-08-24 14:57:37,527 - evaluator - INFO - Evaluating Baseline D (PageRank Propagation)...
+2026-08-24 14:57:37,639 - evaluator - INFO - Evaluating Weighted BFS Decay Strategy...
+2026-08-24 14:57:46,132 - __main__ - INFO - Saved diagnostic log to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\commit_logs\commit_from_25d886f5_to_bf7a1625.json
+2026-08-24 14:57:50,628 - __main__ - INFO - 
+================================================================================
+2026-08-24 14:57:50,628 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-08-24 14:57:50,629 - __main__ - INFO - ================================================================================
+2026-08-24 14:57:50,630 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-08-24 14:57:50,630 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 14:57:50,630 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 14:57:50,631 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 14:57:50,631 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 14:57:50,631 - __main__ - INFO -   Update %:    55.08%
+2026-08-24 14:57:50,631 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-08-24 14:57:50,632 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 14:57:50,632 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 14:57:50,633 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 14:57:50,633 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 14:57:50,634 - __main__ - INFO -   Update %:    98.28%
+2026-08-24 14:57:50,634 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-08-24 14:57:50,634 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 14:57:50,635 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 14:57:50,636 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 14:57:50,637 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 14:57:50,637 - __main__ - INFO -   Update %:    64.37%
+2026-08-24 14:57:50,638 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-08-24 14:57:50,638 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 14:57:50,638 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 14:57:50,639 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 14:57:50,640 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 14:57:50,640 - __main__ - INFO -   Update %:    69.71%
+2026-08-24 14:57:50,641 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-08-24 14:57:50,642 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 14:57:50,642 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 14:57:50,643 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 14:57:50,643 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 14:57:50,643 - __main__ - INFO -   Update %:    71.08%
+2026-08-24 14:57:50,643 - __main__ - INFO - 
+BASELINE_D_PAGERANK_PROPAGATION:
+2026-08-24 14:57:50,644 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 14:57:50,644 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 14:57:50,645 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 14:57:50,646 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 14:57:50,647 - __main__ - INFO -   Update %:    55.08%
+2026-08-24 14:57:50,647 - __main__ - INFO - 
+WEIGHTED_BFS_DECAY:
+2026-08-24 14:57:50,647 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 14:57:50,648 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 14:57:50,648 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 14:57:50,649 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 14:57:50,649 - __main__ - INFO -   Update %:    70.40%
+2026-08-24 14:57:50,651 - __main__ - INFO - ================================================================================
+2026-08-24 14:57:50,652 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-08-24 14:57:50,652 - __main__ - INFO - ================================================================================
+2026-08-24 14:57:50,652 - visualize - INFO - Generating drift decay plot...
+2026-08-24 14:57:51,985 - visualize - INFO - Drift decay plot saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\drift_decay.png
+2026-08-24 14:57:52,081 - visualize - INFO - Generating feature importance plot...
+2026-08-24 14:57:53,453 - visualize - INFO - Feature importance plot saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\feature_importance.png
+2026-08-24 14:57:53,453 - visualize - INFO - Generating strategy comparison plot...
+2026-08-24 14:57:55,042 - visualize - INFO - Strategy comparison plot saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\strategy_comparison.png
+2026-08-24 14:57:55,042 - visualize - INFO - Generating ranking metrics plot (MRR + nDCG)...
+2026-08-24 14:57:56,253 - visualize - INFO - Ranking metrics plot saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\ranking_metrics.png
+2026-08-24 14:57:56,295 - visualize - INFO - Generating Pareto frontier plot...
+2026-08-24 14:57:58,298 - visualize - INFO - Pareto frontier plot saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\pareto_frontier.png
+2026-08-24 14:57:58,298 - visualize - INFO - Generating drift distribution plot...
+2026-08-24 14:57:59,702 - visualize - INFO - Drift distribution plot saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\drift_distribution.png
+2026-08-24 14:57:59,702 - visualize - INFO - Generating confusion matrix plot...
+2026-08-24 14:58:00,413 - visualize - INFO - Confusion matrix plot saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\confusion_matrix.png
+2026-08-24 14:58:00,414 - visualize - INFO - Generating summary report...
+2026-08-24 14:58:00,416 - visualize - INFO - Summary report saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\summary_report.txt
+2026-08-24 14:58:00,417 - __main__ - INFO - Visualizations generated successfully
+2026-08-24 14:58:00,423 - __main__ - INFO - Results saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747\results.json
+2026-08-24 14:58:00,424 - __main__ - INFO - ================================================================================
+2026-08-24 14:58:00,424 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 1813.14 seconds
+2026-08-24 14:58:00,424 - __main__ - INFO - ================================================================================
+2026-08-24 14:58:00,424 - __main__ - INFO - Results saved to results\results_unixcoder-base_isolated_commits5_stride20_cleanFalse_20260824_142747
+2026-08-24 14:58:00,424 - __main__ - INFO - Logs saved to experiment.log
+2026-08-24 15:16:05,181 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-24 15:16:05,185 - __main__ - INFO - ================================================================================
+2026-08-24 15:16:05,185 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-24 15:16:05,185 - __main__ - INFO - ================================================================================
+2026-08-24 15:16:05,185 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-24 15:16:05,186 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-24 15:16:05,186 - __main__ - INFO - Initializing components...
+2026-08-24 15:16:05,200 - __main__ - INFO - Using TreeSitterRepoParser for repository parsing and graph construction
+2026-08-24 15:16:05,202 - __main__ - INFO - Setup complete (parser_mode=tree_sitter)
+2026-08-24 15:16:05,202 - __main__ - INFO - ================================================================================
+2026-08-24 15:16:05,202 - __main__ - INFO - HARVESTING COMMITS
+2026-08-24 15:16:05,202 - __main__ - INFO - ================================================================================
+2026-08-24 15:16:05,202 - git_helper - INFO - Retrieving last 100 commits
+2026-08-24 15:16:05,308 - git_helper - INFO - Retrieved 100 commits
+2026-08-24 15:16:05,309 - __main__ - INFO - Total raw commits: 100
+2026-08-24 15:16:05,309 - __main__ - INFO - Training commits (preliminary): 70
+2026-08-24 15:16:05,309 - __main__ - INFO - Test commits (preliminary):     30
+2026-08-24 15:16:05,310 - __main__ - INFO - ================================================================================
+2026-08-24 15:16:05,310 - __main__ - INFO - BUILDING DATASET
+2026-08-24 15:16:05,310 - __main__ - INFO - ================================================================================
+2026-08-24 15:16:05,310 - __main__ - INFO - 
+Processing sampled commit 1/5 (26de5f91)...
+2026-08-24 15:16:16,485 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 15:16:16,489 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-08-24 15:16:16,489 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 15:16:26,131 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-24 15:16:26,132 - embedding_manager - INFO - Generating embeddings for 547 entities
+2026-08-24 15:17:08,701 - __main__ - INFO -   Parsed 547 entities, generated 547 embeddings
+2026-08-24 15:17:08,874 - __main__ - INFO - 
+Processing sampled commit 2/5 (5b1443ae)...
+2026-08-24 15:17:15,663 - embedding_manager - INFO - Generating embeddings for 552 entities
+2026-08-24 15:22:41,207 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-24 15:22:41,210 - __main__ - INFO - ================================================================================
+2026-08-24 15:22:41,211 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-24 15:22:41,211 - __main__ - INFO - ================================================================================
+2026-08-24 15:22:41,211 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-24 15:22:41,211 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-24 15:22:41,211 - __main__ - INFO - Initializing components...
+2026-08-24 15:22:41,222 - __main__ - INFO - Using TreeSitterRepoParser for repository parsing and graph construction
+2026-08-24 15:22:41,224 - __main__ - INFO - Setup complete (parser_mode=tree_sitter)
+2026-08-24 15:22:41,225 - __main__ - INFO - ================================================================================
+2026-08-24 15:22:41,225 - __main__ - INFO - HARVESTING COMMITS
+2026-08-24 15:22:41,225 - __main__ - INFO - ================================================================================
+2026-08-24 15:22:41,225 - git_helper - INFO - Retrieving last 100 commits
+2026-08-24 15:22:41,331 - git_helper - INFO - Retrieved 100 commits
+2026-08-24 15:22:41,331 - __main__ - INFO - Total raw commits: 100
+2026-08-24 15:22:41,332 - __main__ - INFO - Training commits (preliminary): 70
+2026-08-24 15:22:41,332 - __main__ - INFO - Test commits (preliminary):     30
+2026-08-24 15:22:41,332 - __main__ - INFO - ================================================================================
+2026-08-24 15:22:41,332 - __main__ - INFO - BUILDING DATASET
+2026-08-24 15:22:41,332 - __main__ - INFO - ================================================================================
+2026-08-24 15:22:41,332 - __main__ - INFO - 
+Processing sampled commit 1/5 (4f0532d6)...
+2026-08-24 15:22:53,815 - embedding_manager - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 15:22:53,819 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device_name: cpu
+2026-08-24 15:22:53,819 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2026-08-24 15:23:00,050 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-24 15:23:00,051 - embedding_manager - INFO - Generating embeddings for 547 entities
+2026-08-24 15:23:49,163 - __main__ - INFO -   Parsed 547 entities, generated 547 embeddings
+2026-08-24 15:23:49,346 - __main__ - INFO - 
+Processing sampled commit 2/5 (b776bf92)...
+2026-08-24 15:24:01,343 - embedding_manager - INFO - Generating embeddings for 548 entities
+2026-08-24 15:24:47,076 - __main__ - INFO -   Parsed 548 entities, generated 548 embeddings
+2026-08-24 15:24:47,076 - __main__ - INFO - Computing drifts and features between 4f0532d6 and b776bf92...
+2026-08-24 15:24:47,194 - gtd - INFO - [GTD] nodes_added=0.004  edge_churn=0.014  mean_drift=0.0006
+2026-08-24 15:24:47,798 - __main__ - INFO - Filtered cosmetic changes: 354 -> 12
+2026-08-24 15:24:57,786 - __main__ - INFO -   Computed drifts for 546 entities
+2026-08-24 15:24:57,786 - __main__ - INFO -   Modified entities: 12
+2026-08-24 15:24:57,910 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\commit_logs\commit_from_4f0532d6_to_b776bf92.json
+2026-08-24 15:24:58,040 - __main__ - INFO - 
+Processing sampled commit 3/5 (0019261a)...
+2026-08-24 15:25:07,608 - embedding_manager - INFO - Generating embeddings for 549 entities
+2026-08-24 15:25:53,477 - __main__ - INFO -   Parsed 549 entities, generated 549 embeddings
+2026-08-24 15:25:53,477 - __main__ - INFO - Computing drifts and features between b776bf92 and 0019261a...
+2026-08-24 15:25:53,582 - gtd - INFO - [GTD] nodes_added=0.005  edge_churn=0.034  mean_drift=0.0016
+2026-08-24 15:25:54,065 - __main__ - INFO - Filtered cosmetic changes: 249 -> 34
+2026-08-24 15:26:05,254 - __main__ - INFO -   Computed drifts for 546 entities
+2026-08-24 15:26:05,254 - __main__ - INFO -   Modified entities: 34
+2026-08-24 15:26:05,377 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\commit_logs\commit_from_b776bf92_to_0019261a.json
+2026-08-24 15:26:05,513 - __main__ - INFO - 
+Processing sampled commit 4/5 (1f2ad775)...
+2026-08-24 15:26:15,120 - embedding_manager - INFO - Generating embeddings for 547 entities
+2026-08-24 15:27:03,820 - __main__ - INFO -   Parsed 547 entities, generated 547 embeddings
+2026-08-24 15:27:03,820 - __main__ - INFO - Computing drifts and features between 0019261a and 1f2ad775...
+2026-08-24 15:27:03,939 - gtd - INFO - [GTD] nodes_added=0.004  edge_churn=0.010  mean_drift=0.0004
+2026-08-24 15:27:04,335 - __main__ - INFO - Filtered cosmetic changes: 152 -> 12
+2026-08-24 15:27:14,504 - __main__ - INFO -   Computed drifts for 545 entities
+2026-08-24 15:27:14,504 - __main__ - INFO -   Modified entities: 12
+2026-08-24 15:27:14,658 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\commit_logs\commit_from_0019261a_to_1f2ad775.json
+2026-08-24 15:27:14,789 - __main__ - INFO - 
+Processing sampled commit 5/5 (fbc5136a)...
+2026-08-24 15:27:24,225 - embedding_manager - INFO - Generating embeddings for 547 entities
+2026-08-24 15:28:58,993 - __main__ - INFO -   Parsed 547 entities, generated 547 embeddings
+2026-08-24 15:28:58,994 - __main__ - INFO - Computing drifts and features between 1f2ad775 and fbc5136a...
+2026-08-24 15:28:59,170 - gtd - INFO - [GTD] nodes_added=0.000  edge_churn=0.001  mean_drift=0.0003
+2026-08-24 15:28:59,439 - __main__ - INFO - Filtered cosmetic changes: 60 -> 7
+2026-08-24 15:29:15,283 - __main__ - INFO -   Computed drifts for 547 entities
+2026-08-24 15:29:15,284 - __main__ - INFO -   Modified entities: 7
+2026-08-24 15:29:15,433 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\commit_logs\commit_from_1f2ad775_to_fbc5136a.json
+2026-08-24 15:29:15,603 - __main__ - INFO - 
+Dataset built: 4 commit pairs with data (stride=20, sampled_commits=5)
+2026-08-24 15:29:15,604 - __main__ - INFO - Building RSDs and finalising stratified train/test split...
+2026-08-24 15:29:15,623 - rsd - INFO - [RSD] Built descriptors for 5 commits
+2026-08-24 15:29:15,626 - rsd - WARNING - [RSD] Falling back to simple temporal split (too few commits or no descriptors)
+2026-08-24 15:29:15,626 - __main__ - INFO - Stratified split -> train=3, test=2
+2026-08-24 15:29:15,626 - __main__ - INFO - 
+RSD Summary:
+Commit      S       T       M       C       E     
+--------------------------------------------------
+4f0532d6    0.0226  0.4812  0.0025  0.0134  0.0993
+b776bf92    0.0291  0.4116  0.0024  0.0157  0.5006
+0019261a    0.0382  0.4357  0.0020  0.0212  0.7531
+1f2ad775    0.0296  0.4695  0.0017  0.0228  0.5677
+fbc5136a    0.0303  0.4413  0.0017  0.0242  0.5230
+2026-08-24 15:29:15,627 - __main__ - INFO - ================================================================================
+2026-08-24 15:29:15,628 - __main__ - INFO - TRAINING MODEL
+2026-08-24 15:29:15,629 - __main__ - INFO - ================================================================================
+2026-08-24 15:29:15,643 - __main__ - INFO - Training on 548 entities with 548 drift values
+2026-08-24 15:29:15,655 - predictor - INFO - Train set: 383 entities
+2026-08-24 15:29:15,655 - predictor - INFO - Test set: 165 entities
+2026-08-24 15:29:15,656 - predictor - INFO - Training random_forest regression model...
+2026-08-24 15:29:16,130 - predictor - INFO - Training MSE: 0.000092
+2026-08-24 15:29:16,131 - predictor - INFO - Training R²: 0.3855
+2026-08-24 15:29:16,132 - predictor - INFO - Evaluating model on test data...
+2026-08-24 15:29:16,243 - predictor - INFO - Test MSE: 0.000064
+2026-08-24 15:29:16,244 - predictor - INFO - Test RMSE: 0.008008
+2026-08-24 15:29:16,245 - predictor - INFO - Test R²: -0.3232
+2026-08-24 15:29:16,246 - predictor - INFO - Test MAE: 0.002562
+2026-08-24 15:29:16,357 - predictor - INFO - Model saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\drift_predictor.pkl
+2026-08-24 15:29:16,357 - __main__ - INFO - Model saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\drift_predictor.pkl
+2026-08-24 15:29:16,358 - __main__ - INFO - Test metrics: {'test_mse': 6.412153516188207e-05, 'test_rmse': np.float64(0.008007592344886325), 'test_r2': -0.32317710222694385, 'test_mae': np.float64(0.002562300433939839)}
+2026-08-24 15:29:16,358 - __main__ - INFO - ================================================================================
+2026-08-24 15:29:16,358 - __main__ - INFO - EVALUATING STRATEGIES
+2026-08-24 15:29:16,359 - __main__ - INFO - ================================================================================
+2026-08-24 15:29:16,359 - __main__ - INFO - 
+Evaluating commit pair 1/1: 1f2ad775 -> fbc5136a
+2026-08-24 15:29:17,579 - evaluator - INFO - Evaluating Baseline A (Changed Only)...
+2026-08-24 15:29:17,704 - evaluator - INFO - Evaluating Baseline B (Full Re-indexing)...
+2026-08-24 15:29:17,797 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=1)...
+2026-08-24 15:29:18,761 - evaluator - INFO - Evaluating Baseline C (Fixed-Hop K=2)...
+2026-08-24 15:29:19,705 - evaluator - INFO - Evaluating Proposed Strategy (Predictive)...
+2026-08-24 15:29:19,842 - evaluator - INFO - Evaluating Baseline D (PageRank Propagation)...
+2026-08-24 15:29:19,991 - evaluator - INFO - Evaluating Weighted BFS Decay Strategy...
+2026-08-24 15:29:21,763 - __main__ - INFO - Saved diagnostic log to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\commit_logs\commit_from_1f2ad775_to_fbc5136a.json
+2026-08-24 15:29:28,058 - __main__ - INFO - 
+================================================================================
+2026-08-24 15:29:28,058 - __main__ - INFO - AVERAGED STRATEGY RESULTS
+2026-08-24 15:29:28,059 - __main__ - INFO - ================================================================================
+2026-08-24 15:29:28,059 - __main__ - INFO - 
+BASELINE_A_CHANGED_ONLY:
+2026-08-24 15:29:28,059 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 15:29:28,059 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 15:29:28,060 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 15:29:28,060 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 15:29:28,060 - __main__ - INFO -   Update %:    10.97%
+2026-08-24 15:29:28,060 - __main__ - INFO - 
+BASELINE_B_FULL_REINDEX:
+2026-08-24 15:29:28,060 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 15:29:28,061 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 15:29:28,061 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 15:29:28,061 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 15:29:28,062 - __main__ - INFO -   Update %:    100.00%
+2026-08-24 15:29:28,062 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K1:
+2026-08-24 15:29:28,062 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 15:29:28,062 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 15:29:28,062 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 15:29:28,062 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 15:29:28,062 - __main__ - INFO -   Update %:    11.52%
+2026-08-24 15:29:28,062 - __main__ - INFO - 
+BASELINE_C_FIXED_HOP_K2:
+2026-08-24 15:29:28,063 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 15:29:28,063 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 15:29:28,063 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 15:29:28,063 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 15:29:28,063 - __main__ - INFO -   Update %:    11.88%
+2026-08-24 15:29:28,063 - __main__ - INFO - 
+PROPOSED_PREDICTIVE:
+2026-08-24 15:29:28,064 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 15:29:28,064 - __main__ - INFO -   Recall@10:   0.9850
+2026-08-24 15:29:28,064 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 15:29:28,064 - __main__ - INFO -   nDCG@10:     0.9905
+2026-08-24 15:29:28,064 - __main__ - INFO -   Update %:    0.37%
+2026-08-24 15:29:28,064 - __main__ - INFO - 
+BASELINE_D_PAGERANK_PROPAGATION:
+2026-08-24 15:29:28,064 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 15:29:28,064 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 15:29:28,064 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 15:29:28,064 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 15:29:28,065 - __main__ - INFO -   Update %:    29.98%
+2026-08-24 15:29:28,065 - __main__ - INFO - 
+WEIGHTED_BFS_DECAY:
+2026-08-24 15:29:28,065 - __main__ - INFO -   Recall@5:    1.0000
+2026-08-24 15:29:28,065 - __main__ - INFO -   Recall@10:   1.0000
+2026-08-24 15:29:28,065 - __main__ - INFO -   MRR:         1.0000
+2026-08-24 15:29:28,065 - __main__ - INFO -   nDCG@10:     1.0000
+2026-08-24 15:29:28,066 - __main__ - INFO -   Update %:    11.88%
+2026-08-24 15:29:28,066 - __main__ - INFO - ================================================================================
+2026-08-24 15:29:28,067 - __main__ - INFO - GENERATING VISUALIZATIONS
+2026-08-24 15:29:28,067 - __main__ - INFO - ================================================================================
+2026-08-24 15:29:28,067 - visualize - INFO - Generating drift decay plot...
+2026-08-24 15:29:29,225 - visualize - INFO - Drift decay plot saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\drift_decay.png
+2026-08-24 15:29:29,295 - visualize - INFO - Generating feature importance plot...
+2026-08-24 15:29:30,821 - visualize - INFO - Feature importance plot saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\feature_importance.png
+2026-08-24 15:29:30,822 - visualize - INFO - Generating strategy comparison plot...
+2026-08-24 15:29:32,032 - visualize - INFO - Strategy comparison plot saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\strategy_comparison.png
+2026-08-24 15:29:32,032 - visualize - INFO - Generating ranking metrics plot (MRR + nDCG)...
+2026-08-24 15:29:32,988 - visualize - INFO - Ranking metrics plot saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\ranking_metrics.png
+2026-08-24 15:29:33,009 - visualize - INFO - Generating Pareto frontier plot...
+2026-08-24 15:29:34,019 - visualize - INFO - Pareto frontier plot saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\pareto_frontier.png
+2026-08-24 15:29:34,020 - visualize - INFO - Generating drift distribution plot...
+2026-08-24 15:29:35,103 - visualize - INFO - Drift distribution plot saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\drift_distribution.png
+2026-08-24 15:29:35,103 - visualize - INFO - Generating confusion matrix plot...
+2026-08-24 15:29:35,764 - visualize - INFO - Confusion matrix plot saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\confusion_matrix.png
+2026-08-24 15:29:35,765 - visualize - INFO - Generating summary report...
+2026-08-24 15:29:35,767 - visualize - INFO - Summary report saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\summary_report.txt
+2026-08-24 15:29:35,767 - __main__ - INFO - Visualizations generated successfully
+2026-08-24 15:29:35,771 - __main__ - INFO - Results saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241\results.json
+2026-08-24 15:29:35,772 - __main__ - INFO - ================================================================================
+2026-08-24 15:29:35,773 - __main__ - INFO - EXPERIMENT COMPLETED SUCCESSFULLY in 414.56 seconds
+2026-08-24 15:29:35,773 - __main__ - INFO - ================================================================================
+2026-08-24 15:29:35,773 - __main__ - INFO - Results saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241
+2026-08-24 15:29:35,774 - __main__ - INFO - Logs saved to experiment.log

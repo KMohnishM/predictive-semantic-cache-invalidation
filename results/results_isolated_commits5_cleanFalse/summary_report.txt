@@ -1,0 +1,77 @@
+================================================================================
+PREDICTIVE SEMANTIC CACHE INVALIDATION - EXPERIMENT SUMMARY
+================================================================================
+
+TOP 10 FEATURE IMPORTANCES
+--------------------------------------------------------------------------------
+1. gtd_change_class: 0.3597
+2. entity_size: 0.3556
+3. pagerank: 0.0723
+4. out_degree: 0.0496
+5. betweenness: 0.0422
+6. closeness: 0.0370
+7. distance_to_modified_undirected: 0.0279
+8. in_degree: 0.0245
+9. entity_modification_size: 0.0169
+10. pagerank_impact: 0.0075
+
+STRATEGY COMPARISON
+--------------------------------------------------------------------------------
+
+BASELINE_A_CHANGED_ONLY
+  Entities Updated: 0.0 / 690.0 (0.00%)
+  Recall@5:          1.0000
+  Recall@10:         1.0000
+  MRR:               1.0000
+  nDCG@10:           1.0000
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+BASELINE_B_FULL_REINDEX
+  Entities Updated: 690.0 / 690.0 (100.00%)
+  Recall@5:          1.0000
+  Recall@10:         1.0000
+  MRR:               1.0000
+  nDCG@10:           1.0000
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+BASELINE_C_FIXED_HOP_K1
+  Entities Updated: 0.0 / 690.0 (0.00%)
+  Recall@5:          1.0000
+  Recall@10:         1.0000
+  MRR:               1.0000
+  nDCG@10:           1.0000
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+BASELINE_C_FIXED_HOP_K2
+  Entities Updated: 0.0 / 690.0 (0.00%)
+  Recall@5:          1.0000
+  Recall@10:         1.0000
+  MRR:               1.0000
+  nDCG@10:           1.0000
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+PROPOSED_PREDICTIVE
+  Entities Updated: 0.0 / 690.0 (0.00%)
+  Recall@5:          1.0000
+  Recall@10:         1.0000
+  MRR:               1.0000
+  nDCG@10:           1.0000
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+BASELINE_D_PAGERANK_PROPAGATION
+  Entities Updated: 0.0 / 690.0 (0.00%)
+  Recall@5:          1.0000
+  Recall@10:         1.0000
+  MRR:               1.0000
+  nDCG@10:           1.0000
+  Rank Correlation:  1.0000
+  Evaluation Time:   0.0000s
+
+================================================================================
+END OF REPORT
+================================================================================

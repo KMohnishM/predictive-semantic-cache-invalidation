@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional
 import time
 import json
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -105,12 +106,13 @@ class Experiment:
         # Paths
         self.repo_path = self.workspace_dir / "black"
         
-        # Determine unique results directory name based on configuration
+        # Determine unique results directory name based on configuration and timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         mode_str = "contextual" if self.context_chunking else "isolated"
         model_slug = model_name.split("/")[-1]
         dir_name = (
             f"results_{model_slug}_{mode_str}_commits{self.num_commits}"
-            f"_stride{self.commit_stride}_clean{self.clean_mode}"
+            f"_stride{self.commit_stride}_clean{self.clean_mode}_{timestamp}"
         )
         self.results_dir = Path("results") / dir_name
         self.results_dir.mkdir(parents=True, exist_ok=True)
@@ -415,13 +417,13 @@ class Experiment:
             logger.warning("No entities found in current graph")
             return {}, pd.DataFrame()
 
-        # Update feature extractor with current graph and optional Joern session
-        self.feature_extractor = FeatureExtractor(self.repo_parser, joern_session=self.joern_session)
+        # Update feature extractor with current graph
+        self.feature_extractor = FeatureExtractor(self.repo_parser)
         
         features_df = self.feature_extractor.extract_features_batch(
             entity_ids, commit_a, commit_b, modified_entities,
             self.modification_history, self.previous_drifts, self.git_helper,
-            gtd=gtd, joern_session=self.joern_session
+            gtd=gtd
         )
 
         # Update modification history

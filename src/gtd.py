@@ -353,6 +353,10 @@ class GraphTransitionDescriptor:
             "gtd_local_edge_churn":    0.0,
         })
 
+    def get_entity_features(self, entity_id: str) -> Dict[str, float]:
+        """Alias for get_node_features for feature extractor compatibility."""
+        return self.get_node_features(entity_id)
+
     def get_global_features(self) -> Dict[str, float]:
         """Return the global GTD vector (same for every entity in this pair)."""
         return self.global_vector.copy()

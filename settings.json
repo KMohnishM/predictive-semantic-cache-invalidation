@@ -1,46 +1,16 @@
 {
   // =========================================================================
-  // PREDICTIVE SEMANTIC CACHE INVALIDATION - RUNTIME SETTINGS
-  // =========================================================================
-  // This file configures the options for run_experiment.py.
-  // Run the pipeline using: ./venv/Scripts/python.exe run_experiment.py --config settings.json
+  // PREDICTIVE SEMANTIC CACHE INVALIDATION - TUNED RUNTIME SETTINGS
   // =========================================================================
 
-  // URL or absolute local folder path of the git repository to analyze
   "repo_url": "https://github.com/psf/black.git",
-
-  // Hugging Face embedding model name. E.g.:
-  // - "sentence-transformers/all-MiniLM-L6-v2" (default, lightweight)
-  // - "microsoft/codebert-base" (Microsoft CodeBERT)
-  // - "microsoft/unixcoder-base" (Microsoft UniXcoder)
-  // - "jinaai/jina-embeddings-v2-base-code" (Jina Code 8k context model)
-  "model_name": "microsoft/unixcoder-base",
-
-  // Parser mode:
-  // - "tree_sitter": Tree-sitter fast multi-language AST parser (default, 100% native, error-resilient)
-  // - "ast": local pure Python AST + NetworkX parser
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
   "parser_mode": "tree_sitter",
-
-  // Total number of commit snapshots to extract and analyze
-  "num_commits": 15,
-
-  // Stride (step size) between sampled commits in history
+  "num_commits": 5,
   "commit_stride": 20,
-
-  // Ratio of commits to use for training the machine learning model (rest for testing)
   "train_ratio": 0.7,
-
-  // Drift distance limit (cosine distance) above which a node is marked "stale"
-  "threshold": 0.02,
-
-  // Threshold mode:
-  // - "fixed": use the static threshold value directly
-  // - "dynamic": compute threshold dynamically from percentile of drifts
-  "threshold_mode": "dynamic",
-
-  // If true, strips all comments and docstrings from methods before embedding
+  "threshold": 0.05,
+  "threshold_mode": "fixed",
   "clean_mode": false,
-
-  // If true, appends caller/callee function stubs to the code source as context
-  "context_chunking": false
+  "context_chunking": true
 }
