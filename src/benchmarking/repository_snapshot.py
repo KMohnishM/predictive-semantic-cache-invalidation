@@ -5,9 +5,9 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass
 from typing import Dict, List, Optional
+import tree_sitter_languages
 
 from git_helper import GitHelper
-
 from src.benchmarking.types import RepositoryEntity, RepositorySnapshot
 
 
@@ -82,65 +82,80 @@ def _parse_entities(file_path: str, source: str) -> List[RepositoryEntity]:
     return entities
 
 
+def _parse_entities_tree_sitter(file_path: str, source: str, language_name: str = "python") -> List[RepositoryEntity]:
+    try:
+        parser = tree_sitter_languages.get_parser(language_name)
+        source_bytes = source.encode("utf-8")
+        tree = parser.parse(source_bytes)
+    except Exception:
+        return _parse_entities(file_path, source)
+
+    entities: List[RepositoryEntity] = []
+
+    def _traverse(node, current_class: Optional[str] = None):
+        if node.type == "class_definition":
+            name_node = node.child_by_field_name("name")
+            class_name = name_node.text.decode("utf-8", errors="ignore") if name_node else "UnknownClass"
+            class_id = _get_entity_id(file_path, None, class_name)
+            snippet = source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="ignore")
+            entities.append(
+                RepositoryEntity(
+                    entity_id=class_id,
+                    entity_type="class",
+                    file_path=file_path,
+                    lineno=node.start_point[0] + 1,
+                    end_lineno=node.end_point[0] + 1,
+                    name=class_name,
+                    source_code=snippet,
+                )
+            )
+
+            body_node = node.child_by_field_name("body")
+            if body_node:
+                for child in body_node.children:
+                    _traverse(child, current_class=class_name)
+
+        elif node.type == "function_definition":
+            name_node = node.child_by_field_name("name")
+            func_name = name_node.text.decode("utf-8", errors="ignore") if name_node else "unknown_func"
+            entity_type = "method" if current_class else "function"
+            entity_id = _get_entity_id(file_path, current_class, func_name)
+            snippet = source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="ignore")
+            entities.append(
+                RepositoryEntity(
+                    entity_id=entity_id,
+                    entity_type=entity_type,
+                    file_path=file_path,
+                    lineno=node.start_point[0] + 1,
+                    end_lineno=node.end_point[0] + 1,
+                    name=func_name,
+                    source_code=snippet,
+                )
+            )
+        else:
+            for child in node.children:
+                if child.type not in ("class_definition", "function_definition"):
+                    _traverse(child, current_class=current_class)
+
+    _traverse(tree.root_node, current_class=None)
+    return entities
+
+
 def build_repository_snapshot(
     git_helper: GitHelper,
     commit_hash: str,
-    parser_mode: str = "ast",
-    joern_session: Optional[object] = None,
+    parser_mode: str = "tree_sitter",
 ) -> RepositorySnapshot:
-    if parser_mode == "joern_only" and joern_session is not None:
-        # Checkout commit to disk so Joern can parse the files
-        git_helper.checkout_commit(commit_hash)
-
-        # Re-parse directory to update CPG in Joern session
-        if hasattr(joern_session, "rebuild_cpg"):
-            try:
-                joern_session.rebuild_cpg()
-            except Exception as e:
-                import logging
-                logging.getLogger("benchmarking").warning(f"Failed to rebuild CPG in Joern: {e}")
-        elif hasattr(joern_session, "_build_cpg") and hasattr(joern_session, "_import_cpg"):
-            try:
-                joern_session.cpg_path = joern_session._build_cpg()
-                joern_session._import_cpg()
-            except Exception as e:
-                import logging
-                logging.getLogger("benchmarking").warning(f"Failed to re-import CPG in Joern: {e}")
-
-        entities: Dict[str, RepositoryEntity] = {}
-        try:
-            files = joern_session.get_all_files()
-            if files:
-                py_files = [f for f in files if isinstance(f, str) and (f.endswith(".py") or not f.startswith("<"))]
-                for file_path in py_files:
-                    true_names = joern_session.get_true_names(file_path)
-                    if true_names:
-                        for name_tuple in true_names:
-                            if isinstance(name_tuple, (list, tuple)) and len(name_tuple) >= 2:
-                                short_name, full_name = name_tuple[0], name_tuple[1]
-                                if full_name.startswith("<") or "<lambda>" in full_name:
-                                    continue
-                                entity_id = f"{file_path}::{full_name}"
-                                entities[entity_id] = RepositoryEntity(
-                                    entity_id=entity_id,
-                                    entity_type="function",
-                                    file_path=file_path,
-                                    lineno=1,
-                                    end_lineno=1,
-                                    name=short_name,
-                                    source_code=f"# Joern parsed entity: {full_name}"
-                                )
-        except Exception as e:
-            import logging
-            logging.getLogger("benchmarking").error(f"Error querying Joern snapshot: {e}")
-
-        return RepositorySnapshot(commit_hash=commit_hash, entities=entities)
-
     entities: Dict[str, RepositoryEntity] = {}
     for file_path in _list_python_files_at_commit(git_helper, commit_hash):
         file_source = git_helper.get_file_content_at_commit(commit_hash, file_path)
         if not file_source:
             continue
-        for entity in _parse_entities(file_path, file_source):
+        if parser_mode == "tree_sitter":
+            parsed = _parse_entities_tree_sitter(file_path, file_source)
+        else:
+            parsed = _parse_entities(file_path, file_source)
+
+        for entity in parsed:
             entities[entity.entity_id] = entity
     return RepositorySnapshot(commit_hash=commit_hash, entities=entities)

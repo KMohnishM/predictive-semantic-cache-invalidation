@@ -17,10 +17,9 @@
   "model_name": "microsoft/unixcoder-base",
 
   // Parser mode:
-  // - "ast": local Python parser only (no Joern server required)
-  // - "joern_hybrid": uses Joern CPG + local AST fallbacks (requires Joern server)
-  // - "joern_only": uses pure Joern parser and Graph database (requires Joern server)
-  "parser_mode": "joern_hybrid",
+  // - "tree_sitter": Tree-sitter fast multi-language AST parser (default, 100% native, error-resilient)
+  // - "ast": local pure Python AST + NetworkX parser
+  "parser_mode": "tree_sitter",
 
   // Total number of commit snapshots to extract and analyze
   "num_commits": 15,

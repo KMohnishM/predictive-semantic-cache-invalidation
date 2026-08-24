@@ -17,6 +17,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from git_helper import GitHelper
+from tree_sitter_repo_parser import TreeSitterRepoParser
 from repo_parser import RepoParser, Entity
 from embedding_manager import EmbeddingManager
 from feature_extractor import FeatureExtractor
@@ -162,37 +163,16 @@ class Experiment:
         # Initialize components
         logger.info("Initializing components...")
 
-        # Initialize Joern session if requested
-        if self.parser_mode in ["joern_hybrid", "joern_only"]:
-            try:
-                sys.path.insert(0, str(Path(__file__).resolve().parent / "joern_helper"))
-                from joern_interactive import JoernSession
-                self.joern_session = JoernSession(str(self.repo_path))
-                logger.info(f"Joern session connected successfully for mode: {self.parser_mode}")
-            except Exception as e:
-                logger.warning(f"Failed to initialize Joern session ({e}). Falling back to AST parser_mode.")
-                self.parser_mode = "ast"
-
         # Initialize repository parser based on parser_mode
-        if self.parser_mode == "joern_only" and self.joern_session:
-            from joern_repo_parser import JoernRepoParser
-            candidate = JoernRepoParser(str(self.repo_path), self.joern_session)
-
-            # Ensure it matches the RepoParser interface expected elsewhere
-            required = ("parse_directory", "get_graph", "get_entity", "get_all_entities")
-            if all(hasattr(candidate, name) for name in required):
-                self.repo_parser = candidate
-                logger.info("Using Pure JoernRepoParser for repository parsing and graph construction")
-            else:
-                logger.warning(
-                    "JoernRepoParser does not implement the RepoParser interface; falling back to AST parser."
-                )
-                self.parser_mode = "ast"
-                self.repo_parser = RepoParser(str(self.repo_path))
+        if self.parser_mode == "tree_sitter":
+            self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
+            logger.info("Using TreeSitterRepoParser for repository parsing and graph construction")
         else:
             self.repo_parser = RepoParser(str(self.repo_path))
+            logger.info("Using native AST RepoParser for repository parsing and graph construction")
+
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
-        self.feature_extractor = FeatureExtractor(self.repo_parser, joern_session=self.joern_session)
+        self.feature_extractor = FeatureExtractor(self.repo_parser)
         self.predictor = DriftPredictor(threshold=self.threshold)
         self.evaluator = Evaluator(self.embedding_manager, self.repo_parser)
         self.visualizer = Visualizer(str(self.results_dir))
@@ -344,22 +324,12 @@ class Experiment:
             logger.warning(f"Failed to checkout commit {commit_hash[:8]}, skipping...")
             return
 
-        # Rebuild Joern CPG for the current commit disk state
-        if self.parser_mode in ["joern_hybrid", "joern_only"] and self.joern_session:
-            logger.info("Rebuilding Joern CPG for the checked-out commit...")
-            try:
-                self.joern_session.rebuild_cpg()
-            except Exception as e:
-                logger.warning(f"Failed to rebuild Joern CPG: {e}")
-
         # Parse repository
-        if self.parser_mode == "joern_only" and self.joern_session:
-            from joern_repo_parser import JoernRepoParser
-            self.repo_parser = JoernRepoParser(str(self.repo_path), self.joern_session)
-            self.repo_parser.parse_repository()
+        if self.parser_mode == "tree_sitter":
+            self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
         else:
             self.repo_parser = RepoParser(str(self.repo_path))
-            self.repo_parser.parse_directory(str(self.repo_path))
+        self.repo_parser.parse_directory(str(self.repo_path))
 
         # Generate embeddings for all entities
         entities = self.repo_parser.get_all_entities()
@@ -498,7 +468,10 @@ class Experiment:
                 continue
 
             # Parse repository
-            self.repo_parser = RepoParser(str(self.repo_path))
+            if self.parser_mode == "tree_sitter":
+                self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
+            else:
+                self.repo_parser = RepoParser(str(self.repo_path))
             self.repo_parser.parse_directory(str(self.repo_path))
             self.parsers_history[commit] = self.repo_parser
 
@@ -1208,9 +1181,47 @@ def main():
         config_path = Path(args.config)
         if config_path.exists():
             logger.info(f"Loading configuration from JSON file: {config_path}")
-            import json
+            def strip_json_comments(text: str) -> str:
+                result = []
+                in_string = False
+                escape = False
+                i, n = 0, len(text)
+                while i < n:
+                    char = text[i]
+                    if escape:
+                        result.append(char)
+                        escape = False
+                        i += 1
+                        continue
+                    if char == '\\':
+                        result.append(char)
+                        escape = True
+                        i += 1
+                        continue
+                    if char == '"':
+                        in_string = not in_string
+                        result.append(char)
+                        i += 1
+                        continue
+                    if not in_string:
+                        if i + 1 < n and text[i:i+2] == '//':
+                            while i < n and text[i] not in ('\r', '\n'):
+                                i += 1
+                            continue
+                        if i + 1 < n and text[i:i+2] == '/*':
+                            i += 2
+                            while i + 1 < n and text[i:i+2] != '*/':
+                                i += 1
+                            i += 2
+                            continue
+                    result.append(char)
+                    i += 1
+                return "".join(result)
+
             with config_path.open("r", encoding="utf-8") as f:
-                json_config = json.load(f)
+                raw_content = f.read()
+                clean_content = strip_json_comments(raw_content)
+                json_config = json.loads(clean_content)
                 for key, value in json_config.items():
                     if hasattr(args, key) and getattr(args, key) == parser.get_default(key):
                         setattr(args, key, value)

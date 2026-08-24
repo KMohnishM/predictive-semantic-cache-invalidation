@@ -57,18 +57,6 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
     git_helper = GitHelper(config.repo_path)
     embedding_manager = EmbeddingManager(model_name=config.model_name, clean_mode=config.clean_mode)
 
-    # Initialize Joern Session if joern_only mode is chosen
-    joern_session = None
-    if config.parser_mode == "joern_only":
-        try:
-            sys.path.insert(0, str(project_root / "joern_helper"))
-            from joern_interactive import JoernSession
-            joern_session = JoernSession(config.repo_path)
-            logger.info("Joern session successfully connected for benchmarking.")
-        except Exception as e:
-            logger.warning(f"Failed to connect Joern session: {e}. Falling back to AST parser_mode.")
-            config = replace(config, parser_mode="ast")
-
     # Load ML predictions if provided
     ml_predictions = None
     if config.predictions_path:

@@ -37,6 +37,8 @@ class Entity:
         return f"Entity({self.entity_id}, {self.entity_type})"
 
 
+from src.tree_sitter_repo_parser import TreeSitterRepoParser
+
 class RepoParser:
     """Parses Python files and builds dependency graph."""
 

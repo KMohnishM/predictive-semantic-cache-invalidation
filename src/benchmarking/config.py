@@ -35,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--store-raw-vectors", action="store_true", default=True, help="Include raw full float vectors in comparison output")
     parser.add_argument("--no-store-raw-vectors", action="store_false", dest="store_raw_vectors")
     parser.add_argument("--config", default=None, help="Path to JSON configuration file to load options from")
-    parser.add_argument("--parser-mode", choices=["ast", "joern_only"], default="ast", help="Repository parser mode")
+    parser.add_argument("--parser-mode", choices=["tree_sitter", "ast"], default="tree_sitter", help="Repository parser mode")
     parser.add_argument("--predictions-path", default=None, help="Path to JSON file containing precomputed ML predictions mapping entity_id to boolean")
     return parser
 

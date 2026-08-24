@@ -15,19 +15,17 @@ logger = logging.getLogger(__name__)
 class FeatureExtractor:
     """Extracts features for drift prediction."""
 
-    def __init__(self, repo_parser, git_helper=None, commit_a=None, commit_b=None, joern_session=None):
+    def __init__(self, repo_parser, git_helper=None, commit_a=None, commit_b=None):
         """
         Initialize feature extractor.
 
         Args:
-            repo_parser: RepoParser instance with dependency graph
+            repo_parser: RepoParser or TreeSitterRepoParser instance with dependency graph
             git_helper: GitHelper instance (optional, for caching diff stats)
             commit_a: Earlier commit hash (optional)
             commit_b: Later commit hash (optional)
-            joern_session: Optional JoernSession instance for CPG features
         """
         self.repo_parser = repo_parser
-        self.joern_session = joern_session
         self.graph = repo_parser.get_graph()
         self.undirected_graph = self.graph.to_undirected()
 
@@ -59,22 +57,11 @@ class FeatureExtractor:
                 logger.warning(f"Failed to precompute file diff stats: {e}")
 
         # Personalised PageRank impact scores (seeded on modified entities)
-        # Populated lazily by _get_pagerank_impact_feature
         self._ppr_cache: Optional[Dict[str, float]] = None
         self._ppr_seed: Optional[frozenset] = None
 
     def _get_structural_features(self, entity_id: str) -> Dict[str, float]:
-        """
-        Extract structural features from the dependency graph.
-
-        Args:
-            entity_id: Entity identifier
-
-        Returns:
-            Dictionary of structural features
-        """
-        features = {}
-
+        """Extract structural features from the dependency graph."""
         if entity_id not in self.graph:
             return {
                 'out_degree': 0.0,
@@ -84,322 +71,210 @@ class FeatureExtractor:
                 'betweenness': 0.0
             }
 
-        # Degree features
-        features['out_degree'] = float(self.graph.out_degree(entity_id))
-        features['in_degree'] = float(self.graph.in_degree(entity_id))
-
-        # Centrality features (precomputed)
-        features['pagerank'] = self.pagerank.get(entity_id, 0.0)
-        features['closeness'] = self.closeness.get(entity_id, 0.0)
-        features['betweenness'] = self.betweenness.get(entity_id, 0.0)
-
-        return features
+        return {
+            'out_degree': float(self.graph.out_degree(entity_id)),
+            'in_degree': float(self.graph.in_degree(entity_id)),
+            'pagerank': self.pagerank.get(entity_id, 0.0),
+            'closeness': self.closeness.get(entity_id, 0.0),
+            'betweenness': self.betweenness.get(entity_id, 0.0)
+        }
 
     def _get_evolution_features(self, entity_id: str,
                                 modified_entities: Set[str]) -> Dict[str, float]:
-        """
-        Extract evolution and propagation features.
+        """Extract hop-distance change propagation features."""
+        features = {
+            'is_modified': 1.0 if entity_id in modified_entities else 0.0,
+            'distance_to_modified_directed': 999.0,
+            'distance_to_modified_undirected': 999.0,
+            'modified_dependents_count': 0.0,
+            'modified_dependencies_count': 0.0
+        }
 
-        Args:
-            entity_id: Entity identifier
-            modified_entities: Set of directly modified entity IDs
+        if not modified_entities or entity_id not in self.graph:
+            return features
 
-        Returns:
-            Dictionary of evolution features
-        """
-        features = {}
+        if entity_id in modified_entities:
+            features['distance_to_modified_directed'] = 0.0
+            features['distance_to_modified_undirected'] = 0.0
+            return features
 
-        # Check if entity exists in graph
-        if entity_id not in self.graph:
-            return {
-                'distance_to_modified_directed': -1.0,
-                'distance_to_modified_undirected': -1.0,
-                'modified_dependents_count': 0.0,
-                'modified_dependencies_count': 0.0
-            }
-
-        # Find minimum distance to any modified node
-        min_directed_distance = None
-        min_undirected_distance = None
-
-        for modified_id in modified_entities:
-            # Skip if modified entity not in graph
-            if modified_id not in self.graph:
-                continue
-
-            # Directed distance (downstream)
-            try:
-                dist = nx.shortest_path_length(self.graph, entity_id, modified_id)
-                if min_directed_distance is None or dist < min_directed_distance:
-                    min_directed_distance = dist
-            except (nx.NetworkXNoPath, nx.NodeNotFound):
-                pass
-
-            # Undirected distance
-            try:
-                dist = nx.shortest_path_length(self.undirected_graph, entity_id, modified_id)
-                if min_undirected_distance is None or dist < min_undirected_distance:
-                    min_undirected_distance = dist
-            except (nx.NetworkXNoPath, nx.NodeNotFound):
-                pass
-
-        features['distance_to_modified_directed'] = float(min_directed_distance) if min_directed_distance is not None else -1.0
-        features['distance_to_modified_undirected'] = float(min_undirected_distance) if min_undirected_distance is not None else -1.0
-
-        # Number of directly modified nodes in transitive dependents
         try:
-            dependents = self.repo_parser.get_dependents(entity_id)
-            modified_dependents = dependents & modified_entities
-            features['modified_dependents_count'] = float(len(modified_dependents))
-        except Exception:
-            features['modified_dependents_count'] = 0.0
+            reverse_graph = self.graph.reverse()
+            directed_dists = []
+            for mod_id in modified_entities:
+                if mod_id in reverse_graph:
+                    try:
+                        d = nx.shortest_path_length(reverse_graph, source=entity_id, target=mod_id)
+                        directed_dists.append(d)
+                    except nx.NetworkXNoPath:
+                        pass
+            if directed_dists:
+                features['distance_to_modified_directed'] = float(min(directed_dists))
+        except Exception as e:
+            logger.warning(f"Error computing directed distance for {entity_id}: {e}")
 
-        # Number of directly modified nodes in transitive dependencies
+        min_undirected = self.repo_parser.get_nearest_modified_distance(entity_id, modified_entities)
+        if min_undirected is not None:
+            features['distance_to_modified_undirected'] = float(min_undirected)
+
         try:
-            dependencies = self.repo_parser.get_dependencies(entity_id)
-            modified_dependencies = dependencies & modified_entities
-            features['modified_dependencies_count'] = float(len(modified_dependencies))
+            callers = set(self.graph.predecessors(entity_id))
+            features['modified_dependents_count'] = float(len(callers.intersection(modified_entities)))
         except Exception:
-            features['modified_dependencies_count'] = 0.0
+            pass
+
+        try:
+            callees = set(self.graph.successors(entity_id))
+            features['modified_dependencies_count'] = float(len(callees.intersection(modified_entities)))
+        except Exception:
+            pass
 
         return features
 
     def _get_pagerank_impact_feature(self, entity_id: str,
                                      modified_entities: Set[str]) -> Dict[str, float]:
-        """
-        Compute Personalised PageRank (PPR) impact score.
+        """Compute Personalised PageRank (PPR) seeded on modified entities."""
+        current_seed = frozenset(modified_entities.intersection(self.graph.nodes()))
 
-        Seeds the PPR walk on the set of modified entities.  Every node
-        receives a score proportional to how much random-walk probability
-        flows to it from the modified set — a principled measure of
-        structural influence.
-
-        Args:
-            entity_id:        Target entity.
-            modified_entities: Seed set (directly modified nodes).
-
-        Returns:
-            Dict with key ``pagerank_impact``.
-        """
-        seed_key = frozenset(modified_entities)
-        if self._ppr_cache is None or self._ppr_seed != seed_key:
-            self._ppr_seed = seed_key
-            valid_seeds = {n for n in modified_entities if n in self.graph}
-            if valid_seeds and self.graph.number_of_nodes() > 0:
-                personalization = {n: 1.0 / len(valid_seeds) for n in valid_seeds}
-                # Zero for all other nodes
-                for n in self.graph.nodes():
-                    personalization.setdefault(n, 0.0)
-                try:
-                    self._ppr_cache = nx.pagerank(
-                        self.graph, alpha=0.85,
-                        personalization=personalization
-                    )
-                except Exception as e:
-                    logger.warning(f"PPR computation failed: {e}")
-                    self._ppr_cache = {}
-            else:
+        if self._ppr_seed != current_seed or self._ppr_cache is None:
+            self._ppr_seed = current_seed
+            if not current_seed or self.graph.number_of_nodes() == 0:
                 self._ppr_cache = {}
+            else:
+                weight = 1.0 / len(current_seed)
+                personalization = {node: (weight if node in current_seed else 0.0)
+                                   for node in self.graph.nodes()}
+                try:
+                    self._ppr_cache = nx.pagerank(self.graph, alpha=0.85, personalization=personalization)
+                except Exception as e:
+                    logger.warning(f"Failed to compute Personalised PageRank: {e}")
+                    self._ppr_cache = {}
 
-        return {"pagerank_impact": float(self._ppr_cache.get(entity_id, 0.0))}
-
-    def _get_gtd_features(self, entity_id: str,
-                          gtd) -> Dict[str, float]:
-        """
-        Extract per-entity GTD features from a GraphTransitionDescriptor.
-
-        Args:
-            entity_id : Target entity.
-            gtd       : GraphTransitionDescriptor instance (or None).
-
-        Returns:
-            Dict of node-level and global GTD-derived features.
-        """
-        if gtd is None:
-            return {
-                "gtd_change_class":        0.0,
-                "gtd_local_edges_added":   0.0,
-                "gtd_local_edges_removed": 0.0,
-                "gtd_local_edge_churn":    0.0,
-                "gtd_mean_drift":          0.0,
-                "gtd_drift_variance":      0.0,
-                "gtd_edge_churn":          0.0,
-                "gtd_density_delta":       0.0,
-                "gtd_node_growth_ratio":   0.0,
-                "gtd_clustering_delta":    0.0,
-                "gtd_mean_pagerank_shift": 0.0,
-                "gtd_high_drift_ratio":    0.0,
-            }
-
-        node_feats   = gtd.get_node_features(entity_id)
-        global_feats = gtd.get_global_features()
-
-        return {
-            # Per-node
-            "gtd_change_class":        node_feats.get("gtd_change_class",        0.0),
-            "gtd_local_edges_added":   node_feats.get("gtd_local_edges_added",   0.0),
-            "gtd_local_edges_removed": node_feats.get("gtd_local_edges_removed", 0.0),
-            "gtd_local_edge_churn":    node_feats.get("gtd_local_edge_churn",    0.0),
-            # Global (same for all entities in this pair)
-            "gtd_mean_drift":          global_feats.get("sm_mean_drift",          0.0),
-            "gtd_drift_variance":      global_feats.get("sm_drift_variance",      0.0),
-            "gtd_edge_churn":          global_feats.get("ee_edge_churn",          0.0),
-            "gtd_density_delta":       global_feats.get("ee_density_delta",       0.0),
-            "gtd_node_growth_ratio":   global_feats.get("se_node_growth_ratio",   0.0),
-            "gtd_clustering_delta":    global_feats.get("se_clustering_delta",    0.0),
-            "gtd_mean_pagerank_shift": global_feats.get("ce_mean_pagerank_shift", 0.0),
-            "gtd_high_drift_ratio":    global_feats.get("sm_high_drift_ratio",    0.0),
-        }
+        return {'pagerank_impact': self._ppr_cache.get(entity_id, 0.0)}
 
     def _get_commit_features(self, entity_id: str, commit_a: str, commit_b: str,
                              modified_entities: Set[str], git_helper) -> Dict[str, float]:
-        """
-        Extract commit-related features.
-
-        Args:
-            entity_id: Entity identifier
-            commit_a: Earlier commit hash
-            commit_b: Later commit hash
-            modified_entities: Set of directly modified entity IDs
-            git_helper: GitHelper instance
-
-        Returns:
-            Dictionary of commit features
-        """
-        features = {}
+        """Extract diff metrics for the file containing entity_id."""
+        features = {
+            'file_lines_added': 0.0,
+            'file_lines_deleted': 0.0,
+            'entity_size': 0.0,
+            'entity_modification_size': 0.0
+        }
 
         entity = self.repo_parser.get_entity(entity_id)
         if not entity:
-            return {
-                'file_lines_added': 0.0,
-                'file_lines_deleted': 0.0,
-                'entity_size': 0.0,
-                'entity_modification_size': 0.0
-            }
+            return features
 
-        # File-level changes (using cached diff stats)
-        diff_stats = self.diff_stats_cache.get(entity.file_path, {"added": 0.0, "deleted": 0.0})
-        features['file_lines_added'] = float(diff_stats['added'])
-        features['file_lines_deleted'] = float(diff_stats['deleted'])
+        features['entity_size'] = float(entity.end_lineno - entity.lineno + 1)
 
-        # Entity size
-        features['entity_size'] = float(len(entity.source_code))
+        file_path = entity.file_path
+        if file_path in self.diff_stats_cache:
+            stats = self.diff_stats_cache[file_path]
+            features['file_lines_added'] = float(stats['added'])
+            features['file_lines_deleted'] = float(stats['deleted'])
 
-        # Entity modification size (if directly modified)
-        if entity_id in modified_entities:
-            # Get old version of entity
-            old_source = git_helper.get_file_content_at_commit(commit_a, entity.file_path)
-            if old_source:
-                try:
-                    import ast
-                    old_tree = ast.parse(old_source)
-                    # Parse entity parts to match class scope
-                    parts = entity_id.split('::')
-                    class_name = parts[1] if len(parts) == 3 else None
-                    func_name = parts[-1]
-
-                    target_node = None
-                    if class_name:
-                        # Find the class first
-                        for node in old_tree.body:
-                            if isinstance(node, ast.ClassDef) and node.name == class_name:
-                                # Find the method inside the class
-                                for subnode in node.body:
-                                    if isinstance(subnode, ast.FunctionDef) and subnode.name == func_name:
-                                        target_node = subnode
-                                        break
-                                break
-                    else:
-                        # Find top-level function
-                        for node in old_tree.body:
-                            if isinstance(node, ast.FunctionDef) and node.name == func_name:
-                                target_node = node
-                                break
-
-                    if target_node:
-                        old_lines = old_source.split('\n')
-                        start = target_node.lineno - 1
-                        end = target_node.end_lineno if hasattr(target_node, 'end_lineno') else start + 1
-                        old_entity_source = "\n".join(old_lines[start:end])
-                        features['entity_modification_size'] = float(
-                            abs(len(entity.source_code) - len(old_entity_source))
-                        )
-                    else:
-                        features['entity_modification_size'] = 0.0
-                except Exception:
-                    features['entity_modification_size'] = 0.0
-            else:
-                features['entity_modification_size'] = 0.0
-        else:
-            features['entity_modification_size'] = 0.0
+        if entity_id in modified_entities and file_path in self.diff_stats_cache:
+            features['entity_modification_size'] = float(
+                self.diff_stats_cache[file_path]['added'] + self.diff_stats_cache[file_path]['deleted']
+            )
 
         return features
 
     def _get_historical_features(self, entity_id: str,
-                                  modification_history: Dict[str, List[str]],
-                                  previous_drifts: Dict[str, float]) -> Dict[str, float]:
-        """
-        Extract historical features.
+                                 modification_history: Dict[str, List[str]],
+                                 previous_drifts: Dict[str, float]) -> Dict[str, float]:
+        """Extract historical features for an entity."""
+        features = {
+            'modification_frequency': 0.0,
+            'previous_drift': 0.0
+        }
 
-        Args:
-            entity_id: Entity identifier
-            modification_history: Dictionary mapping entity_id to list of commit hashes
-            previous_drifts: Dictionary mapping entity_id to previous drift values
+        if entity_id in modification_history:
+            features['modification_frequency'] = float(len(modification_history[entity_id]))
 
-        Returns:
-            Dictionary of historical features
-        """
-        features = {}
-
-        # Modification frequency (volatility)
-        mod_count = len(modification_history.get(entity_id, []))
-        features['modification_frequency'] = float(mod_count)
-
-        # Previous drift
-        features['previous_drift'] = previous_drifts.get(entity_id, 0.0)
+        if entity_id in previous_drifts:
+            features['previous_drift'] = float(previous_drifts[entity_id])
 
         return features
 
-    def _get_joern_features(self, entity_id: str, joern_session=None) -> Dict[str, float]:
-        """Extract Joern CPG control-flow and data-flow features."""
-        session = joern_session or self.joern_session
-        if session is None:
+    def _get_gtd_features(self, entity_id: str, gtd=None) -> Dict[str, float]:
+        """Extract Graph Transition Descriptor (GTD) features for entity_id."""
+        if gtd is None:
             return {
-                "joern_cyclomatic_complexity": 0.0,
-                "joern_cfg_node_count": 0.0,
-                "joern_max_cfg_nesting_depth": 0.0,
-                "joern_data_flow_distance": 0.0,
-                "joern_modified_data_deps_count": 0.0,
-                "joern_taint_reachability_score": 0.0,
+                "gtd_change_class": 0.0,
+                "gtd_local_edges_added": 0.0,
+                "gtd_local_edges_removed": 0.0,
+                "gtd_local_edge_churn": 0.0,
+                "gtd_mean_drift": 0.0,
+                "gtd_drift_variance": 0.0,
+            }
+        return gtd.get_entity_features(entity_id)
+
+    def _get_code_metrics_features(self, entity_id: str, modified_entities: Set[str]) -> Dict[str, float]:
+        """Extract native code complexity features directly using Tree-sitter or AST."""
+        is_mod = 1.0 if entity_id in modified_entities else 0.0
+        data_flow_dist = 0.0 if is_mod else 1.0
+        modified_deps = float(len(modified_entities.intersection(self.graph.neighbors(entity_id)))) if entity_id in self.graph else 0.0
+
+        if hasattr(self.repo_parser, "get_code_metrics"):
+            ts_metrics = self.repo_parser.get_code_metrics(entity_id)
+            return {
+                "cyclomatic_complexity": ts_metrics.get("cyclomatic_complexity", 1.0),
+                "ast_node_count": ts_metrics.get("ast_node_count", 0.0),
+                "max_nesting_depth": ts_metrics.get("max_nesting_depth", 0.0),
+                "data_flow_distance": data_flow_dist,
+                "modified_data_deps_count": modified_deps,
+                "taint_reachability_score": is_mod,
+            }
+
+        entity = self.repo_parser.get_entity(entity_id)
+        if not entity or not entity.source_code:
+            return {
+                "cyclomatic_complexity": 1.0,
+                "ast_node_count": 0.0,
+                "max_nesting_depth": 0.0,
+                "data_flow_distance": 0.0,
+                "modified_data_deps_count": 0.0,
+                "taint_reachability_score": 0.0,
             }
 
         try:
-            parts = entity_id.split("::")
-            file_path = parts[0].replace("\\", "/")
-            if len(parts) == 2 and ":" in parts[1]:
-                full_name = parts[1]
-            elif len(parts) == 3:
-                full_name = f"{file_path}:<module>.{parts[1]}.{parts[2]}"
-            else:
-                full_name = f"{file_path}:<module>.{parts[1]}"
+            import ast
+            code = entity.source_code
+            tree = ast.parse(code)
+
+            branches = sum(1 for node in ast.walk(tree) if isinstance(node, (ast.If, ast.For, ast.While, ast.ExceptHandler, ast.BoolOp)))
+            cyclomatic_complexity = float(1 + branches)
+            node_count = float(len(list(ast.walk(tree))))
+
+            def _calc_nesting(node, current_depth=0):
+                max_d = current_depth
+                for child in ast.iter_child_nodes(node):
+                    if isinstance(child, (ast.If, ast.For, ast.While, ast.Try, ast.With)):
+                        max_d = max(max_d, _calc_nesting(child, current_depth + 1))
+                    else:
+                        max_d = max(max_d, _calc_nesting(child, current_depth))
+                return max_d
+
+            max_depth = float(_calc_nesting(tree))
 
             return {
-                "joern_cyclomatic_complexity": float(session.cyclomatic_complexity(full_name)),
-                "joern_cfg_node_count": float(session.cfg_node_count(full_name)),
-                "joern_max_cfg_nesting_depth": float(session.max_cfg_nesting_depth(full_name)),
-                "joern_data_flow_distance": float(session.data_flow_distance(full_name)),
-                "joern_modified_data_deps_count": float(session.modified_data_deps_count(full_name)),
-                "joern_taint_reachability_score": float(session.taint_reachability_score(full_name)),
+                "cyclomatic_complexity": cyclomatic_complexity,
+                "ast_node_count": node_count,
+                "max_nesting_depth": max_depth,
+                "data_flow_distance": data_flow_dist,
+                "modified_data_deps_count": modified_deps,
+                "taint_reachability_score": is_mod,
             }
-        except Exception as e:
-            logger.warning(f"Failed to harvest Joern features for {entity_id}: {e}")
+        except Exception:
             return {
-                "joern_cyclomatic_complexity": 0.0,
-                "joern_cfg_node_count": 0.0,
-                "joern_max_cfg_nesting_depth": 0.0,
-                "joern_data_flow_distance": 0.0,
-                "joern_modified_data_deps_count": 0.0,
-                "joern_taint_reachability_score": 0.0,
+                "cyclomatic_complexity": 1.0,
+                "ast_node_count": 0.0,
+                "max_nesting_depth": 0.0,
+                "data_flow_distance": 0.0,
+                "modified_data_deps_count": 0.0,
+                "taint_reachability_score": 0.0,
             }
 
     def extract_features(self, entity_id: str, commit_a: str, commit_b: str,
@@ -407,50 +282,16 @@ class FeatureExtractor:
                          modification_history: Dict[str, List[str]],
                          previous_drifts: Dict[str, float],
                          git_helper,
-                         gtd=None,
-                         joern_session=None) -> Dict[str, float]:
-        """
-        Extract all features for an entity.
-
-        Args:
-            entity_id:            Entity identifier
-            commit_a:             Earlier commit hash
-            commit_b:             Later commit hash
-            modified_entities:    Set of directly modified entity IDs
-            modification_history: Historical modification data
-            previous_drifts:      Previous drift values
-            git_helper:           GitHelper instance
-            gtd:                  Optional GraphTransitionDescriptor for this pair
-            joern_session:        Optional JoernSession instance
-
-        Returns:
-            Dictionary of all features
-        """
+                         gtd=None) -> Dict[str, float]:
+        """Extract all features for an entity."""
         features = {}
-
-        # Structural features
         features.update(self._get_structural_features(entity_id))
-
-        # Evolution features (hop-distance based)
         features.update(self._get_evolution_features(entity_id, modified_entities))
-
-        # Personalised PageRank impact (principled propagation)
         features.update(self._get_pagerank_impact_feature(entity_id, modified_entities))
-
-        # Commit features
         features.update(self._get_commit_features(entity_id, commit_a, commit_b, modified_entities, git_helper))
-
-        # Historical features
-        features.update(self._get_historical_features(
-            entity_id, modification_history, previous_drifts
-        ))
-
-        # Graph Transition Descriptor features
+        features.update(self._get_historical_features(entity_id, modification_history, previous_drifts))
         features.update(self._get_gtd_features(entity_id, gtd))
-
-        # Joern CPG features
-        features.update(self._get_joern_features(entity_id, joern_session))
-
+        features.update(self._get_code_metrics_features(entity_id, modified_entities))
         return features
 
     def extract_features_batch(self, entity_ids: List[str], commit_a: str, commit_b: str,
@@ -458,52 +299,25 @@ class FeatureExtractor:
                                modification_history: Dict[str, List[str]],
                                previous_drifts: Dict[str, float],
                                git_helper,
-                               gtd=None,
-                               joern_session=None) -> pd.DataFrame:
-        """
-        Extract features for multiple entities.
-
-        Args:
-            entity_ids:           List of entity identifiers
-            commit_a:             Earlier commit hash
-            commit_b:             Later commit hash
-            modified_entities:    Set of directly modified entity IDs
-            modification_history: Historical modification data
-            previous_drifts:      Previous drift values
-            git_helper:           GitHelper instance
-            gtd:                  Optional GraphTransitionDescriptor for this pair
-            joern_session:        Optional JoernSession instance
-
-        Returns:
-            DataFrame with features for all entities
-        """
+                               gtd=None) -> pd.DataFrame:
+        """Extract features for multiple entities."""
         features_list = []
 
         for entity_id in entity_ids:
             features = self.extract_features(
                 entity_id, commit_a, commit_b, modified_entities,
-                modification_history, previous_drifts, git_helper, gtd=gtd,
-                joern_session=joern_session
+                modification_history, previous_drifts, git_helper, gtd=gtd
             )
             features['entity_id'] = entity_id
             features_list.append(features)
 
         df = pd.DataFrame(features_list)
         df.set_index('entity_id', inplace=True)
-
         return df
 
     def update_modification_history(self, entity_id: str, commit_hash: str,
                                     modification_history: Dict[str, List[str]]) -> None:
-        """
-        Update modification history for an entity.
-
-        Args:
-            entity_id: Entity identifier
-            commit_hash: Commit hash
-            modification_history: Historical modification data (modified in place)
-        """
+        """Update modification history for an entity."""
         if entity_id not in modification_history:
             modification_history[entity_id] = []
-
         modification_history[entity_id].append(commit_hash)

@@ -16,3 +16,4 @@ benchmark_runs/
 *.log
 .gemini/
 .agents/
+scratch/

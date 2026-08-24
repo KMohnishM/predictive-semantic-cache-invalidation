@@ -6,7 +6,7 @@
   "train_ratio": 0.7,
   "threshold": 0.02,
   "threshold_mode": "dynamic",
-  "parser_mode": "ast",
+  "parser_mode": "tree_sitter",
   "clean_mode": false,
   "context_chunking": false,
   "model_name": "sentence-transformers/all-MiniLM-L6-v2"

@@ -4885,3 +4885,83 @@ BASELINE_D_PAGERANK_PROPAGATION:
 2026-08-03 14:34:40,749 - __main__ - INFO - ================================================================================
 2026-08-03 14:34:40,750 - __main__ - INFO - Results saved to results\results_unixcoder-base_isolated_commits15_stride20_cleanFalse
 2026-08-03 14:34:40,750 - __main__ - INFO - Logs saved to experiment.log
+2026-08-03 22:10:34,396 - __main__ - INFO - ================================================================================
+2026-08-03 22:10:34,396 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-03 22:10:34,396 - __main__ - INFO - ================================================================================
+2026-08-03 22:10:34,397 - __main__ - INFO - Cloning repository from https://github.com/KMohnishM/predictive-semantic-cache-invalidation...
+2026-08-03 22:10:34,397 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-03 22:10:34,397 - __main__ - INFO - Initializing components...
+2026-08-03 22:10:38,597 - __main__ - WARNING - Failed to initialize Joern session ([WinError 1225] The remote computer refused the network connection). Falling back to AST parser_mode.
+2026-08-03 22:10:38,607 - __main__ - INFO - Setup complete (parser_mode=ast)
+2026-08-03 22:10:38,609 - __main__ - INFO - ================================================================================
+2026-08-03 22:10:38,611 - __main__ - INFO - HARVESTING COMMITS
+2026-08-03 22:10:38,612 - __main__ - INFO - ================================================================================
+2026-08-03 22:10:38,613 - git_helper - INFO - Retrieving last 300 commits
+2026-08-03 22:10:38,684 - git_helper - INFO - Retrieved 300 commits
+2026-08-03 22:10:38,685 - __main__ - INFO - Total raw commits: 300
+2026-08-03 22:10:38,685 - __main__ - INFO - Training commits (preliminary): 210
+2026-08-03 22:10:38,685 - __main__ - INFO - Test commits (preliminary):     90
+2026-08-03 22:10:38,685 - __main__ - INFO - ================================================================================
+2026-08-03 22:10:38,685 - __main__ - INFO - BUILDING DATASET
+2026-08-03 22:10:38,685 - __main__ - INFO - ================================================================================
+2026-08-03 22:10:38,686 - __main__ - INFO - 
+Processing sampled commit 1/15 (fd9bd07f)...
+2026-08-03 22:10:40,674 - embedding_manager - INFO - Loading embedding model: microsoft/unixcoder-base
+2026-08-03 22:10:40,675 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-03 22:10:41,529 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/modules.json "HTTP/1.1 404 Not Found"
+2026-08-03 22:10:41,531 - huggingface_hub.utils._http - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-08-03 22:10:41,549 - sentence_transformers.base.model - INFO - No modules.json found for microsoft/unixcoder-base, initializing a new SentenceTransformer model.
+2026-08-03 22:10:41,816 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 22:10:42,110 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 22:10:42,164 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-08-03 22:10:42,520 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+2026-08-03 22:10:42,804 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base "HTTP/1.1 200 OK"
+2026-08-03 22:10:43,103 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/commits/main "HTTP/1.1 200 OK"
+2026-08-03 22:10:43,207 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 22:10:43,431 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/discussions?p=0 "HTTP/1.1 200 OK"
+2026-08-03 22:10:43,508 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 22:10:43,873 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 22:10:43,884 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/commits/refs%2Fpr%2F8 "HTTP/1.1 200 OK"
+2026-08-03 22:10:44,179 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-08-03 22:10:44,188 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/refs%2Fpr%2F8/model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-08-03 22:10:44,759 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 22:10:44,760 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/refs%2Fpr%2F8/model.safetensors "HTTP/1.1 302 Found"
+2026-08-03 22:10:44,886 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 22:10:45,348 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 22:10:45,446 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-08-03 22:10:45,736 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 22:10:45,987 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/config.json "HTTP/1.1 200 OK"
+2026-08-03 22:10:46,643 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/microsoft/unixcoder-base/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-03 22:10:46,693 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/microsoft/unixcoder-base/5604afdc964f6c53782a6813140ade5216b99006/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-08-03 22:10:47,208 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-08-03 22:10:47,498 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-08-03 22:10:48,017 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/microsoft/unixcoder-base "HTTP/1.1 200 OK"
+2026-08-03 22:10:48,031 - embedding_manager - INFO - Model loaded successfully with max_seq_length=512
+2026-08-03 22:10:48,032 - embedding_manager - INFO - Generating embeddings for 306 entities
+2026-08-05 15:19:12,031 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-05 15:21:07,630 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-05 15:23:23,086 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-05 15:23:55,402 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-05 15:24:54,519 - __main__ - INFO - Loading configuration from JSON file: settings.json
+2026-08-05 15:24:54,522 - __main__ - INFO - ================================================================================
+2026-08-05 15:24:54,522 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-05 15:24:54,522 - __main__ - INFO - ================================================================================
+2026-08-05 15:24:54,522 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-05 15:24:54,523 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-05 15:24:54,523 - __main__ - INFO - Initializing components...
+2026-08-05 15:26:51,067 - __main__ - INFO - Joern session connected successfully for mode: joern_hybrid
+2026-08-05 15:26:51,072 - __main__ - INFO - Setup complete (parser_mode=joern_hybrid)
+2026-08-05 15:26:51,073 - __main__ - INFO - ================================================================================
+2026-08-05 15:26:51,074 - __main__ - INFO - HARVESTING COMMITS
+2026-08-05 15:26:51,074 - __main__ - INFO - ================================================================================
+2026-08-05 15:26:51,074 - git_helper - INFO - Retrieving last 300 commits
+2026-08-05 15:26:51,165 - git_helper - INFO - Retrieved 271 commits
+2026-08-05 15:26:51,165 - __main__ - INFO - Total raw commits: 271
+2026-08-05 15:26:51,165 - __main__ - INFO - Training commits (preliminary): 189
+2026-08-05 15:26:51,166 - __main__ - INFO - Test commits (preliminary):     82
+2026-08-05 15:26:51,167 - __main__ - INFO - ================================================================================
+2026-08-05 15:26:51,167 - __main__ - INFO - BUILDING DATASET
+2026-08-05 15:26:51,167 - __main__ - INFO - ================================================================================
+2026-08-05 15:26:51,167 - __main__ - INFO - 
+Processing sampled commit 1/14 (e74117f1)...
+2026-08-05 15:26:51,361 - __main__ - INFO - Rebuilding Joern CPG for the checked-out commit...
