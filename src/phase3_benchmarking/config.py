@@ -7,7 +7,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Optional
 
-from src.benchmarking.types import BenchmarkConfig
+from .types import BenchmarkConfig
 
 
 DEFAULT_REPO_URL = "https://github.com/psf/black.git"

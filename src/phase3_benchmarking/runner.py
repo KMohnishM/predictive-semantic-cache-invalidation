@@ -16,21 +16,29 @@ if str(src_dir) not in sys.path:
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from embedding_manager import EmbeddingManager
-from git_helper import GitHelper
+try:
+    from core.embedding_manager import EmbeddingManager
+    from core.git_helper import GitHelper
+except ImportError:
+    try:
+        from src.core.embedding_manager import EmbeddingManager
+        from src.core.git_helper import GitHelper
+    except ImportError:
+        from ..core.embedding_manager import EmbeddingManager
+        from ..core.git_helper import GitHelper
 
-from benchmarking.commit_sampler import sample_commit_pairs
-from benchmarking.config import load_config
-from benchmarking.dataset_builder import build_dataset
-from benchmarking.embedding_comparator import compare_index_snapshots
-from benchmarking.index_builder import build_index_snapshot, build_selective_snapshot, retrieve_top_k
-from benchmarking.metrics import mean_reciprocal_rank, ndcg_at_k, rank_delta, recall_at_k, score_delta
-from benchmarking.query_sources import build_queries
-from benchmarking.reporting import write_summary_report
-from benchmarking.serialization import persist_run
-from benchmarking.strategy_runner import decide_updated_entities
-from benchmarking.repository_snapshot import build_repository_snapshot
-from benchmarking.types import (
+from .commit_sampler import sample_commit_pairs
+from .config import load_config
+from .dataset_builder import build_dataset
+from .embedding_comparator import compare_index_snapshots
+from .index_builder import build_index_snapshot, build_selective_snapshot, retrieve_top_k
+from .metrics import mean_reciprocal_rank, ndcg_at_k, rank_delta, recall_at_k, score_delta
+from .query_sources import build_queries
+from .reporting import write_summary_report
+from .serialization import persist_run
+from .strategy_runner import decide_updated_entities
+from .repository_snapshot import build_repository_snapshot
+from .types import (
     BenchmarkConfig,
     BenchmarkSummary,
     PerQueryResult,

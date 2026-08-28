@@ -7,8 +7,15 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 import tree_sitter_languages
 
-from git_helper import GitHelper
-from src.benchmarking.types import RepositoryEntity, RepositorySnapshot
+try:
+    from core.git_helper import GitHelper
+except ImportError:
+    try:
+        from src.core.git_helper import GitHelper
+    except ImportError:
+        from ..core.git_helper import GitHelper
+
+from .types import RepositoryEntity, RepositorySnapshot
 
 
 def _list_python_files_at_commit(git_helper: GitHelper, commit_hash: str) -> List[str]:

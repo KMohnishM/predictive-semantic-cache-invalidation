@@ -7,7 +7,10 @@ import pandas as pd
 import logging
 
 if TYPE_CHECKING:
-    from gtd import GraphTransitionDescriptor
+    try:
+        from core.gtd import GraphTransitionDescriptor
+    except ImportError:
+        from src.core.gtd import GraphTransitionDescriptor
 
 logger = logging.getLogger(__name__)
 
@@ -206,16 +209,33 @@ class FeatureExtractor:
                 "gtd_local_edges_added": 0.0,
                 "gtd_local_edges_removed": 0.0,
                 "gtd_local_edge_churn": 0.0,
-                "gtd_mean_drift": 0.0,
-                "gtd_drift_variance": 0.0,
             }
         return gtd.get_entity_features(entity_id)
 
     def _get_code_metrics_features(self, entity_id: str, modified_entities: Set[str]) -> Dict[str, float]:
-        """Extract native code complexity features directly using Tree-sitter or AST."""
+        """Extract native code complexity and topological graph features."""
         is_mod = 1.0 if entity_id in modified_entities else 0.0
-        data_flow_dist = 0.0 if is_mod else 1.0
-        modified_deps = float(len(modified_entities.intersection(self.graph.neighbors(entity_id)))) if entity_id in self.graph else 0.0
+        
+        # Calculate real topological graph metrics
+        data_flow_dist = 10.0
+        modified_deps = 0.0
+        taint_score = is_mod
+
+        if entity_id in self.graph:
+            # Shortest path from any modified entity to entity_id
+            min_dist = float('inf')
+            for mod_ent in modified_entities:
+                if mod_ent in self.graph:
+                    try:
+                        # Path from mod_ent (source of change) to entity_id (dependent)
+                        d = nx.shortest_path_length(self.graph, source=mod_ent, target=entity_id)
+                        min_dist = min(min_dist, d)
+                        modified_deps += 1.0
+                        taint_score = 1.0
+                    except nx.NetworkXNoPath:
+                        pass
+            if min_dist != float('inf'):
+                data_flow_dist = float(min_dist)
 
         if hasattr(self.repo_parser, "get_code_metrics"):
             ts_metrics = self.repo_parser.get_code_metrics(entity_id)
@@ -225,7 +245,7 @@ class FeatureExtractor:
                 "max_nesting_depth": ts_metrics.get("max_nesting_depth", 0.0),
                 "data_flow_distance": data_flow_dist,
                 "modified_data_deps_count": modified_deps,
-                "taint_reachability_score": is_mod,
+                "taint_reachability_score": taint_score,
             }
 
         entity = self.repo_parser.get_entity(entity_id)
@@ -234,9 +254,9 @@ class FeatureExtractor:
                 "cyclomatic_complexity": 1.0,
                 "ast_node_count": 0.0,
                 "max_nesting_depth": 0.0,
-                "data_flow_distance": 0.0,
-                "modified_data_deps_count": 0.0,
-                "taint_reachability_score": 0.0,
+                "data_flow_distance": data_flow_dist,
+                "modified_data_deps_count": modified_deps,
+                "taint_reachability_score": taint_score,
             }
 
         try:
@@ -265,16 +285,16 @@ class FeatureExtractor:
                 "max_nesting_depth": max_depth,
                 "data_flow_distance": data_flow_dist,
                 "modified_data_deps_count": modified_deps,
-                "taint_reachability_score": is_mod,
+                "taint_reachability_score": taint_score,
             }
         except Exception:
             return {
                 "cyclomatic_complexity": 1.0,
                 "ast_node_count": 0.0,
                 "max_nesting_depth": 0.0,
-                "data_flow_distance": 0.0,
-                "modified_data_deps_count": 0.0,
-                "taint_reachability_score": 0.0,
+                "data_flow_distance": data_flow_dist,
+                "modified_data_deps_count": modified_deps,
+                "taint_reachability_score": taint_score,
             }
 
     def extract_features(self, entity_id: str, commit_a: str, commit_b: str,
@@ -301,6 +321,18 @@ class FeatureExtractor:
                                git_helper,
                                gtd=None) -> pd.DataFrame:
         """Extract features for multiple entities."""
+        # Retrieve or compute fallback global GTD features
+        if gtd is not None and hasattr(gtd, "get_global_features"):
+            global_feats = gtd.get_global_features()
+        else:
+            try:
+                from core.gtd import GraphTransitionDescriptor
+            except ImportError:
+                from src.core.gtd import GraphTransitionDescriptor
+            dummy = GraphTransitionDescriptor()
+            dummy.compute(nx.DiGraph(), nx.DiGraph(), {})
+            global_feats = {k: 0.0 for k in dummy.get_global_features()}
+
         features_list = []
 
         for entity_id in entity_ids:
@@ -308,6 +340,8 @@ class FeatureExtractor:
                 entity_id, commit_a, commit_b, modified_entities,
                 modification_history, previous_drifts, git_helper, gtd=gtd
             )
+            if global_feats:
+                features.update(global_feats)
             features['entity_id'] = entity_id
             features_list.append(features)
 

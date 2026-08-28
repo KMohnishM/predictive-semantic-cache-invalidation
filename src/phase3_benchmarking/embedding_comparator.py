@@ -6,7 +6,7 @@ from typing import List, Optional, Set
 
 import numpy as np
 
-from src.benchmarking.types import (
+from .types import (
     EntityEmbeddingComparison,
     IndexSnapshot,
     StrategyEmbeddingComparisonResult,

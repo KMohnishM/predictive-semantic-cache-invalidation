@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-from src.benchmarking.types import BenchmarkConfig, BenchmarkSummary, CommitPair, PerQueryResult, QueryCase
+from .types import BenchmarkConfig, BenchmarkSummary, CommitPair, PerQueryResult, QueryCase
 
 
 def ensure_output_dir(path: str) -> Path:

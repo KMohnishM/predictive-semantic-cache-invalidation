@@ -5,7 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional
 
-from git_helper import GitHelper
+try:
+    from core.git_helper import GitHelper
+except ImportError:
+    try:
+        from src.core.git_helper import GitHelper
+    except ImportError:
+        from ..core.git_helper import GitHelper
 
 from .types import CommitPair
 

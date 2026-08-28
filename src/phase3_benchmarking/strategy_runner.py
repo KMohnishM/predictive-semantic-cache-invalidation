@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional
 
-from src.benchmarking.types import StrategyDecision
+from .types import StrategyDecision
 
 
 def decide_updated_entities(

@@ -7,9 +7,15 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from embedding_manager import EmbeddingManager
+try:
+    from core.embedding_manager import EmbeddingManager
+except ImportError:
+    try:
+        from src.core.embedding_manager import EmbeddingManager
+    except ImportError:
+        from ..core.embedding_manager import EmbeddingManager
 
-from src.benchmarking.types import IndexSnapshot, RepositorySnapshot
+from .types import IndexSnapshot, RepositorySnapshot
 
 
 @dataclass(frozen=True)

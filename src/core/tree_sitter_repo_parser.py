@@ -299,23 +299,44 @@ class TreeSitterRepoParser:
         return None
 
     def _resolve_call_target(self, call_name: str, local_entities: Dict[str, Entity],
-                             symbol_table: Dict[str, str]) -> Optional[str]:
-        """Resolve function/method call target name to entity ID."""
+                             symbol_table: Dict[str, str], file_path: str,
+                             current_class: Optional[str] = None) -> Optional[str]:
+        """Resolve function/method call target name to entity ID with high precision."""
         if not call_name:
             return None
 
-        if call_name in local_entities:
-            return local_entities[call_name].entity_id
+        # 1. Resolve local method calls (if current_class is present)
+        if current_class:
+            local_method_id = f"{file_path}::{current_class}::{call_name}"
+            if local_method_id in local_entities:
+                return local_method_id
 
-        for entity_id, entity in local_entities.items():
-            if entity.entity_type in ["method", "function"]:
-                if entity_id.endswith(f"::{call_name}"):
-                    return entity_id
+        # 2. Resolve local module-level function calls
+        local_func_id = f"{file_path}::{call_name}"
+        if local_func_id in local_entities:
+            return local_func_id
 
+        # 3. Resolve imports from symbol table
         if call_name in symbol_table:
             resolved = self._resolve_external_import(symbol_table[call_name], local_entities)
             if resolved:
                 return resolved
+
+        # 4. Suffix matching (fallback) - only resolve if unique or highly likely
+        matches = []
+        for entity_id, entity in local_entities.items():
+            if entity.entity_type in ["method", "function"]:
+                if entity_id.endswith(f"::{call_name}"):
+                    matches.append(entity_id)
+
+        if len(matches) == 1:
+            return matches[0]
+        elif len(matches) > 1:
+            # If multiple matches, prioritize matches in the same module / directory
+            file_dir = os.path.dirname(file_path)
+            close_matches = [m for m in matches if os.path.dirname(local_entities[m].file_path) == file_dir]
+            if len(close_matches) == 1:
+                return close_matches[0]
 
         return None
 
@@ -349,7 +370,17 @@ class TreeSitterRepoParser:
                 if func_node:
                     call_text = func_node.text.decode('utf-8', errors='ignore')
                     call_name = call_text.split('.')[-1]
-                    callee_id = self._resolve_call_target(call_name, local_entities, symbol_table)
+                    
+                    # Parse current_class from active_id
+                    current_class = None
+                    parts = active_id.split("::")
+                    if len(parts) == 3:
+                        current_class = parts[1]
+
+                    callee_id = self._resolve_call_target(
+                        call_name, local_entities, symbol_table,
+                        file_path=file_path, current_class=current_class
+                    )
                     if callee_id and callee_id in local_entities and callee_id != active_id:
                         edges.append((active_id, callee_id))
 
