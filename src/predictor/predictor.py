@@ -127,7 +127,7 @@ class DriftPredictor:
 
         Args:
             X: Feature matrix
-            y: Target values
+            y: Target values (continuous or binary)
 
         Returns:
             Dictionary of training metrics
@@ -136,6 +136,10 @@ class DriftPredictor:
 
         # Scale features
         X_scaled = self.scaler.fit_transform(X)
+
+        # Convert continuous labels if classification task
+        if self.task_type == "classification" and not np.all(np.isin(y, [0, 1])):
+            y = np.array([1 if val >= self.threshold else 0 for val in y])
 
         # Create and train model
         self.model = self._create_model()
@@ -169,7 +173,7 @@ class DriftPredictor:
 
         Args:
             X: Feature matrix
-            y: Target values
+            y: Target values (continuous or binary)
 
         Returns:
             Dictionary of evaluation metrics
@@ -195,6 +199,10 @@ class DriftPredictor:
             logger.info(f"Test MAE: {metrics['test_mae']:.6f}")
 
         else:
+            # Convert test labels if continuous
+            if not np.all(np.isin(y, [0, 1])):
+                y = np.array([1 if val >= self.threshold else 0 for val in y])
+
             y_pred = self.model.predict(X_scaled)
             y_prob = self.model.predict_proba(X_scaled)[:, 1] if hasattr(self.model, 'predict_proba') else None
 

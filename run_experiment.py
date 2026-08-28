@@ -170,7 +170,7 @@ class Experiment:
 
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
         self.feature_extractor = FeatureExtractor(self.repo_parser)
-        self.predictor = DriftPredictor(threshold=self.threshold)
+        self.predictor = DriftPredictor(model_type="random_forest", task_type="classification", threshold=self.threshold)
         self.evaluator = Evaluator(self.embedding_manager, self.repo_parser)
         self.visualizer = Visualizer(str(self.results_dir))
 
@@ -668,11 +668,15 @@ class Experiment:
             # Prepare data for prediction
             X, y_true = self.predictor.prepare_data(features_df, drifts)
 
-            # Predict drifts
-            y_pred = self.predictor.predict(X)
+            # Predict drifts / probabilities
+            if self.predictor.task_type == "classification":
+                y_prob = self.predictor.predict_proba(X)
+                y_pred = y_prob[:, 1] if y_prob is not None else self.predictor.predict(X)
+                y_pred_class = self.predictor.predict(X)
+            else:
+                y_pred = self.predictor.predict(X)
+                y_pred_class = (y_pred >= self.threshold).astype(int)
 
-            # Convert to classification labels
-            y_pred_class = (y_pred >= self.threshold).astype(int)
             y_true_class = (y_true >= self.threshold).astype(int)
 
             all_predictions.extend(y_pred_class)
@@ -826,6 +830,18 @@ class Experiment:
             'all_labels': all_labels
         }
 
+    def _extract_docstring_summary(self, source_code: str) -> Optional[str]:
+        import re
+        match = re.search(r'"""(.*?)"""', source_code, re.DOTALL)
+        if not match:
+            match = re.search(r"'''(.*?)'''", source_code, re.DOTALL)
+        if match:
+            doc = match.group(1).strip()
+            first_line = doc.split('\n')[0].strip()
+            if len(first_line) > 5:
+                return first_line
+        return None
+
     def _generate_queries(self, drifts: Dict[str, float] = None, num_queries: int = 20) -> Dict[str, np.ndarray]:
         """
         Generate search queries from entity docstrings and descriptions.
@@ -860,7 +876,13 @@ class Experiment:
 
         # Generate template queries from selected entities
         for i, entity in enumerate(selected_entities):
-            query_text = f"What does {entity.entity_id} do after the latest commit?"
+            doc_summary = self._extract_docstring_summary(entity.source_code)
+            file_name = entity.file_path.split('/')[-1]
+            func_name = entity.entity_id.split('::')[-1]
+            if doc_summary:
+                query_text = f"Which function implements the following functionality: {doc_summary}?"
+            else:
+                query_text = f"How is the function {func_name} in {file_name} implemented and what is its purpose?"
 
             # Generate embedding
             query_embedding = self.embedding_manager.generate_embedding(

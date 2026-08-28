@@ -14,6 +14,19 @@ def _normalize_query(text: str) -> str:
     return " ".join(text.strip().split())
 
 
+def _extract_docstring_summary(source_code: str) -> Optional[str]:
+    import re
+    match = re.search(r'"""(.*?)"""', source_code, re.DOTALL)
+    if not match:
+        match = re.search(r"'''(.*?)'''", source_code, re.DOTALL)
+    if match:
+        doc = match.group(1).strip()
+        first_line = doc.split('\n')[0].strip()
+        if len(first_line) > 5:
+            return first_line
+    return None
+
+
 def build_synthetic_queries(
     snapshot: RepositorySnapshot,
     commit_pair: CommitPair,
@@ -30,11 +43,28 @@ def build_synthetic_queries(
         else:
             is_changed = (entity_index % 2 == 0)
 
-        templates = [
-            f"What does {entity.entity_id} do after the latest commit?",
-            f"Where is {entity.entity_id} implemented in the updated version?",
-        ]
-        for template_index, template in enumerate(templates[:max_queries_per_entity]):
+        doc_summary = _extract_docstring_summary(entity.source_code)
+        file_name = entity.file_path.split('/')[-1]
+        templates = []
+        
+        if doc_summary:
+            templates.append(doc_summary)
+            templates.append(f"Which function is described as: {doc_summary}?")
+
+        templates.append(f"Find the implementation of {entity.name} in {file_name}")
+        templates.append(f"How is the {entity.entity_type} {entity.name} structured?")
+        templates.append(f"What is the purpose of the {entity.entity_type} {entity.name}?")
+
+        # Deduplicate templates
+        seen = set()
+        unique_templates = []
+        for t in templates:
+            t_norm = _normalize_query(t)
+            if t_norm not in seen:
+                seen.add(t_norm)
+                unique_templates.append(t)
+
+        for template_index, template in enumerate(unique_templates[:max_queries_per_entity]):
             query_id = f"{commit_pair.commit_after[:8]}::{entity.entity_id}::{template_index}"
             queries.append(
                 QueryCase(
@@ -43,7 +73,7 @@ def build_synthetic_queries(
                     query_source="synthetic",
                     category="changed_entity" if is_changed else "unchanged_entity",
                     target_entity_id=entity.entity_id,
-                    target_entity_name=entity.entity_id.split("::")[-1],
+                    target_entity_name=entity.name,
                     expected_behavior="latest_snapshot" if is_changed else "cached_snapshot",
                     commit_after=commit_pair.commit_after,
                     file_path=entity.file_path,
