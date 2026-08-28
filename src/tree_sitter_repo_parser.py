@@ -7,30 +7,10 @@ import networkx as nx
 import logging
 import tree_sitter_languages
 
-class Entity:
-    """Represents a code entity (function, method, or class)."""
-
-    def __init__(self, entity_id: str, entity_type: str, file_path: str,
-                 lineno: int, end_lineno: int, source_code: str,
-                 cyclomatic_complexity: float = 1.0,
-                 ast_node_count: float = 0.0,
-                 max_nesting_depth: float = 0.0,
-                 param_count: float = 0.0,
-                 return_count: float = 0.0):
-        self.entity_id = entity_id
-        self.entity_type = entity_type
-        self.file_path = file_path
-        self.lineno = lineno
-        self.end_lineno = end_lineno
-        self.source_code = source_code
-        self.cyclomatic_complexity = cyclomatic_complexity
-        self.ast_node_count = ast_node_count
-        self.max_nesting_depth = max_nesting_depth
-        self.param_count = param_count
-        self.return_count = return_count
-
-    def __repr__(self):
-        return f"Entity({self.entity_id}, {self.entity_type})"
+try:
+    from src.repo_parser import Entity
+except ImportError:
+    from repo_parser import Entity
 
 logger = logging.getLogger(__name__)
 
