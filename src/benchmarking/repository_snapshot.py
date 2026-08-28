@@ -8,12 +8,12 @@ from typing import Dict, List, Optional
 import tree_sitter_languages
 
 try:
-    from core.git_helper import GitHelper
+    from parser.git_helper import GitHelper
 except ImportError:
     try:
-        from src.core.git_helper import GitHelper
+        from src.parser.git_helper import GitHelper
     except ImportError:
-        from ..core.git_helper import GitHelper
+        from ..parser.git_helper import GitHelper
 
 from .types import RepositoryEntity, RepositorySnapshot
 

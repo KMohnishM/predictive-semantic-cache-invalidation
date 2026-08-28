@@ -8,12 +8,12 @@ from typing import Dict, List, Optional
 import numpy as np
 
 try:
-    from core.embedding_manager import EmbeddingManager
+    from embedder.embedding_manager import EmbeddingManager
 except ImportError:
     try:
-        from src.core.embedding_manager import EmbeddingManager
+        from src.embedder.embedding_manager import EmbeddingManager
     except ImportError:
-        from ..core.embedding_manager import EmbeddingManager
+        from ..embedder.embedding_manager import EmbeddingManager
 
 from .types import IndexSnapshot, RepositorySnapshot
 

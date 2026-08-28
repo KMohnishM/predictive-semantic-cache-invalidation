@@ -6,12 +6,12 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 try:
-    from core.git_helper import GitHelper
+    from parser.git_helper import GitHelper
 except ImportError:
     try:
-        from src.core.git_helper import GitHelper
+        from src.parser.git_helper import GitHelper
     except ImportError:
-        from ..core.git_helper import GitHelper
+        from ..parser.git_helper import GitHelper
 
 from .types import CommitPair
 

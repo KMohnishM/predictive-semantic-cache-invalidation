@@ -17,17 +17,17 @@ import pandas as pd
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from core.git_helper import GitHelper
-from core.repo_parser import RepoParser, Entity
-from core.embedding_manager import EmbeddingManager
-from phase1_training.feature_extractor import FeatureExtractor
-from phase1_training.predictor import DriftPredictor, train_test_split_temporal
-from phase2_invalidation.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
+from parser.git_helper import GitHelper
+from parser.repo_parser import RepoParser, Entity
+from embedder.embedding_manager import EmbeddingManager
+from extractor.feature_extractor import FeatureExtractor
+from predictor.predictor import DriftPredictor, train_test_split_temporal
+from evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
                        BaselineCFixedHop, BaselineDPageRankPropagation,
                        PredictiveStrategy)
-from core.visualize import Visualizer
-from core.rsd import RepositoryStateDescriptor
-from core.gtd import GraphTransitionDescriptor
+from reporter.visualize import Visualizer
+from extractor.rsd import RepositoryStateDescriptor
+from extractor.gtd import GraphTransitionDescriptor
 
 # Configure logging
 logging.basicConfig(

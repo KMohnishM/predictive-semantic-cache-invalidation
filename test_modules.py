@@ -9,45 +9,45 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 print("Testing reorganized module imports...")
 
 try:
-    from core.git_helper import GitHelper
-    print("[OK] core.git_helper imported successfully")
+    from parser.git_helper import GitHelper
+    print("[OK] parser.git_helper imported successfully")
 except Exception as e:
-    print(f"[FAIL] core.git_helper failed: {e}")
+    print(f"[FAIL] parser.git_helper failed: {e}")
 
 try:
-    from core.repo_parser import RepoParser, Entity
-    print("[OK] core.repo_parser imported successfully")
+    from parser.repo_parser import RepoParser, Entity
+    print("[OK] parser.repo_parser imported successfully")
 except Exception as e:
-    print(f"[FAIL] core.repo_parser failed: {e}")
+    print(f"[FAIL] parser.repo_parser failed: {e}")
 
 try:
-    from core.embedding_manager import EmbeddingManager
-    print("[OK] core.embedding_manager imported successfully")
+    from embedder.embedding_manager import EmbeddingManager
+    print("[OK] embedder.embedding_manager imported successfully")
 except Exception as e:
-    print(f"[FAIL] core.embedding_manager failed: {e}")
+    print(f"[FAIL] embedder.embedding_manager failed: {e}")
 
 try:
-    from phase1_training.feature_extractor import FeatureExtractor
-    print("[OK] phase1_training.feature_extractor imported successfully")
+    from extractor.feature_extractor import FeatureExtractor
+    print("[OK] extractor.feature_extractor imported successfully")
 except Exception as e:
-    print(f"[FAIL] phase1_training.feature_extractor failed: {e}")
+    print(f"[FAIL] extractor.feature_extractor failed: {e}")
 
 try:
-    from phase1_training.predictor import DriftPredictor
-    print("[OK] phase1_training.predictor imported successfully")
+    from predictor.predictor import DriftPredictor
+    print("[OK] predictor.predictor imported successfully")
 except Exception as e:
-    print(f"[FAIL] phase1_training.predictor failed: {e}")
+    print(f"[FAIL] predictor.predictor failed: {e}")
 
 try:
-    from phase2_invalidation.evaluator import Evaluator, BaselineAChangedOnly, BaselineBFullReindex, BaselineCFixedHop, PredictiveStrategy
-    print("[OK] phase2_invalidation.evaluator imported successfully")
+    from evaluator.evaluator import Evaluator, BaselineAChangedOnly, BaselineBFullReindex, BaselineCFixedHop, PredictiveStrategy
+    print("[OK] evaluator.evaluator imported successfully")
 except Exception as e:
-    print(f"[FAIL] phase2_invalidation.evaluator failed: {e}")
+    print(f"[FAIL] evaluator.evaluator failed: {e}")
 
 try:
-    from core.visualize import Visualizer
-    print("[OK] core.visualize imported successfully")
+    from reporter.visualize import Visualizer
+    print("[OK] reporter.visualize imported successfully")
 except Exception as e:
-    print(f"[FAIL] core.visualize failed: {e}")
+    print(f"[FAIL] reporter.visualize failed: {e}")
 
 print("\nAll reorganized module imports tested!")

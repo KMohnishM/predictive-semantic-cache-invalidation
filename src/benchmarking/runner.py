@@ -17,15 +17,15 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from core.embedding_manager import EmbeddingManager
-    from core.git_helper import GitHelper
+    from embedder.embedding_manager import EmbeddingManager
+    from parser.git_helper import GitHelper
 except ImportError:
     try:
-        from src.core.embedding_manager import EmbeddingManager
-        from src.core.git_helper import GitHelper
+        from src.embedder.embedding_manager import EmbeddingManager
+        from src.parser.git_helper import GitHelper
     except ImportError:
-        from ..core.embedding_manager import EmbeddingManager
-        from ..core.git_helper import GitHelper
+        from ..embedder.embedding_manager import EmbeddingManager
+        from ..parser.git_helper import GitHelper
 
 from .commit_sampler import sample_commit_pairs
 from .config import load_config

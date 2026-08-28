@@ -13,9 +13,9 @@ if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
 try:
-    from phase3_benchmarking.runner import main
+    from benchmarking.runner import main
 except ImportError:
-    from src.phase3_benchmarking.runner import main
+    from src.benchmarking.runner import main
 
 if __name__ == "__main__":
     output_path = main(sys.argv[1:])

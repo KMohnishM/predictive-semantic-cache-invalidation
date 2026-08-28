@@ -7,10 +7,7 @@ import pandas as pd
 import logging
 
 if TYPE_CHECKING:
-    try:
-        from core.gtd import GraphTransitionDescriptor
-    except ImportError:
-        from src.core.gtd import GraphTransitionDescriptor
+    from .gtd import GraphTransitionDescriptor
 
 logger = logging.getLogger(__name__)
 
@@ -325,10 +322,7 @@ class FeatureExtractor:
         if gtd is not None and hasattr(gtd, "get_global_features"):
             global_feats = gtd.get_global_features()
         else:
-            try:
-                from core.gtd import GraphTransitionDescriptor
-            except ImportError:
-                from src.core.gtd import GraphTransitionDescriptor
+            from .gtd import GraphTransitionDescriptor
             dummy = GraphTransitionDescriptor()
             dummy.compute(nx.DiGraph(), nx.DiGraph(), {})
             global_feats = {k: 0.0 for k in dummy.get_global_features()}
