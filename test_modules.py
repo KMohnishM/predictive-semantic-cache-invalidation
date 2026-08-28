@@ -45,9 +45,9 @@ except Exception as e:
     print(f"[FAIL] evaluator.evaluator failed: {e}")
 
 try:
-    from reporter.visualize import Visualizer
-    print("[OK] reporter.visualize imported successfully")
+    from visualizer.visualize import Visualizer
+    print("[OK] visualizer.visualize imported successfully")
 except Exception as e:
-    print(f"[FAIL] reporter.visualize failed: {e}")
+    print(f"[FAIL] visualizer.visualize failed: {e}")
 
 print("\nAll reorganized module imports tested!")

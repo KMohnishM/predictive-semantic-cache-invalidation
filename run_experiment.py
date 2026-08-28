@@ -25,7 +25,7 @@ from predictor.predictor import DriftPredictor, train_test_split_temporal
 from evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
                        BaselineCFixedHop, BaselineDPageRankPropagation,
                        PredictiveStrategy)
-from reporter.visualize import Visualizer
+from visualizer.visualize import Visualizer
 from extractor.rsd import RepositoryStateDescriptor
 from extractor.gtd import GraphTransitionDescriptor
 
