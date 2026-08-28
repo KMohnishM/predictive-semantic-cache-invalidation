@@ -148,7 +148,9 @@ class EmbeddingManager:
         texts = [self._prepare_text(source) for source in entities.values()]
 
         logger.info(f"Generating embeddings for {len(entity_ids)} entities")
-        embeddings = self.model.encode(texts, convert_to_numpy=True, show_progress_bar=True)
+        # Reduce batch size for memory-intensive models (e.g. jina with 8k context)
+        batch_size = 2 if "jina" in self.model_name.lower() else 32
+        embeddings = self.model.encode(texts, batch_size=batch_size, convert_to_numpy=True, show_progress_bar=True)
 
         # Normalize embeddings
         norms = np.linalg.norm(embeddings, axis=1, keepdims=True)

@@ -18,7 +18,6 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from git_helper import GitHelper
-from tree_sitter_repo_parser import TreeSitterRepoParser
 from repo_parser import RepoParser, Entity
 from embedding_manager import EmbeddingManager
 from feature_extractor import FeatureExtractor
@@ -165,13 +164,9 @@ class Experiment:
         # Initialize components
         logger.info("Initializing components...")
 
-        # Initialize repository parser based on parser_mode
-        if self.parser_mode == "tree_sitter":
-            self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
-            logger.info("Using TreeSitterRepoParser for repository parsing and graph construction")
-        else:
-            self.repo_parser = RepoParser(str(self.repo_path))
-            logger.info("Using native AST RepoParser for repository parsing and graph construction")
+        # Initialize repository parser (Tree-sitter native)
+        self.repo_parser = RepoParser(str(self.repo_path))
+        logger.info("Initialized Tree-sitter RepoParser for repository parsing and graph construction")
 
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
         self.feature_extractor = FeatureExtractor(self.repo_parser)
@@ -327,10 +322,7 @@ class Experiment:
             return
 
         # Parse repository
-        if self.parser_mode == "tree_sitter":
-            self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
-        else:
-            self.repo_parser = RepoParser(str(self.repo_path))
+        self.repo_parser = RepoParser(str(self.repo_path))
         self.repo_parser.parse_directory(str(self.repo_path))
 
         # Generate embeddings for all entities
@@ -470,10 +462,7 @@ class Experiment:
                 continue
 
             # Parse repository
-            if self.parser_mode == "tree_sitter":
-                self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
-            else:
-                self.repo_parser = RepoParser(str(self.repo_path))
+            self.repo_parser = RepoParser(str(self.repo_path))
             self.repo_parser.parse_directory(str(self.repo_path))
             self.parsers_history[commit] = self.repo_parser
 

@@ -5775,3 +5775,230 @@ WEIGHTED_BFS_DECAY:
 2026-08-24 15:29:35,773 - __main__ - INFO - ================================================================================
 2026-08-24 15:29:35,773 - __main__ - INFO - Results saved to results\results_all-MiniLM-L6-v2_contextual_commits5_stride20_cleanFalse_20260824_152241
 2026-08-24 15:29:35,774 - __main__ - INFO - Logs saved to experiment.log
+2026-08-25 09:49:38,575 - __main__ - INFO - ================================================================================
+2026-08-25 09:49:38,576 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-25 09:49:38,576 - __main__ - INFO - ================================================================================
+2026-08-25 09:49:38,576 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-25 09:49:38,578 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-25 09:49:38,578 - __main__ - INFO - Initializing components...
+2026-08-25 09:49:38,579 - __main__ - INFO - Using native AST RepoParser for repository parsing and graph construction
+2026-08-25 09:49:38,585 - __main__ - INFO - Setup complete (parser_mode=ast)
+2026-08-25 09:49:38,586 - __main__ - INFO - ================================================================================
+2026-08-25 09:49:38,586 - __main__ - INFO - HARVESTING COMMITS
+2026-08-25 09:49:38,586 - __main__ - INFO - ================================================================================
+2026-08-25 09:49:38,586 - git_helper - INFO - Retrieving last 100 commits
+2026-08-25 09:49:38,652 - git_helper - INFO - Retrieved 100 commits
+2026-08-25 09:49:38,652 - __main__ - INFO - Total raw commits: 100
+2026-08-25 09:49:38,652 - __main__ - INFO - Training commits (preliminary): 70
+2026-08-25 09:49:38,653 - __main__ - INFO - Test commits (preliminary):     30
+2026-08-25 09:49:38,654 - __main__ - INFO - ================================================================================
+2026-08-25 09:49:38,654 - __main__ - INFO - BUILDING DATASET
+2026-08-25 09:49:38,654 - __main__ - INFO - ================================================================================
+2026-08-25 09:49:38,654 - __main__ - INFO - 
+Processing sampled commit 1/5 (436e12f2)...
+2026-08-25 09:49:50,589 - embedding_manager - INFO - Loading embedding model: jinaai/jina-embeddings-v2-base-code
+2026-08-25 09:49:50,594 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-25 09:49:52,081 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+2026-08-25 09:49:52,355 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-embeddings-v2-base-code/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-25 09:49:52,405 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/modules.json "HTTP/1.1 200 OK"
+2026-08-25 09:49:52,483 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/modules.json "HTTP/1.1 200 OK"
+2026-08-25 09:49:52,822 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-embeddings-v2-base-code/resolve/main/config_sentence_transformers.json "HTTP/1.1 404 Not Found"
+2026-08-25 09:49:52,824 - huggingface_hub.utils._http - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-08-25 09:49:52,854 - sentence_transformers.base.model - INFO - Loading SentenceTransformer model from jinaai/jina-embeddings-v2-base-code.
+2026-08-25 09:49:53,131 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-embeddings-v2-base-code/resolve/main/config_sentence_transformers.json "HTTP/1.1 404 Not Found"
+2026-08-25 09:49:53,401 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-embeddings-v2-base-code/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-08-25 09:49:53,453 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/README.md "HTTP/1.1 200 OK"
+2026-08-25 09:49:53,540 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/README.md "HTTP/1.1 200 OK"
+2026-08-25 09:49:53,894 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-embeddings-v2-base-code/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-25 09:49:53,951 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/modules.json "HTTP/1.1 200 OK"
+2026-08-25 09:49:54,256 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-embeddings-v2-base-code/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-25 09:49:54,311 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-08-25 09:49:54,377 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-08-25 09:49:54,690 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-embeddings-v2-base-code/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-08-25 09:49:54,971 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-embeddings-v2-base-code/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-25 09:49:55,023 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/config.json "HTTP/1.1 200 OK"
+2026-08-25 09:49:55,080 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/config.json "HTTP/1.1 200 OK"
+2026-08-25 09:49:55,386 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-bert-v2-qk-post-norm/resolve/main/configuration_bert.py "HTTP/1.1 307 Temporary Redirect"
+2026-08-25 09:49:55,435 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/jinaai/jina-bert-v2-qk-post-norm/3baf9e3ac750e76e8edd3019170176884695fb94/configuration_bert.py "HTTP/1.1 200 OK"
+2026-08-25 09:49:55,498 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/jinaai/jina-bert-v2-qk-post-norm/3baf9e3ac750e76e8edd3019170176884695fb94/configuration_bert.py "HTTP/1.1 200 OK"
+2026-08-25 09:49:55,983 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-embeddings-v2-base-code/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-08-25 09:49:56,033 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/jinaai/jina-embeddings-v2-base-code/516f4baf13dec4ddddda8631e019b5737c8bc250/config.json "HTTP/1.1 200 OK"
+2026-08-25 09:49:56,317 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/jinaai/jina-bert-v2-qk-post-norm/resolve/main/modeling_bert.py "HTTP/1.1 307 Temporary Redirect"
+2026-08-25 09:49:56,368 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/jinaai/jina-bert-v2-qk-post-norm/3baf9e3ac750e76e8edd3019170176884695fb94/modeling_bert.py "HTTP/1.1 200 OK"
+2026-08-25 09:49:56,443 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/resolve-cache/models/jinaai/jina-bert-v2-qk-post-norm/3baf9e3ac750e76e8edd3019170176884695fb94/modeling_bert.py "HTTP/1.1 200 OK"
+2026-08-25 09:49:56,758 - __main__ - ERROR - Experiment failed with error: cannot import name 'find_pruneable_heads_and_indices' from 'transformers.pytorch_utils' (C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\transformers\pytorch_utils.py)
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 986, in run
+    if not self.build_dataset():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 485, in build_dataset
+    embeddings = self.embedding_manager.generate_embeddings_batch(entity_sources)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\embedding_manager.py", line 145, in generate_embeddings_batch
+    self._load_model()
+  File "C:\Users\kmohn\New folder\Project-1\src\embedding_manager.py", line 32, in _load_model
+    self.model = SentenceTransformer(self.model_name, trust_remote_code=True)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\util\decorators.py", line 41, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\sentence_transformer\model.py", line 188, in __init__
+    super().__init__(
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\base\model.py", line 216, in __init__
+    modules, self.module_kwargs = self._load_modules(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\base\model.py", line 1002, in _load_modules
+    return self._load_config_modules(model_name_or_path, **load_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\base\model.py", line 1208, in _load_config_modules
+    module = module_class.load(
+             ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\base\modules\transformer.py", line 2045, in load
+    return cls(model_name_or_path=model_name_or_path, **init_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\util\decorators.py", line 87, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\base\modules\transformer.py", line 654, in __init__
+    self.model = self._load_model(
+                 ^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\base\modules\transformer.py", line 1751, in _load_model
+    return model_cls.from_pretrained(model_name_or_path, config=config, **model_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\transformers\models\auto\auto_factory.py", line 378, in from_pretrained
+    model_class = get_class_from_dynamic_module(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\transformers\dynamic_module_utils.py", line 623, in get_class_from_dynamic_module
+    return get_class_in_module(class_name, final_module, force_reload=force_download)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\transformers\dynamic_module_utils.py", line 309, in get_class_in_module
+    module_spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 994, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\kmohn\.cache\huggingface\modules\transformers_modules\jinaai\jina_hyphen_bert_hyphen_v2_hyphen_qk_hyphen_post_hyphen_norm\3baf9e3ac750e76e8edd3019170176884695fb94\modeling_bert.py", line 45, in <module>
+    from transformers.pytorch_utils import (
+ImportError: cannot import name 'find_pruneable_heads_and_indices' from 'transformers.pytorch_utils' (C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\transformers\pytorch_utils.py)
+2026-08-25 09:57:36,822 - __main__ - INFO - ================================================================================
+2026-08-25 09:57:36,823 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-25 09:57:36,823 - __main__ - INFO - ================================================================================
+2026-08-25 09:57:36,823 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-25 09:57:36,825 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-25 09:57:36,825 - __main__ - INFO - Initializing components...
+2026-08-25 09:57:36,827 - __main__ - INFO - Using native AST RepoParser for repository parsing and graph construction
+2026-08-25 09:57:36,836 - __main__ - INFO - Setup complete (parser_mode=ast)
+2026-08-25 09:57:36,836 - __main__ - INFO - ================================================================================
+2026-08-25 09:57:36,836 - __main__ - INFO - HARVESTING COMMITS
+2026-08-25 09:57:36,837 - __main__ - INFO - ================================================================================
+2026-08-25 09:57:36,838 - git_helper - INFO - Retrieving last 100 commits
+2026-08-25 09:57:36,930 - git_helper - INFO - Retrieved 100 commits
+2026-08-25 09:57:36,930 - __main__ - INFO - Total raw commits: 100
+2026-08-25 09:57:36,930 - __main__ - INFO - Training commits (preliminary): 70
+2026-08-25 09:57:36,931 - __main__ - INFO - Test commits (preliminary):     30
+2026-08-25 09:57:36,931 - __main__ - INFO - ================================================================================
+2026-08-25 09:57:36,931 - __main__ - INFO - BUILDING DATASET
+2026-08-25 09:57:36,931 - __main__ - INFO - ================================================================================
+2026-08-25 09:57:36,931 - __main__ - INFO - 
+Processing sampled commit 1/5 (fda2561f)...
+2026-08-25 09:57:49,330 - embedding_manager - INFO - Loading embedding model: jinaai/jina-embeddings-v2-base-code
+2026-08-25 09:57:49,335 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-25 09:57:51,236 - sentence_transformers.base.model - INFO - Loading SentenceTransformer model from jinaai/jina-embeddings-v2-base-code.
+2026-08-25 10:04:57,632 - embedding_manager - INFO - Model loaded successfully with max_seq_length=8192
+2026-08-25 10:04:57,633 - embedding_manager - INFO - Generating embeddings for 566 entities
+2026-08-25 10:05:22,662 - __main__ - ERROR - Experiment failed with error: [enforce fail at alloc_cpu.cpp:117] data. DefaultCPUAllocator: not enough memory: you tried to allocate 48651853824 bytes.
+Traceback (most recent call last):
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 986, in run
+    if not self.build_dataset():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\run_experiment.py", line 485, in build_dataset
+    embeddings = self.embedding_manager.generate_embeddings_batch(entity_sources)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\src\embedding_manager.py", line 151, in generate_embeddings_batch
+    embeddings = self.model.encode(texts, convert_to_numpy=True, show_progress_bar=True)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\utils\_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\util\decorators.py", line 41, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\sentence_transformer\model.py", line 661, in encode
+    out_features = self.forward(features, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\base\model.py", line 511, in forward
+    input = module(input, **module_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\sentence_transformers\base\modules\transformer.py", line 1111, in forward
+    model_output = model_method(**filtered_kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\.cache\huggingface\modules\transformers_modules\jinaai\jina_hyphen_bert_hyphen_v2_hyphen_qk_hyphen_post_hyphen_norm\3baf9e3ac750e76e8edd3019170176884695fb94\modeling_bert.py", line 1374, in forward
+    encoder_outputs = self.encoder(
+                      ^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\.cache\huggingface\modules\transformers_modules\jinaai\jina_hyphen_bert_hyphen_v2_hyphen_qk_hyphen_post_hyphen_norm\3baf9e3ac750e76e8edd3019170176884695fb94\modeling_bert.py", line 779, in forward
+    layer_outputs = layer_module(
+                    ^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\.cache\huggingface\modules\transformers_modules\jinaai\jina_hyphen_bert_hyphen_v2_hyphen_qk_hyphen_post_hyphen_norm\3baf9e3ac750e76e8edd3019170176884695fb94\modeling_bert.py", line 608, in forward
+    self_attention_outputs = self.attention(
+                             ^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\.cache\huggingface\modules\transformers_modules\jinaai\jina_hyphen_bert_hyphen_v2_hyphen_qk_hyphen_post_hyphen_norm\3baf9e3ac750e76e8edd3019170176884695fb94\modeling_bert.py", line 501, in forward
+    self_outputs = self.self(
+                   ^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\New folder\Project-1\venv\Lib\site-packages\torch\nn\modules\module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kmohn\.cache\huggingface\modules\transformers_modules\jinaai\jina_hyphen_bert_hyphen_v2_hyphen_qk_hyphen_post_hyphen_norm\3baf9e3ac750e76e8edd3019170176884695fb94\modeling_bert.py", line 366, in forward
+    attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: [enforce fail at alloc_cpu.cpp:117] data. DefaultCPUAllocator: not enough memory: you tried to allocate 48651853824 bytes.
+2026-08-25 10:39:15,045 - __main__ - INFO - ================================================================================
+2026-08-25 10:39:15,045 - __main__ - INFO - SETTING UP EXPERIMENT
+2026-08-25 10:39:15,045 - __main__ - INFO - ================================================================================
+2026-08-25 10:39:15,045 - __main__ - INFO - Cloning repository from https://github.com/psf/black.git...
+2026-08-25 10:39:15,046 - git_helper - INFO - Repository already exists at C:\Users\kmohn\New folder\Project-1\workspace\black
+2026-08-25 10:39:15,046 - __main__ - INFO - Initializing components...
+2026-08-25 10:39:15,046 - __main__ - INFO - Using native AST RepoParser for repository parsing and graph construction
+2026-08-25 10:39:15,049 - __main__ - INFO - Setup complete (parser_mode=ast)
+2026-08-25 10:39:15,049 - __main__ - INFO - ================================================================================
+2026-08-25 10:39:15,049 - __main__ - INFO - HARVESTING COMMITS
+2026-08-25 10:39:15,049 - __main__ - INFO - ================================================================================
+2026-08-25 10:39:15,049 - git_helper - INFO - Retrieving last 100 commits
+2026-08-25 10:39:15,115 - git_helper - INFO - Retrieved 100 commits
+2026-08-25 10:39:15,116 - __main__ - INFO - Total raw commits: 100
+2026-08-25 10:39:15,116 - __main__ - INFO - Training commits (preliminary): 70
+2026-08-25 10:39:15,116 - __main__ - INFO - Test commits (preliminary):     30
+2026-08-25 10:39:15,116 - __main__ - INFO - ================================================================================
+2026-08-25 10:39:15,116 - __main__ - INFO - BUILDING DATASET
+2026-08-25 10:39:15,117 - __main__ - INFO - ================================================================================
+2026-08-25 10:39:15,117 - __main__ - INFO - 
+Processing sampled commit 1/5 (7dacdbe6)...
+2026-08-25 10:39:24,651 - embedding_manager - INFO - Loading embedding model: jinaai/jina-embeddings-v2-base-code
+2026-08-25 10:39:24,652 - sentence_transformers.base.model - INFO - No device provided, using cpu
+2026-08-25 10:39:26,057 - sentence_transformers.base.model - INFO - Loading SentenceTransformer model from jinaai/jina-embeddings-v2-base-code.
+2026-08-25 10:39:36,660 - embedding_manager - INFO - Model loaded successfully with max_seq_length=8192
+2026-08-25 10:39:36,660 - embedding_manager - INFO - Generating embeddings for 536 entities
