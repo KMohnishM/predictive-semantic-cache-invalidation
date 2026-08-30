@@ -7,7 +7,8 @@ from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.ensemble import GradientBoostingRegressor, GradientBoostingClassifier
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score, f1_score, precision_score, recall_score
+from sklearn.metrics import (mean_squared_error, r2_score, f1_score,
+                             precision_score, recall_score, precision_recall_curve, auc)
 from sklearn.preprocessing import StandardScaler
 import logging
 import joblib
@@ -105,11 +106,15 @@ class DriftPredictor:
             Tuple of (X, y) arrays
         """
         # Align features with drifts
-        common_ids = set(features_df.index) & set(drifts.keys())
-        if not common_ids:
+        common_ids_set = set(features_df.index) & set(drifts.keys())
+        if not common_ids_set:
             raise ValueError("No common entities between features and drifts")
 
-        X = features_df.loc[list(common_ids)].values
+        # Sort common_ids for deterministic ordering
+        common_ids = sorted(list(common_ids_set))
+        self.last_common_ids = common_ids
+
+        X = features_df.loc[common_ids].values
         drift_values = [drifts[eid] for eid in common_ids]
 
         if self.task_type == "regression":
@@ -211,10 +216,21 @@ class DriftPredictor:
             metrics['test_precision'] = precision_score(y, y_pred, zero_division=0)
             metrics['test_recall'] = recall_score(y, y_pred, zero_division=0)
 
+            if y_prob is not None:
+                # Handle single-class edge cases gracefully by returning 0.0 or 1.0 depending on the target
+                if len(np.unique(y)) < 2:
+                    metrics['test_pr_auc'] = 1.0 if np.all(y == 1) else 0.0
+                else:
+                    precisions, recalls, _ = precision_recall_curve(y, y_prob)
+                    metrics['test_pr_auc'] = auc(recalls, precisions)
+            else:
+                metrics['test_pr_auc'] = 0.0
+
             logger.info(f"Test Accuracy: {metrics['test_accuracy']:.4f}")
             logger.info(f"Test F1: {metrics['test_f1']:.4f}")
             logger.info(f"Test Precision: {metrics['test_precision']:.4f}")
             logger.info(f"Test Recall: {metrics['test_recall']:.4f}")
+            logger.info(f"Test PR-AUC: {metrics['test_pr_auc']:.4f}")
 
         return metrics
 
@@ -328,36 +344,49 @@ class DriftPredictor:
 def train_test_split_temporal(features_df: pd.DataFrame, drifts: Dict[str, float],
                               train_ratio: float = 0.7) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
-    Split data based on entity IDs (simulating temporal split).
-
-    In practice, this would be based on commit indices.
-    For now, we use a random split but preserve the interface.
-
-    Args:
-        features_df: DataFrame with features
-        drifts: Dictionary of drift values
-        train_ratio: Ratio of data to use for training
-
-    Returns:
-        Tuple of (X_train, X_test, y_train, y_test)
+    Split data based on commit pair chronology (simulating temporal split).
     """
     # Get common entities
     common_ids = list(set(features_df.index) & set(drifts.keys()))
 
-    # Sort by entity_id for reproducibility (in practice, sort by commit time)
-    common_ids.sort()
+    # Extract commit pair prefixes if present in chronological order
+    prefixes = []
+    for idx in features_df.index:
+        if idx in drifts and "::" in idx:
+            prefix = idx.split("::")[0]
+            if prefix not in prefixes:
+                prefixes.append(prefix)
 
-    # Split
-    split_idx = int(len(common_ids) * train_ratio)
-    train_ids = common_ids[:split_idx]
-    test_ids = common_ids[split_idx:]
+    if prefixes and len(prefixes) >= 2:
+        split_idx = max(1, int(len(prefixes) * train_ratio))
+        train_prefixes = set(prefixes[:split_idx])
+        
+        train_ids = [eid for eid in common_ids if eid.split("::")[0] in train_prefixes]
+        test_ids = [eid for eid in common_ids if eid.split("::")[0] not in train_prefixes]
+        logger.info(f"[Temporal Split] Chronological split by commit pair: {len(train_prefixes)} train pairs, {len(prefixes) - len(train_prefixes)} test pairs")
+    else:
+        # Fall back to index order split (do NOT sort alphabetically)
+        ordered_common_ids = [eid for eid in features_df.index if eid in drifts]
+        
+        # De-duplicate ordered_common_ids preserving order
+        seen = set()
+        dedup_ordered_ids = []
+        for eid in ordered_common_ids:
+            if eid not in seen:
+                seen.add(eid)
+                dedup_ordered_ids.append(eid)
+                
+        split_idx = int(len(dedup_ordered_ids) * train_ratio)
+        train_ids = dedup_ordered_ids[:split_idx]
+        test_ids = dedup_ordered_ids[split_idx:]
+        logger.info(f"[Temporal Split] Fallback split by index order: {len(train_ids)} train rows, {len(test_ids)} test rows")
 
     X_train = features_df.loc[train_ids].values
     X_test = features_df.loc[test_ids].values
     y_train = np.array([drifts[eid] for eid in train_ids])
     y_test = np.array([drifts[eid] for eid in test_ids])
 
-    logger.info(f"Train set: {len(train_ids)} entities")
-    logger.info(f"Test set: {len(test_ids)} entities")
+    logger.info(f"Train set: {len(train_ids)} rows")
+    logger.info(f"Test set: {len(test_ids)} rows")
 
     return X_train, X_test, y_train, y_test
