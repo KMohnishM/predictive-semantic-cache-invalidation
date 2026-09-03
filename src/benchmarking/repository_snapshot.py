@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
-from typing import Dict, List, Optional
-import tree_sitter_languages
+from typing import Any, Dict, List, Optional
 
 try:
     from parser.git_helper import GitHelper
@@ -71,7 +70,10 @@ def _parse_entities(file_path: str, source: str) -> List[RepositoryEntity]:
                         )
                     )
         elif isinstance(node, ast.FunctionDef):
-            is_method = any(isinstance(parent, ast.ClassDef) and node in parent.body for parent in ast.walk(tree))
+            is_method = any(
+                isinstance(parent, ast.ClassDef) and node in parent.body
+                for parent in ast.walk(tree)
+            )
             if not is_method:
                 func_id = _get_entity_id(file_path, None, node.name)
                 entities.append(
@@ -91,15 +93,17 @@ def _parse_entities(file_path: str, source: str) -> List[RepositoryEntity]:
 
 def _parse_entities_tree_sitter(file_path: str, source: str, language_name: str = "python") -> List[RepositoryEntity]:
     try:
+        import tree_sitter_languages  # lazy import — optional dependency
         parser = tree_sitter_languages.get_parser(language_name)
         source_bytes = source.encode("utf-8")
         tree = parser.parse(source_bytes)
     except Exception:
+        # tree_sitter_languages not installed or parse failed — fall back to AST parser
         return _parse_entities(file_path, source)
 
     entities: List[RepositoryEntity] = []
 
-    def _traverse(node, current_class: Optional[str] = None):
+    def _traverse(node: Any, current_class: Optional[str] = None) -> None:
         if node.type == "class_definition":
             name_node = node.child_by_field_name("name")
             class_name = name_node.text.decode("utf-8", errors="ignore") if name_node else "UnknownClass"
@@ -116,7 +120,6 @@ def _parse_entities_tree_sitter(file_path: str, source: str, language_name: str 
                     source_code=snippet,
                 )
             )
-
             body_node = node.child_by_field_name("body")
             if body_node:
                 for child in body_node.children:
@@ -148,11 +151,63 @@ def _parse_entities_tree_sitter(file_path: str, source: str, language_name: str 
     return entities
 
 
+def _build_call_graph(entities: Dict[str, RepositoryEntity]) -> Any:
+    """
+    Phase 1.2: Build a lightweight call graph (nx.DiGraph) from entity source code.
+
+    Edges: caller_entity_id -> callee_entity_id
+    Uses simple name-matching: if any other entity's short name appears as a token
+    in the source code of an entity, we add a call edge.
+
+    This is a heuristic (not full AST call analysis) but sufficient for fixed_hop
+    propagation and caller-perspective query generation.
+    """
+    try:
+        import networkx as nx
+    except ImportError:
+        return None
+
+    graph = nx.DiGraph()
+
+    # Add all entity nodes
+    for entity_id in entities:
+        graph.add_node(entity_id)
+
+    # Build name -> entity_id lookup for fast matching
+    name_to_ids: Dict[str, List[str]] = {}
+    for entity_id, entity in entities.items():
+        name_to_ids.setdefault(entity.name, []).append(entity_id)
+
+    # For each entity, scan its source for calls to other entities
+    import re
+    for entity_id, entity in entities.items():
+        source = entity.source_code
+        for callee_name, callee_ids in name_to_ids.items():
+            if callee_name == entity.name:
+                continue  # skip self-reference
+            # Look for callee_name( pattern — simple call site detection
+            if re.search(r'\b' + re.escape(callee_name) + r'\s*\(', source):
+                for callee_id in callee_ids:
+                    if callee_id != entity_id:
+                        graph.add_edge(entity_id, callee_id)
+
+    return graph
+
+
 def build_repository_snapshot(
     git_helper: GitHelper,
     commit_hash: str,
     parser_mode: str = "tree_sitter",
+    joern_session: Any = None,  # kept for backward-compat; unused
 ) -> RepositorySnapshot:
+    """
+    Build a RepositorySnapshot for a given commit.
+
+    Phase 1.2: Also builds and attaches a call graph (graph) and a lightweight
+    parser-like object (parser) to the snapshot. These are used by:
+        - build_queries() for caller-perspective synthetic query generation
+        - decide_updated_entities() for fixed_hop propagation
+    """
     entities: Dict[str, RepositoryEntity] = {}
     for file_path in _list_python_files_at_commit(git_helper, commit_hash):
         file_source = git_helper.get_file_content_at_commit(commit_hash, file_path)
@@ -165,4 +220,56 @@ def build_repository_snapshot(
 
         for entity in parsed:
             entities[entity.entity_id] = entity
-    return RepositorySnapshot(commit_hash=commit_hash, entities=entities)
+
+    # Phase 1.2: build call graph and wrap in a SnapshotParser for fixed_hop
+    graph = _build_call_graph(entities)
+    snapshot_parser = SnapshotParser(graph) if graph is not None else None
+
+    return RepositorySnapshot(
+        commit_hash=commit_hash,
+        entities=entities,
+        graph=graph,
+        parser=snapshot_parser,
+    )
+
+
+class SnapshotParser:
+    """
+    Phase 1.2: Lightweight parser wrapper stored on RepositorySnapshot.
+
+    Provides get_dependents(entity_id, max_hops) for fixed_hop propagation
+    in strategy_runner.py, backed by the call graph built at snapshot time.
+    """
+
+    def __init__(self, graph: Any) -> None:
+        self._graph = graph
+
+    def get_dependents(self, entity_id: str, max_hops: int = 2) -> List[str]:
+        """
+        Return all entities that (transitively) depend on entity_id up to max_hops.
+
+        In the call graph, an edge A->B means A calls B. A "dependent" of B is
+        any entity that calls B (directly or transitively) — i.e., predecessors
+        in the graph. We walk predecessor edges up to max_hops levels.
+        """
+        if self._graph is None or entity_id not in self._graph:
+            return []
+
+        visited: set = set()
+        frontier = {entity_id}
+
+        for _ in range(max_hops):
+            next_frontier: set = set()
+            for node in frontier:
+                try:
+                    for pred in self._graph.predecessors(node):
+                        if pred not in visited and pred != entity_id:
+                            next_frontier.add(pred)
+                except Exception:
+                    pass
+            visited.update(next_frontier)
+            frontier = next_frontier
+            if not frontier:
+                break
+
+        return list(visited)

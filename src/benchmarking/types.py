@@ -25,11 +25,15 @@ class RepositoryEntity:
 class RepositorySnapshot:
     commit_hash: str
     entities: Dict[str, RepositoryEntity]
+    # Phase 1.2: call graph and parser stored on snapshot for use by strategy_runner
+    graph: Optional[Any] = None    # nx.DiGraph — call graph at this commit
+    parser: Optional[Any] = None   # repo parser — used by fixed_hop propagation
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "commit_hash": self.commit_hash,
-            "entities": {entity_id: entity.to_dict() for entity_id, entity in self.entities.items()},
+            "entities": {eid: e.to_dict() for eid, e in self.entities.items()},
+            # graph and parser are not serialised (they are live objects)
         }
 
 
@@ -84,21 +88,33 @@ class BenchmarkConfig:
     num_commits: int = 10
     commit_stride: int = 1
     sampling_mode: str = "adjacent"
-    query_mode: str = "synthetic"
-    curated_queries_path: Optional[str] = None
+    # Phase 1.3: default changed from "synthetic" to "hybrid"
+    query_mode: str = "hybrid"
+    curated_queries_path: Optional[str] = "src/benchmarking/data/curated_queries.json"
     model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     clean_mode: bool = False
     top_k_values: List[int] = field(default_factory=lambda: [1, 5, 10])
     output_format: str = "jsonl"
     max_queries_per_entity: int = 2
-    strategies: List[str] = field(default_factory=lambda: ["changed_only"])
+    # Phase 2.4: predictive_ml and fixed_hop in default strategy list
+    strategies: List[str] = field(
+        default_factory=lambda: ["changed_only", "fixed_hop", "predictive_ml", "full_reindex"]
+    )
     compare_embeddings: bool = True
     store_raw_vectors: bool = True
     parser_mode: str = "ast"
     predictions_path: Optional[str] = None
+    # Phase 2.3: hop depth for fixed_hop strategy
+    hop_k: int = 2
+    # Phase 2.3: score threshold for predictive_ml continuous scores
+    ml_threshold: float = 0.5
+    # Phase 3.3: number of independent runs for mean +- CI aggregation
+    n_seeds: int = 1
 
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        # graph/parser fields are not in BenchmarkConfig, nothing extra to strip
+        return d
 
 
 @dataclass(frozen=True)
@@ -190,9 +206,10 @@ class BenchmarkSummary:
     freshness_success_rate: float
     cache_preservation_success_rate: float
     candidate_update_fraction: float
-    benchmark_passed: bool
+    # Phase 3.1: benchmark_passed removed — replaced by Wilson CI columns in reporting
+    # Phase 1.4: saturation_warning flag added
+    saturation_warning: bool = False
     embedding_comparison_summaries: Optional[List[Dict[str, Any]]] = None
-
     strategy_summaries: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -201,5 +218,3 @@ class BenchmarkSummary:
 
 def resolve_output_dir(base_dir: str, run_id: str) -> Path:
     return Path(base_dir).resolve() / run_id
-
-
