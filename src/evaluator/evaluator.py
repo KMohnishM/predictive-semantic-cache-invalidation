@@ -3,10 +3,12 @@
 from typing import Dict, List, Set, Tuple, Optional
 import numpy as np
 import pandas as pd
-from scipy.stats import spearmanr
 import networkx as nx
 import logging
 import time
+
+from .util import (compute_recall_at_k, compute_mrr, compute_ndcg_at_k,
+                    compute_spearman_correlation)
 
 logger = logging.getLogger(__name__)
 
@@ -229,108 +231,6 @@ class Evaluator:
         self.embedding_manager = embedding_manager
         self.repo_parser = repo_parser
 
-    def compute_recall_at_k(self, retrieved: List[str], ground_truth: List[str],
-                            k: int = 5) -> float:
-        """
-        Compute Recall@K.
-
-        Args:
-            retrieved: List of retrieved entity IDs (ranked)
-            ground_truth: List of relevant entity IDs
-            k: Number of top results to consider
-
-        Returns:
-            Recall@K score
-        """
-        if not ground_truth:
-            return 0.0
-
-        top_k = retrieved[:k]
-        relevant_retrieved = set(top_k) & set(ground_truth)
-        return len(relevant_retrieved) / len(ground_truth)
-
-    def compute_mrr(self, retrieved: List[str], ground_truth: List[str]) -> float:
-        """
-        Compute Mean Reciprocal Rank (MRR).
-
-        The reciprocal rank is 1 / rank_of_first_relevant_result.
-        Returns 0 if no relevant result is found.
-
-        Args:
-            retrieved:    Ranked list of entity IDs.
-            ground_truth: Set of relevant entity IDs.
-
-        Returns:
-            Reciprocal rank score in [0, 1].
-        """
-        gt_set = set(ground_truth)
-        for rank, eid in enumerate(retrieved, start=1):
-            if eid in gt_set:
-                return 1.0 / rank
-        return 0.0
-
-    def compute_ndcg_at_k(self, retrieved: List[str], ground_truth: List[str],
-                          k: int = 10) -> float:
-        """
-        Compute Normalised Discounted Cumulative Gain at K (nDCG@K).
-
-        Relevance is binary (1 if in ground truth, 0 otherwise).
-        nDCG@K = DCG@K / IDCG@K.
-
-        Args:
-            retrieved:    Ranked list of entity IDs.
-            ground_truth: List of relevant entity IDs.
-            k:            Cut-off rank.
-
-        Returns:
-            nDCG@K score in [0, 1].
-        """
-        if not ground_truth:
-            return 0.0
-
-        gt_set = set(ground_truth)
-        top_k  = retrieved[:k]
-
-        # DCG
-        dcg = sum(
-            (1.0 / np.log2(rank + 2))  # log2(rank+2) because rank is 0-indexed
-            for rank, eid in enumerate(top_k)
-            if eid in gt_set
-        )
-
-        # IDCG — ideal ranking: all relevant docs at the top
-        n_relevant = min(len(gt_set), k)
-        idcg = sum(1.0 / np.log2(rank + 2) for rank in range(n_relevant))
-
-        return dcg / idcg if idcg > 0 else 0.0
-
-    def compute_spearman_correlation(self, rankings1: Dict[str, float],
-                                     rankings2: Dict[str, float]) -> float:
-        """
-        Compute Spearman's rank correlation between two rankings.
-
-        Args:
-            rankings1: First ranking (entity_id -> score)
-            rankings2: Second ranking (entity_id -> score)
-
-        Returns:
-            Spearman correlation coefficient
-        """
-        # Get common entities
-        common_ids = set(rankings1.keys()) & set(rankings2.keys())
-
-        if len(common_ids) < 2:
-            return 0.0
-
-        # Extract scores in same order
-        scores1 = [rankings1[eid] for eid in common_ids]
-        scores2 = [rankings2[eid] for eid in common_ids]
-
-        # Compute correlation
-        correlation, _ = spearmanr(scores1, scores2)
-
-        return correlation if not np.isnan(correlation) else 0.0
-
     def evaluate_strategy(self, strategy: CacheInvalidationStrategy,
                           ground_truth_embeddings: Dict[str, np.ndarray],
                           predicted_drifts: Dict[str, float],
@@ -418,7 +318,7 @@ class Evaluator:
                 gt_top_k      = gt_ids_ranked[:k]
                 strategy_ids_ranked = strategy_rankings_by_query[query_id]
 
-                recall = self.compute_recall_at_k(strategy_ids_ranked, gt_top_k, k=k)
+                recall = compute_recall_at_k(strategy_ids_ranked, gt_top_k, k=k)
                 recall_scores[k].append(recall)
 
         for query_id in queries:
@@ -426,8 +326,8 @@ class Evaluator:
             gt_top10 = gt_ids_ranked[:10]
             strategy_ids_ranked = strategy_rankings_by_query[query_id]
 
-            mrr_scores.append(self.compute_mrr(strategy_ids_ranked, gt_top10))
-            ndcg_scores.append(self.compute_ndcg_at_k(strategy_ids_ranked, gt_top10, k=10))
+            mrr_scores.append(compute_mrr(strategy_ids_ranked, gt_top10))
+            ndcg_scores.append(compute_ndcg_at_k(strategy_ids_ranked, gt_top10, k=10))
 
         for k in k_values:
             metrics[f'recall_at_{k}'] = np.mean(recall_scores[k])
@@ -435,7 +335,7 @@ class Evaluator:
         metrics['mrr']      = float(np.mean(mrr_scores))  if mrr_scores  else 0.0
         metrics['ndcg_at_10'] = float(np.mean(ndcg_scores)) if ndcg_scores else 0.0
 
-        metrics['rank_correlation'] = self.compute_spearman_correlation(
+        metrics['rank_correlation'] = compute_spearman_correlation(
             gt_rankings, strategy_rankings
         )
 
