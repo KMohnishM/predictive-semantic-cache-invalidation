@@ -18,7 +18,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from parser.git_helper import GitHelper
-from parser.repo_parser import RepoParser, Entity
+from parser.tree_sitter_repo_parser import TreeSitterRepoParser, Entity
 from embedder.embedding_manager import EmbeddingManager
 from extractor.feature_extractor import FeatureExtractor
 from predictor.predictor import DriftPredictor, train_test_split_temporal
@@ -137,7 +137,7 @@ class Experiment:
         self.features_history = {}  # (commit_a, commit_b) -> features DataFrame
         self.modification_history = {}  # entity_id -> list of commit hashes
         self.previous_drifts = {}  # entity_id -> last drift value
-        self.parsers_history = {}  # commit_hash -> RepoParser instance
+        self.parsers_history = {}  # commit_hash -> TreeSitterRepoParser instance
         self.gtd_history = {}  # (commit_a, commit_b) -> GraphTransitionDescriptor
 
         # Repository State Descriptor — used for stratified train/test split
@@ -165,7 +165,7 @@ class Experiment:
         logger.info("Initializing components...")
 
         # Initialize repository parser (Tree-sitter native)
-        self.repo_parser = RepoParser(str(self.repo_path))
+        self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
         logger.info("Initialized Tree-sitter RepoParser for repository parsing and graph construction")
 
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
@@ -333,7 +333,7 @@ class Experiment:
             return
 
         # Parse repository
-        self.repo_parser = RepoParser(str(self.repo_path))
+        self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
         self.repo_parser.parse_directory(str(self.repo_path))
 
         # Generate embeddings for all entities
@@ -473,7 +473,7 @@ class Experiment:
                 continue
 
             # Parse repository
-            self.repo_parser = RepoParser(str(self.repo_path))
+            self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
             self.repo_parser.parse_directory(str(self.repo_path))
             self.parsers_history[commit] = self.repo_parser
 
