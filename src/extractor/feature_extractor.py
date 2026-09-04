@@ -60,6 +60,10 @@ class FeatureExtractor:
         self._ppr_cache: Optional[Dict[str, float]] = None
         self._ppr_seed: Optional[frozenset] = None
 
+        # Distance-to-nearest-modified-entity cache (seeded on modified entities)
+        self._modified_dist_cache: Optional[Dict[str, float]] = None
+        self._modified_dist_seed: Optional[frozenset] = None
+
     def _get_structural_features(self, entity_id: str) -> Dict[str, float]:
         """Extract structural features from the dependency graph."""
         if entity_id not in self.graph:
@@ -98,20 +102,14 @@ class FeatureExtractor:
             features['distance_to_modified_undirected'] = 0.0
             return features
 
-        try:
-            reverse_graph = self.graph.reverse()
-            directed_dists = []
-            for mod_id in modified_entities:
-                if mod_id in reverse_graph:
-                    try:
-                        d = nx.shortest_path_length(reverse_graph, source=entity_id, target=mod_id)
-                        directed_dists.append(d)
-                    except nx.NetworkXNoPath:
-                        pass
-            if directed_dists:
-                features['distance_to_modified_directed'] = float(min(directed_dists))
-        except Exception as e:
-            logger.warning(f"Error computing directed distance for {entity_id}: {e}")
+        # Distance from entity_id to the nearest modified entity, following
+        # the call direction (entity_id -> ... -> modified). This matters
+        # because contextual embeddings splice in stubs of an entity's
+        # dependencies, so an entity can only drift when something it calls
+        # (transitively) changes.
+        modified_distances = self._get_modified_distances(modified_entities)
+        if entity_id in modified_distances:
+            features['distance_to_modified_directed'] = float(modified_distances[entity_id])
 
         min_undirected = self.repo_parser.get_nearest_modified_distance(entity_id, modified_entities)
         if min_undirected is not None:
@@ -151,6 +149,37 @@ class FeatureExtractor:
                     self._ppr_cache = {}
 
         return {'pagerank_impact': self._ppr_cache.get(entity_id, 0.0)}
+
+    def _get_modified_distances(self, modified_entities: Set[str]) -> Dict[str, float]:
+        """
+        Shortest-path distance from every entity to the nearest modified
+        entity, following the call direction (entity -> ... -> modified),
+        i.e. the number of hops until the entity transitively calls
+        something that changed.
+
+        Computed once per distinct modified_entities set via a single
+        multi-source search (instead of a separate shortest-path search per
+        entity per modified entity), and shared across feature groups that
+        need this same quantity.
+        """
+        current_seed = frozenset(modified_entities.intersection(self.graph.nodes()))
+
+        if self._modified_dist_seed != current_seed or self._modified_dist_cache is None:
+            self._modified_dist_seed = current_seed
+            if not current_seed:
+                self._modified_dist_cache = {}
+            else:
+                try:
+                    reverse_graph = self.graph.reverse()
+                    sources = [m for m in current_seed if m in reverse_graph]
+                    self._modified_dist_cache = dict(
+                        nx.multi_source_dijkstra_path_length(reverse_graph, sources)
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to compute modified-entity distances: {e}")
+                    self._modified_dist_cache = {}
+
+        return self._modified_dist_cache
 
     def _get_commit_features(self, entity_id: str, commit_a: str, commit_b: str,
                              modified_entities: Set[str], git_helper) -> Dict[str, float]:
@@ -212,87 +241,34 @@ class FeatureExtractor:
     def _get_code_metrics_features(self, entity_id: str, modified_entities: Set[str]) -> Dict[str, float]:
         """Extract native code complexity and topological graph features."""
         is_mod = 1.0 if entity_id in modified_entities else 0.0
-        
-        # Calculate real topological graph metrics
+
+        # Topological graph metrics: how close/exposed is entity_id to the
+        # entities that changed, following the call direction (entity_id
+        # -> ... -> modified), i.e. does entity_id transitively call
+        # something that changed.
         data_flow_dist = 10.0
         modified_deps = 0.0
         taint_score = is_mod
 
         if entity_id in self.graph:
-            # Shortest path from any modified entity to entity_id
-            min_dist = float('inf')
-            for mod_ent in modified_entities:
-                if mod_ent in self.graph:
-                    try:
-                        # Path from mod_ent (source of change) to entity_id (dependent)
-                        d = nx.shortest_path_length(self.graph, source=mod_ent, target=entity_id)
-                        min_dist = min(min_dist, d)
-                        modified_deps += 1.0
-                        taint_score = 1.0
-                    except nx.NetworkXNoPath:
-                        pass
-            if min_dist != float('inf'):
-                data_flow_dist = float(min_dist)
+            reachable_modified = self.repo_parser.get_dependencies(entity_id) & modified_entities
+            modified_deps = float(len(reachable_modified))
+            if reachable_modified:
+                taint_score = 1.0
 
-        if hasattr(self.repo_parser, "get_code_metrics"):
-            ts_metrics = self.repo_parser.get_code_metrics(entity_id)
-            return {
-                "cyclomatic_complexity": ts_metrics.get("cyclomatic_complexity", 1.0),
-                "ast_node_count": ts_metrics.get("ast_node_count", 0.0),
-                "max_nesting_depth": ts_metrics.get("max_nesting_depth", 0.0),
-                "data_flow_distance": data_flow_dist,
-                "modified_data_deps_count": modified_deps,
-                "taint_reachability_score": taint_score,
-            }
+            modified_distances = self._get_modified_distances(modified_entities)
+            if entity_id in modified_distances:
+                data_flow_dist = float(modified_distances[entity_id])
 
-        entity = self.repo_parser.get_entity(entity_id)
-        if not entity or not entity.source_code:
-            return {
-                "cyclomatic_complexity": 1.0,
-                "ast_node_count": 0.0,
-                "max_nesting_depth": 0.0,
-                "data_flow_distance": data_flow_dist,
-                "modified_data_deps_count": modified_deps,
-                "taint_reachability_score": taint_score,
-            }
-
-        try:
-            import ast
-            code = entity.source_code
-            tree = ast.parse(code)
-
-            branches = sum(1 for node in ast.walk(tree) if isinstance(node, (ast.If, ast.For, ast.While, ast.ExceptHandler, ast.BoolOp)))
-            cyclomatic_complexity = float(1 + branches)
-            node_count = float(len(list(ast.walk(tree))))
-
-            def _calc_nesting(node, current_depth=0):
-                max_d = current_depth
-                for child in ast.iter_child_nodes(node):
-                    if isinstance(child, (ast.If, ast.For, ast.While, ast.Try, ast.With)):
-                        max_d = max(max_d, _calc_nesting(child, current_depth + 1))
-                    else:
-                        max_d = max(max_d, _calc_nesting(child, current_depth))
-                return max_d
-
-            max_depth = float(_calc_nesting(tree))
-
-            return {
-                "cyclomatic_complexity": cyclomatic_complexity,
-                "ast_node_count": node_count,
-                "max_nesting_depth": max_depth,
-                "data_flow_distance": data_flow_dist,
-                "modified_data_deps_count": modified_deps,
-                "taint_reachability_score": taint_score,
-            }
-        except Exception:
-            return {
-                "cyclomatic_complexity": 1.0,
-                "ast_node_count": 0.0,
-                "max_nesting_depth": 0.0,
-                "data_flow_distance": data_flow_dist,
-                "modified_data_deps_count": modified_deps,
-                "taint_reachability_score": taint_score,
-            }
+        ts_metrics = self.repo_parser.get_code_metrics(entity_id)
+        return {
+            "cyclomatic_complexity": ts_metrics.get("cyclomatic_complexity", 1.0),
+            "ast_node_count": ts_metrics.get("ast_node_count", 0.0),
+            "max_nesting_depth": ts_metrics.get("max_nesting_depth", 0.0),
+            "data_flow_distance": data_flow_dist,
+            "modified_data_deps_count": modified_deps,
+            "taint_reachability_score": taint_score,
+        }
 
     def extract_features(self, entity_id: str, commit_a: str, commit_b: str,
                          modified_entities: Set[str],
