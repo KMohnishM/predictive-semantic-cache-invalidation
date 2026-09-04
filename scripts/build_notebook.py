@@ -414,11 +414,20 @@ with timed("4_train", "combine_training_data"):
 
 threshold = CONFIG["threshold"]
 if CONFIG["threshold_mode"] == "dynamic":
+    # Most entities in any given commit pair are untouched (directly or via
+    # context) and have exactly-zero drift; including them in the percentile
+    # collapses the threshold to ~0 regardless of the percentile chosen. Take
+    # the percentile over entities that actually drifted at all instead.
     vals = [v for v in all_drifts.values() if not np.isnan(v)]
-    if vals:
-        threshold = float(np.percentile(vals, 85))
+    nonzero_vals = [v for v in vals if v > 1e-9]
+    if nonzero_vals:
+        threshold = float(np.percentile(nonzero_vals, 85))
         predictor.threshold = threshold
-        print(f"Dynamic threshold -> {threshold:.4f} (85th percentile of training drift)")
+        print(f"Dynamic threshold -> {threshold:.4f} (85th percentile of nonzero training drift, "
+              f"{len(nonzero_vals)}/{len(vals)} rows had any drift)")
+    elif vals:
+        print(f"All {len(vals)} training drift values are ~zero; "
+              f"keeping configured threshold {threshold:.4f} instead of a degenerate dynamic one")
 
 with timed("4_train", "prepare_and_split"):
     predictor.prepare_data(combined_features, all_drifts)

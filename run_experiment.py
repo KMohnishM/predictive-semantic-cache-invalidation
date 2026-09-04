@@ -618,13 +618,27 @@ class Experiment:
 
         logger.info(f"Training on {len(combined_features)} entities with {len(all_drifts)} drift values")
 
-        # Dynamically calculate threshold if configured
+        # Dynamically calculate threshold if configured.
+        # Most entities in any given commit pair are untouched (directly or via
+        # context) and have exactly-zero drift; including them in the percentile
+        # collapses the threshold to ~0 regardless of the percentile chosen. Take
+        # the percentile over entities that actually drifted at all instead.
         if self.threshold_mode == "dynamic":
             drift_values = [v for v in all_drifts.values() if not np.isnan(v)]
-            if drift_values:
-                self.threshold = float(np.percentile(drift_values, 85))
+            nonzero_drift_values = [v for v in drift_values if v > 1e-9]
+            if nonzero_drift_values:
+                self.threshold = float(np.percentile(nonzero_drift_values, 85))
                 self.predictor.threshold = self.threshold
-                logger.info(f"Dynamically adjusted drift threshold to {self.threshold:.4f} based on 85th percentile of training drifts")
+                logger.info(
+                    f"Dynamically adjusted drift threshold to {self.threshold:.4f} "
+                    f"based on 85th percentile of nonzero training drifts "
+                    f"({len(nonzero_drift_values)}/{len(drift_values)} rows had any drift)"
+                )
+            elif drift_values:
+                logger.warning(
+                    f"All {len(drift_values)} training drift values are ~zero; "
+                    f"keeping configured threshold {self.threshold:.4f} instead of a degenerate dynamic one"
+                )
 
         # Prepare data
         try:
