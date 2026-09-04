@@ -72,7 +72,8 @@ class Experiment:
                  context_chunking: bool = False,
                  model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
                  commit_stride: int = 20,
-                 parser_mode: str = "ast"):
+                 parser_mode: str = "ast",
+                 device: str = "auto"):
         """
         Initialize experiment.
 
@@ -88,6 +89,8 @@ class Experiment:
             model_name: HuggingFace model name for embeddings
             commit_stride: Step size between sampled commits
             parser_mode: Parser mode ("ast", "joern_hybrid", "joern_only")
+            device: Embedding model device — "auto" (CUDA if available, else CPU),
+                "cpu", "cuda", or a specific device string (e.g. "cuda:0")
         """
         self.repo_url = repo_url
         self.workspace_dir = Path(workspace_dir)
@@ -100,6 +103,7 @@ class Experiment:
         self.model_name = model_name
         self.commit_stride = commit_stride
         self.parser_mode = parser_mode
+        self.device = device
         self.joern_session = None
 
         # Paths
@@ -168,13 +172,14 @@ class Experiment:
         self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
         logger.info("Initialized Tree-sitter RepoParser for repository parsing and graph construction")
 
-        self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
+        self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode,
+                                                   device=self.device)
         self.feature_extractor = FeatureExtractor(self.repo_parser)
         self.predictor = DriftPredictor(model_type="random_forest", task_type="classification", threshold=self.threshold)
         self.evaluator = Evaluator(self.embedding_manager, self.repo_parser)
         self.visualizer = Visualizer(str(self.results_dir))
 
-        logger.info(f"Setup complete (parser_mode={self.parser_mode})")
+        logger.info(f"Setup complete (parser_mode={self.parser_mode}, embedding_device={self.embedding_manager.device})")
         return True
 
     def harvest_commits(self) -> bool:
@@ -1224,6 +1229,12 @@ def main():
         default="sentence-transformers/all-MiniLM-L6-v2",
         help="HuggingFace model name for embeddings"
     )
+    parser.add_argument(
+        "--device",
+        choices=["auto", "cpu", "cuda"],
+        default="auto",
+        help="Device for the embedding model: auto (CUDA if available, else CPU), cpu, or cuda"
+    )
 
     args = parser.parse_args()
 
@@ -1294,7 +1305,8 @@ def main():
         context_chunking=args.context_chunking,
         model_name=args.model_name,
         commit_stride=args.commit_stride,
-        parser_mode=parser_mode
+        parser_mode=parser_mode,
+        device=args.device
     )
 
     # Run experiment

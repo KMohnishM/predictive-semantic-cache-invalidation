@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Tuple, Optional
 import numpy as np
+import torch
 from sentence_transformers import SentenceTransformer
 import logging
 
@@ -10,28 +11,41 @@ from .util import remove_comments_and_docstrings, compute_cosine_similarity
 logger = logging.getLogger(__name__)
 
 
+def resolve_device(device: str = "auto") -> str:
+    """
+    Resolve a device setting ("auto", "cpu", "cuda", "cuda:0", ...) to a
+    concrete torch device string. "auto" picks CUDA when available, else CPU.
+    """
+    if device == "auto":
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    return device
+
+
 class EmbeddingManager:
     """Manages code embeddings and semantic drift calculation."""
 
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
-                 clean_mode: bool = False):
+                 clean_mode: bool = False, device: str = "auto"):
         """
         Initialize embedding manager.
 
         Args:
             model_name: Name of the sentence-transformers model
             clean_mode: If True, remove comments and docstrings before embedding
+            device: "auto" (use CUDA if available, else CPU), "cpu", "cuda", or
+                a specific device string (e.g. "cuda:0")
         """
         self.model_name = model_name
         self.clean_mode = clean_mode
+        self.device = resolve_device(device)
         self.model = None
         self.embeddings: Dict[str, np.ndarray] = {}
 
     def _load_model(self) -> None:
         if self.model is None:
-            logger.info(f"Loading embedding model: {self.model_name}")
-            self.model = SentenceTransformer(self.model_name, trust_remote_code=True)
-            
+            logger.info(f"Loading embedding model: {self.model_name} on device={self.device}")
+            self.model = SentenceTransformer(self.model_name, trust_remote_code=True, device=self.device)
+
             # Enforce safe max sequence length to prevent IndexError in position embeddings
             if "unixcoder" in self.model_name.lower():
                 self.model.max_seq_length = 512
@@ -103,9 +117,11 @@ class EmbeddingManager:
         entity_ids = list(entities.keys())
         texts = [self._prepare_text(source) for source in entities.values()]
 
-        logger.info(f"Generating embeddings for {len(entity_ids)} entities")
-        # Reduce batch size for memory-intensive models (e.g. jina with 8k context)
-        batch_size = 2 if "jina" in self.model_name.lower() else 32
+        logger.info(f"Generating embeddings for {len(entity_ids)} entities on device={self.device}")
+        # Reduce batch size for memory-intensive models (e.g. jina with 8k context);
+        # GPUs can push larger batches than CPU for the same model.
+        base_batch_size = 2 if "jina" in self.model_name.lower() else 32
+        batch_size = base_batch_size * 2 if self.device.startswith("cuda") else base_batch_size
         embeddings = self.model.encode(texts, batch_size=batch_size, convert_to_numpy=True, show_progress_bar=True)
 
         # Normalize embeddings

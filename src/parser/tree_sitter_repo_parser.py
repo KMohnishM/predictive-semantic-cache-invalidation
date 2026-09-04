@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional
 import networkx as nx
 import logging
-import tree_sitter_languages
+import tree_sitter_language_pack
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class TreeSitterRepoParser:
         """
         self.repo_path = Path(repo_path).resolve()
         self.language_name = language.lower()
-        self.parser = tree_sitter_languages.get_parser(self.language_name)
+        self.parser = tree_sitter_language_pack.get_parser(self.language_name)
         self.graph = nx.DiGraph()
         self.entities: Dict[str, Entity] = {}
         self.symbol_table: Dict[str, Dict[str, str]] = {}  # RelPath -> {ImportName: Target}

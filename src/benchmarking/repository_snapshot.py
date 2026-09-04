@@ -5,7 +5,7 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass
 from typing import Dict, List, Optional
-import tree_sitter_languages
+import tree_sitter_language_pack
 
 try:
     from parser.git_helper import GitHelper
@@ -91,7 +91,7 @@ def _parse_entities(file_path: str, source: str) -> List[RepositoryEntity]:
 
 def _parse_entities_tree_sitter(file_path: str, source: str, language_name: str = "python") -> List[RepositoryEntity]:
     try:
-        parser = tree_sitter_languages.get_parser(language_name)
+        parser = tree_sitter_language_pack.get_parser(language_name)
         source_bytes = source.encode("utf-8")
         tree = parser.parse(source_bytes)
     except Exception:

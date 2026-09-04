@@ -43,13 +43,14 @@ CONFIG = {
     "repo_url":        "https://github.com/psf/black.git",
     "workspace_dir":   "workspace",
     "model_name":      "sentence-transformers/all-MiniLM-L6-v2",
+    "device":          "cuda",  # "auto" (CUDA if available, else CPU), "cpu", "cuda", "cuda:0", ...
 
-    "num_commits":     15,     # number of sampled commits to analyze
-    "commit_stride":   20,     # step size between sampled commits
+    "num_commits":     150,    # number of sampled commits to analyze
+    "commit_stride":   15,     # step size between sampled commits
     "train_ratio":     0.7,    # fraction of commits used for training
 
-    "threshold":       0.05,   # drift threshold for classification
-    "threshold_mode":  "fixed",   # "fixed" or "dynamic" (85th percentile of train drift)
+    "threshold":       0.05,   # drift threshold for classification (ignored when threshold_mode="dynamic")
+    "threshold_mode":  "dynamic",   # "fixed" or "dynamic" (85th percentile of train drift)
 
     "clean_mode":       False,  # strip comments/docstrings before embedding
     "context_chunking": True,   # splice dependency stubs into embedded source
@@ -73,6 +74,7 @@ from typing import Dict, List, Set, Optional, Tuple
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import torch
 
 warnings.filterwarnings("ignore")
 np.random.seed(RANDOM_SEED)
@@ -155,7 +157,8 @@ with timed("0_setup", "clone_repo"):
     assert ok, "Failed to clone repository"
 
 with timed("0_setup", "construct_components"):
-    embedding_manager = EmbeddingManager(model_name=CONFIG["model_name"], clean_mode=CONFIG["clean_mode"])
+    embedding_manager = EmbeddingManager(model_name=CONFIG["model_name"], clean_mode=CONFIG["clean_mode"],
+                                          device=CONFIG["device"])
     predictor = DriftPredictor(model_type="random_forest", task_type="classification",
                                 threshold=CONFIG["threshold"])
     rsd = RepositoryStateDescriptor()
@@ -167,6 +170,9 @@ with timed("0_setup", "construct_components"):
 
 print(f"Repo ready at: {repo_path}")
 print(f"Results will be saved under: {results_dir}")
+print(f"CUDA available: {torch.cuda.is_available()}"
+      + (f"  ({torch.cuda.get_device_name(0)})" if torch.cuda.is_available() else ""))
+print(f"Embedding device resolved to: {embedding_manager.device}")
 """)
 
 # ---------------------------------------------------------------------------
