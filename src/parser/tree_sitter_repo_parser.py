@@ -70,6 +70,19 @@ class TreeSitterRepoParser:
         self.entities: Dict[str, Entity] = {}
         self.symbol_table: Dict[str, Dict[str, str]] = {}  # RelPath -> {ImportName: Target}
 
+        # Derived-graph / distance caches, invalidated whenever self.graph mutates.
+        self._reverse_graph_cache: Optional[nx.DiGraph] = None
+        self._undirected_graph_cache: Optional[nx.Graph] = None
+        self._nearest_modified_cache: Optional[Dict[str, int]] = None
+        self._nearest_modified_seed: Optional[frozenset] = None
+
+    def _invalidate_graph_caches(self) -> None:
+        """Clear cached derived graphs/distances after the graph is mutated."""
+        self._reverse_graph_cache = None
+        self._undirected_graph_cache = None
+        self._nearest_modified_cache = None
+        self._nearest_modified_seed = None
+
     def _get_entity_id(self, file_path: str, class_name: Optional[str],
                        func_name: str) -> str:
         """Generate unique entity ID."""
@@ -422,6 +435,8 @@ class TreeSitterRepoParser:
         except Exception as e:
             logger.error(f"Failed to extract edges from {file_path}: {e}")
 
+        self._invalidate_graph_caches()
+
     def parse_directory(self, directory: str) -> None:
         """Parse all Python files in a directory using two-pass resolution."""
         dir_path = Path(directory).resolve()
@@ -464,6 +479,8 @@ class TreeSitterRepoParser:
             except Exception as e:
                 logger.error(f"Failed to extract edges from {py_file}: {e}")
 
+        self._invalidate_graph_caches()
+
     def remove_file(self, file_path: str) -> None:
         """Remove entities and edges for a deleted file."""
         entities_to_remove = [
@@ -479,6 +496,8 @@ class TreeSitterRepoParser:
 
         if file_path in self.symbol_table:
             del self.symbol_table[file_path]
+
+        self._invalidate_graph_caches()
 
     def update_file(self, file_path: str) -> None:
         """Update entities and edges for a modified file."""
@@ -519,15 +538,19 @@ class TreeSitterRepoParser:
         return self.graph
 
     def get_undirected_graph(self) -> nx.Graph:
-        """Get NetworkX undirected graph."""
-        return self.graph.to_undirected()
+        """Get NetworkX undirected graph (cached until the graph is next mutated)."""
+        if self._undirected_graph_cache is None:
+            self._undirected_graph_cache = self.graph.to_undirected()
+        return self._undirected_graph_cache
 
     def get_dependents(self, entity_id: str, max_hops: Optional[int] = None) -> Set[str]:
         """Get all dependent entity IDs downstream."""
         if entity_id not in self.graph:
             return set()
 
-        reverse_graph = self.graph.reverse()
+        if self._reverse_graph_cache is None:
+            self._reverse_graph_cache = self.graph.reverse()
+        reverse_graph = self._reverse_graph_cache
         if max_hops is None:
             return nx.descendants(reverse_graph, entity_id)
         else:
@@ -552,19 +575,31 @@ class TreeSitterRepoParser:
 
     def get_nearest_modified_distance(self, entity_id: str,
                                        modified_entities: Set[str]) -> Optional[int]:
-        """Get shortest distance to nearest modified entity."""
+        """
+        Get shortest (undirected) distance to the nearest modified entity.
+
+        Computed once per distinct modified_entities set via a single
+        multi-source search, cached and reused across the many per-entity
+        calls made for the same commit pair (instead of a separate
+        shortest-path search per entity per modified entity).
+        """
         if entity_id in modified_entities:
             return 0
 
-        distances = []
         undirected_graph = self.get_undirected_graph()
+        seed = frozenset(e for e in modified_entities if e in undirected_graph)
 
-        for modified_id in modified_entities:
-            if modified_id in undirected_graph and entity_id in undirected_graph:
+        if self._nearest_modified_seed != seed or self._nearest_modified_cache is None:
+            self._nearest_modified_seed = seed
+            if not seed:
+                self._nearest_modified_cache = {}
+            else:
                 try:
-                    dist = nx.shortest_path_length(undirected_graph, entity_id, modified_id)
-                    distances.append(dist)
-                except nx.NetworkXNoPath:
-                    continue
+                    self._nearest_modified_cache = dict(
+                        nx.multi_source_dijkstra_path_length(undirected_graph, list(seed))
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to compute nearest-modified distances: {e}")
+                    self._nearest_modified_cache = {}
 
-        return min(distances) if distances else None
+        return self._nearest_modified_cache.get(entity_id)
