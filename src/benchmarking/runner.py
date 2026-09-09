@@ -175,7 +175,6 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         before_snapshot = build_repository_snapshot(
             git_helper,
             commit_pair.commit_before,
-            parser_mode=config.parser_mode,
         )
         logger.info(f"  Extracted {len(before_snapshot.entities)} entities at commit {commit_pair.commit_before[:8]}.")
 
@@ -183,7 +182,6 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         after_snapshot = build_repository_snapshot(
             git_helper,
             commit_pair.commit_after,
-            parser_mode=config.parser_mode,
         )
         logger.info(f"  Extracted {len(after_snapshot.entities)} entities at commit {commit_pair.commit_after[:8]}.")
 
