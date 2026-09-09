@@ -18,7 +18,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from parser.git_helper import GitHelper
-from parser.repo_parser import RepoParser, Entity
+from parser.tree_sitter_repo_parser import TreeSitterRepoParser, Entity
 from embedder.embedding_manager import EmbeddingManager
 from extractor.feature_extractor import FeatureExtractor
 from predictor.predictor import DriftPredictor, train_test_split_temporal
@@ -72,7 +72,8 @@ class Experiment:
                  context_chunking: bool = False,
                  model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
                  commit_stride: int = 20,
-                 parser_mode: str = "ast"):
+                 parser_mode: str = "ast",
+                 device: str = "auto"):
         """
         Initialize experiment.
 
@@ -88,6 +89,8 @@ class Experiment:
             model_name: HuggingFace model name for embeddings
             commit_stride: Step size between sampled commits
             parser_mode: Parser mode ("ast", "joern_hybrid", "joern_only")
+            device: Embedding model device — "auto" (CUDA if available, else CPU),
+                "cpu", "cuda", or a specific device string (e.g. "cuda:0")
         """
         self.repo_url = repo_url
         self.workspace_dir = Path(workspace_dir)
@@ -100,6 +103,7 @@ class Experiment:
         self.model_name = model_name
         self.commit_stride = commit_stride
         self.parser_mode = parser_mode
+        self.device = device
         self.joern_session = None
 
         # Paths
@@ -137,7 +141,7 @@ class Experiment:
         self.features_history = {}  # (commit_a, commit_b) -> features DataFrame
         self.modification_history = {}  # entity_id -> list of commit hashes
         self.previous_drifts = {}  # entity_id -> last drift value
-        self.parsers_history = {}  # commit_hash -> RepoParser instance
+        self.parsers_history = {}  # commit_hash -> TreeSitterRepoParser instance
         self.gtd_history = {}  # (commit_a, commit_b) -> GraphTransitionDescriptor
 
         # Repository State Descriptor — used for stratified train/test split
@@ -165,16 +169,17 @@ class Experiment:
         logger.info("Initializing components...")
 
         # Initialize repository parser (Tree-sitter native)
-        self.repo_parser = RepoParser(str(self.repo_path))
+        self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
         logger.info("Initialized Tree-sitter RepoParser for repository parsing and graph construction")
 
-        self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode)
+        self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode,
+                                                   device=self.device)
         self.feature_extractor = FeatureExtractor(self.repo_parser)
         self.predictor = DriftPredictor(model_type="random_forest", task_type="classification", threshold=self.threshold)
         self.evaluator = Evaluator(self.embedding_manager, self.repo_parser)
         self.visualizer = Visualizer(str(self.results_dir))
 
-        logger.info(f"Setup complete (parser_mode={self.parser_mode})")
+        logger.info(f"Setup complete (parser_mode={self.parser_mode}, embedding_device={self.embedding_manager.device})")
         return True
 
     def harvest_commits(self) -> bool:
@@ -295,9 +300,20 @@ class Experiment:
                     doc_block = ''
                 stub = f"{sig_dedented}\n{doc_block}    pass"
             else:
-                # Small context window (<8k): use compact MD5 hash stub
-                dep_hash = hashlib.md5(dep_entity.source_code.encode('utf-8')).hexdigest()
-                stub = f"{sig_dedented}\n    _dep_hash_ = '{dep_hash}'\n    pass"
+                # Small context window (<8k): use semantic stub containing first line of docstring/body
+                dep_doc = (getattr(dep_entity, 'docstring', '') or '').strip()
+                if dep_doc:
+                    first_line = dep_doc.split('\n')[0].strip()
+                else:
+                    # Get the first non-declaration line of source code
+                    lines = dep_entity.source_code.split('\n')
+                    body_lines = [l.strip() for l in lines if l.strip() and not l.strip().startswith('def ') and not l.strip().startswith('class ') and not l.strip().startswith('@')]
+                    first_line = body_lines[0] if body_lines else 'pass'
+                
+                # Truncate first line to avoid overly long line stubs
+                if len(first_line) > 120:
+                    first_line = first_line[:117] + '...'
+                stub = f"{sig_dedented}\n    # Context: {first_line}\n    pass"
 
             stubs.append(stub)
 
@@ -322,7 +338,7 @@ class Experiment:
             return
 
         # Parse repository
-        self.repo_parser = RepoParser(str(self.repo_path))
+        self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
         self.repo_parser.parse_directory(str(self.repo_path))
 
         # Generate embeddings for all entities
@@ -462,7 +478,7 @@ class Experiment:
                 continue
 
             # Parse repository
-            self.repo_parser = RepoParser(str(self.repo_path))
+            self.repo_parser = TreeSitterRepoParser(str(self.repo_path))
             self.repo_parser.parse_directory(str(self.repo_path))
             self.parsers_history[commit] = self.repo_parser
 
@@ -538,13 +554,16 @@ class Experiment:
             f"(stride={self.commit_stride}, sampled_commits={len(self.sampled_commits)})"
         )
 
-        # ---- Finalise stratified split with RSD ----
-        logger.info("Building RSDs and finalising stratified train/test split...")
+        # ---- Finalise split chronologically ----
+        logger.info("Building RSDs and finalising chronological train/test split...")
         self.rsd.build_all_rsds()
-        self.train_commits, self.test_commits = self.rsd.stratified_split(
-            self.sampled_commits, train_ratio=self.train_ratio, n_clusters=3
-        )
-        logger.info(f"Stratified split -> train={len(self.train_commits)}, test={len(self.test_commits)}")
+
+        # Chronological split of sampled commits
+        split_idx = max(1, int(len(self.sampled_commits) * self.train_ratio))
+        self.train_commits = self.sampled_commits[:split_idx]
+        self.test_commits  = self.sampled_commits[split_idx:]
+
+        logger.info(f"Chronological split -> train={len(self.train_commits)}, test={len(self.test_commits)}")
         logger.info("\nRSD Summary:\n" + self.rsd.summary_table())
 
         return True
@@ -578,11 +597,15 @@ class Experiment:
 
             key = (commit_a, commit_b)
             if key in self.features_history and key in self.drifts_history:
-                features_df = self.features_history[key]
+                features_df = self.features_history[key].copy()
                 drifts = self.drifts_history[key]
 
+                pair_prefix = f"{commit_a[:8]}_{commit_b[:8]}"
+                features_df.index = [f"{pair_prefix}::{eid}" for eid in features_df.index]
+                drifts_mapped = {f"{pair_prefix}::{eid}": d for eid, d in drifts.items()}
+
                 all_features.append(features_df)
-                all_drifts.update(drifts)
+                all_drifts.update(drifts_mapped)
 
         if not all_features:
             logger.error("No training data available")
@@ -590,18 +613,32 @@ class Experiment:
 
         # Combine features
         combined_features = pd.concat(all_features, ignore_index=False)
-        # Remove duplicates (keep first occurrence)
+        # Remove duplicate composite rows if any exist
         combined_features = combined_features[~combined_features.index.duplicated(keep='first')]
 
         logger.info(f"Training on {len(combined_features)} entities with {len(all_drifts)} drift values")
 
-        # Dynamically calculate threshold if configured
+        # Dynamically calculate threshold if configured.
+        # Most entities in any given commit pair are untouched (directly or via
+        # context) and have exactly-zero drift; including them in the percentile
+        # collapses the threshold to ~0 regardless of the percentile chosen. Take
+        # the percentile over entities that actually drifted at all instead.
         if self.threshold_mode == "dynamic":
             drift_values = [v for v in all_drifts.values() if not np.isnan(v)]
-            if drift_values:
-                self.threshold = float(np.percentile(drift_values, 85))
+            nonzero_drift_values = [v for v in drift_values if v > 1e-9]
+            if nonzero_drift_values:
+                self.threshold = float(np.percentile(nonzero_drift_values, 85))
                 self.predictor.threshold = self.threshold
-                logger.info(f"Dynamically adjusted drift threshold to {self.threshold:.4f} based on 85th percentile of training drifts")
+                logger.info(
+                    f"Dynamically adjusted drift threshold to {self.threshold:.4f} "
+                    f"based on 85th percentile of nonzero training drifts "
+                    f"({len(nonzero_drift_values)}/{len(drift_values)} rows had any drift)"
+                )
+            elif drift_values:
+                logger.warning(
+                    f"All {len(drift_values)} training drift values are ~zero; "
+                    f"keeping configured threshold {self.threshold:.4f} instead of a degenerate dynamic one"
+                )
 
         # Prepare data
         try:
@@ -645,6 +682,7 @@ class Experiment:
         drift_by_distance = {}
         all_predictions = []
         all_labels = []
+        self.predictions_export = {}
 
         # Process each test commit pair from the sampled commit sequence.
         for i, commit_b in enumerate(self.test_commits):
@@ -667,6 +705,7 @@ class Experiment:
 
             # Prepare data for prediction
             X, y_true = self.predictor.prepare_data(features_df, drifts)
+            aligned_ids = self.predictor.last_common_ids
 
             # Predict drifts / probabilities
             if self.predictor.task_type == "classification":
@@ -681,6 +720,14 @@ class Experiment:
 
             all_predictions.extend(y_pred_class)
             all_labels.extend(y_true_class)
+
+            # Record predictions for export
+            pair_prefix = f"{commit_a[:8]}_{commit_b[:8]}"
+            full_pair_prefix = f"{commit_a}_{commit_b}"
+            for eid, pred_val in zip(aligned_ids, y_pred):
+                self.predictions_export[f"{pair_prefix}::{eid}"] = float(pred_val)
+                self.predictions_export[f"{full_pair_prefix}::{eid}"] = float(pred_val)
+                self.predictions_export[eid] = float(pred_val)
 
             # Get ground truth embeddings (at commit_b)
             ground_truth_embeddings = self.embeddings_history.get(commit_b, {})
@@ -706,7 +753,7 @@ class Experiment:
             # Evaluate all strategies
             strategy_results = self.evaluator.evaluate_all_strategies(
                 ground_truth_embeddings=ground_truth_embeddings,
-                predicted_drifts={eid: d for eid, d in zip(features_df.index, y_pred)},
+                predicted_drifts={eid: d for eid, d in zip(aligned_ids, y_pred)},
                 modified_entities=modified_entities,
                 queries=queries,
                 threshold=self.threshold,
@@ -717,9 +764,9 @@ class Experiment:
             # Generate testing log diagnostic
             try:
                 invalidation_decisions = {
-                    "predicted_stale": [str(eid) for eid, pred in zip(features_df.index, y_pred_class) if pred == 1],
-                    "predicted_fresh": [str(eid) for eid, pred in zip(features_df.index, y_pred_class) if pred == 0],
-                    "raw_predictions": {str(eid): float(val) for eid, val in zip(features_df.index, y_pred)}
+                    "predicted_stale": [str(eid) for eid, pred in zip(aligned_ids, y_pred_class) if pred == 1],
+                    "predicted_fresh": [str(eid) for eid, pred in zip(aligned_ids, y_pred_class) if pred == 0],
+                    "raw_predictions": {str(eid): float(val) for eid, val in zip(aligned_ids, y_pred)}
                 }
 
                 from evaluator import (BaselineAChangedOnly, BaselineBFullReindex,
@@ -727,25 +774,25 @@ class Experiment:
                                        PredictiveStrategy, WeightedBFSDecayStrategy)
                 strategy_re_embeddings = {
                     "changed_only": list(BaselineAChangedOnly().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold
                     )),
                     "full_reindex": list(BaselineBFullReindex().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold
                     )),
                     "fixed_hop_k1": list(BaselineCFixedHop(k=1).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold, repo_parser=self.repo_parser
                     )),
                     "fixed_hop_k2": list(BaselineCFixedHop(k=2).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold, repo_parser=self.repo_parser
                     )),
                     "predictive_ml": list(PredictiveStrategy().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold
                     )),
                     "pagerank_propagation": list(BaselineDPageRankPropagation(top_fraction=0.3).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold, repo_parser=self.repo_parser
                     )),
                     "weighted_bfs_decay": list(WeightedBFSDecayStrategy(threshold=0.05).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(features_df.index, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold, repo_parser=self.repo_parser
                     ))
                 }
 
@@ -822,6 +869,16 @@ class Experiment:
             logger.info(f"  MRR:         {metrics.get('mrr',            0):.4f}")
             logger.info(f"  nDCG@10:     {metrics.get('ndcg_at_10',     0):.4f}")
             logger.info(f"  Update %:    {metrics.get('update_percentage', 0):.2f}%")
+
+        # Export predictions to a JSON file
+        predictions_path = self.results_dir / "predictions.json"
+        try:
+            import json
+            with predictions_path.open("w", encoding="utf-8") as f:
+                json.dump(self.predictions_export, f, indent=2)
+            logger.info(f"Exported continuous predictions to {predictions_path}")
+        except Exception as e:
+            logger.error(f"Failed to export predictions: {e}")
 
         return {
             'strategy_results': averaged_results,
@@ -1186,6 +1243,12 @@ def main():
         default="sentence-transformers/all-MiniLM-L6-v2",
         help="HuggingFace model name for embeddings"
     )
+    parser.add_argument(
+        "--device",
+        choices=["auto", "cpu", "cuda"],
+        default="auto",
+        help="Device for the embedding model: auto (CUDA if available, else CPU), cpu, or cuda"
+    )
 
     args = parser.parse_args()
 
@@ -1256,7 +1319,8 @@ def main():
         context_chunking=args.context_chunking,
         model_name=args.model_name,
         commit_stride=args.commit_stride,
-        parser_mode=parser_mode
+        parser_mode=parser_mode,
+        device=args.device
     )
 
     # Run experiment
