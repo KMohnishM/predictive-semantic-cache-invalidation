@@ -64,9 +64,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--config", default=None, help="Path to JSON configuration file")
     parser.add_argument(
         "--parser-mode",
-        choices=["tree_sitter", "ast"],
+        choices=["tree_sitter"],
         default="tree_sitter",
-        help="Repository parser mode",
+        help="Repository parser mode (tree_sitter only — uses Pipeline A TreeSitterRepoParser)",
     )
     parser.add_argument(
         "--predictions-path",

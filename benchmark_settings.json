@@ -1,0 +1,18 @@
+{
+  "repo_url":               "https://github.com/psf/black.git",
+  "repo_path":              "workspace/black",
+  "output_dir":             "benchmark_runs",
+  "model_name":             "sentence-transformers/all-MiniLM-L6-v2",
+  "num_commits":            10,
+  "commit_stride":          1,
+  "sampling_mode":          "adjacent",
+  "query_mode":             "hybrid",
+  "curated_queries_path":   "src/benchmarking/data/curated_queries.json",
+  "strategies":             "changed_only,fixed_hop,predictive_ml,full_reindex",
+  "hop_k":                  2,
+  "ml_threshold":           0.5,
+  "n_seeds":                1,
+  "predictions_path":       null,
+  "benchmark_version":      "1.0",
+  "seed":                   13
+}
