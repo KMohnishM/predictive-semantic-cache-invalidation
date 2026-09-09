@@ -12,5 +12,6 @@
   "threshold": 0.05,
   "threshold_mode": "fixed",
   "clean_mode": false,
-  "context_chunking": true
+  "context_chunking": true,
+  "device": "auto"
 }
