@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Main orchestration script for predictive semantic cache invalidation experiment."""
 
+import ast
 import os
 import sys
 import logging
@@ -41,11 +42,76 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+_CANONICALIZE_EXEMPT_NAMES = {"self", "cls"}
+
+
+class _LocalNameCollector(ast.NodeVisitor):
+    """Collects local bindings (assignment targets and function parameters)
+    in first-appearance order, so they can be alpha-renamed to canonical
+    placeholders before comparing two versions of an entity's source.
+
+    Deliberately does NOT touch call targets, attribute access, imports, or
+    string/docstring literals — only names that are actually bound as local
+    variables or parameters within this entity's own source. This is a
+    single flattened scope per entity (entities extracted by this pipeline
+    are individual functions/methods/classes, not deeply nested closures),
+    which is a reasonable approximation but does not do full per-scope
+    resolution for nested function definitions.
+    """
+
+    def __init__(self):
+        self.order: list = []
+        self._seen: set = set()
+
+    def _register(self, name: str) -> None:
+        if name in _CANONICALIZE_EXEMPT_NAMES or name in self._seen:
+            return
+        self._seen.add(name)
+        self.order.append(name)
+
+    def visit_Name(self, node):
+        if isinstance(node.ctx, ast.Store):
+            self._register(node.id)
+        self.generic_visit(node)
+
+    def visit_arg(self, node):
+        self._register(node.arg)
+        self.generic_visit(node)
+
+
+class _LocalNameRenamer(ast.NodeTransformer):
+    """Renames local-binding Name/arg nodes per a precomputed mapping,
+    leaving call targets, attributes, imports, and literals untouched."""
+
+    def __init__(self, mapping: dict):
+        self.mapping = mapping
+
+    def visit_Name(self, node):
+        if node.id in self.mapping:
+            node.id = self.mapping[node.id]
+        return node
+
+    def visit_arg(self, node):
+        if node.arg in self.mapping:
+            node.arg = self.mapping[node.arg]
+        return node
+
+
+def _canonicalize_local_names(tree):
+    """Alpha-rename local variable/parameter names to _v0, _v1, ... in
+    order of first appearance, so a pure rename diff canonicalizes
+    identically on both sides."""
+    collector = _LocalNameCollector()
+    collector.visit(tree)
+    mapping = {name: f"_v{i}" for i, name in enumerate(collector.order)}
+    return _LocalNameRenamer(mapping).visit(tree)
+
+
 def normalize_source(code: str) -> str:
-    import ast
     import re
     try:
         tree = ast.parse(code)
+        tree = _canonicalize_local_names(tree)
         return ast.dump(tree, annotate_fields=False)
     except Exception:
         # Language-agnostic fallback: strip comments and collapse whitespaces
