@@ -35,7 +35,7 @@ from .config import load_config
 from .dataset_builder import build_dataset
 from .embedding_comparator import compare_index_snapshots
 from .index_builder import build_index_snapshot, build_selective_snapshot, retrieve_top_k
-from .metrics import mean_reciprocal_rank, ndcg_at_k, rank_delta, recall_at_k, score_delta
+from .metrics import compute_rank, mean_reciprocal_rank, ndcg_at_k, rank_delta, recall_at_k, score_delta
 from .query_sources import build_queries
 from .reporting import (
     aggregate_multi_run_results,
@@ -280,16 +280,8 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                 )
 
                 target_id = query_row.query.target_entity_id
-                baseline_rank = (
-                    baseline_result.ranked_entity_ids.index(target_id) + 1
-                    if target_id in baseline_result.ranked_entity_ids
-                    else len(baseline_result.ranked_entity_ids) + 1
-                )
-                selective_rank = (
-                    selective_result.ranked_entity_ids.index(target_id) + 1
-                    if target_id in selective_result.ranked_entity_ids
-                    else len(selective_result.ranked_entity_ids) + 1
-                )
+                baseline_rank = compute_rank(baseline_result.ranked_entity_ids, target_id)
+                selective_rank = compute_rank(selective_result.ranked_entity_ids, target_id)
                 baseline_score = (
                     baseline_result.ranked_scores[baseline_rank - 1]
                     if baseline_rank - 1 < len(baseline_result.ranked_scores) else 0.0
