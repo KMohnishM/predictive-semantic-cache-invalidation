@@ -15,10 +15,15 @@ by the model's own drift score and builds query text from the target's own
 docstring, both of which reintroduce circularity. See
 docs/ground_truth_method_comparison.md for the full rationale.
 
-This module intentionally stops at continuous, raw scores (displacement
-counts and per-query nDCG deltas) — binarizing them via a significance
-test (Wilcoxon) is a separate, later step (Phase 4), so the two concerns
-don't get tangled together.
+compute_leave_one_out_scores() stops at continuous, raw scores
+(displacement counts and per-query nDCG deltas) — binarize_ground_truth()
+below turns those into the final Y_i label via a Wilcoxon signed-rank
+significance test, kept as a separate step so "did retaining a stale
+embedding measurably matter" and "was that measured effect statistically
+real, not noise" stay two distinct, inspectable stages:
+
+    Y_i = 1  if  (displaced_query_count >= 1)  AND  (p_i < alpha)
+    Y_i = 0  otherwise
 """
 
 from __future__ import annotations
@@ -26,7 +31,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
+
+from scipy.stats import wilcoxon
 
 import numpy as np
 
@@ -206,3 +213,127 @@ def load_ground_truth_queries(path: Optional[str] = None) -> List["QueryCase"]:
     src/benchmarking/data/curated_queries.json.
     """
     return load_curated_queries(path or DEFAULT_CURATED_QUERIES_PATH)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4: statistical significance + binarization
+# ---------------------------------------------------------------------------
+
+DEFAULT_ALPHA = 0.05
+DEFAULT_MIN_NONZERO_QUERIES = 5
+
+
+@dataclass
+class GroundTruthLabel:
+    """Final per-entity training label, plus everything needed to audit it."""
+
+    entity_id: str
+    label: int  # Y_i in {0, 1} — the value predictor.py should train against
+    displaced_query_count: int
+    evaluated_query_count: int
+    nonzero_delta_count: int
+    mean_ndcg_delta: float
+    p_value: Optional[float]
+    underpowered: bool
+
+
+def compute_wilcoxon_significance(
+    ndcg_deltas: List[float],
+    alternative: str = "greater",
+) -> Tuple[Optional[float], int]:
+    """
+    One-sided Wilcoxon signed-rank test: H1: E[ndcg_deltas] > 0, i.e. the
+    fresh embedding measurably outperforms the stale one across the paired
+    per-query nDCG differences.
+
+    Returns (p_value, nonzero_count). p_value is None only when there is
+    no data at all (empty deltas — e.g. no curated query had a target
+    present in this snapshot). An all-zero deltas vector is a valid,
+    meaningful result (no measurable effect anywhere) and returns p=1.0,
+    not None — scipy.stats.wilcoxon raises ValueError on that input, so
+    it's handled explicitly here rather than being an error.
+    """
+    if not ndcg_deltas:
+        return None, 0
+
+    nonzero_count = sum(1 for d in ndcg_deltas if d != 0.0)
+    if nonzero_count == 0:
+        return 1.0, 0
+
+    try:
+        _, p_value = wilcoxon(ndcg_deltas, alternative=alternative)
+        return float(p_value), nonzero_count
+    except ValueError as exc:
+        # Defensive: scipy can still raise on pathological inputs we
+        # haven't anticipated (e.g. a single non-zero difference under
+        # some scipy versions' exact-method edge cases). Treat as "could
+        # not establish significance" rather than propagating a crash
+        # into dataset construction.
+        logger.debug(f"wilcoxon() raised for deltas={ndcg_deltas!r}: {exc}")
+        return None, nonzero_count
+
+
+def binarize_ground_truth(
+    loo_results: Dict[str, "LeaveOneOutResult"],
+    alpha: float = DEFAULT_ALPHA,
+    min_nonzero_queries: int = DEFAULT_MIN_NONZERO_QUERIES,
+) -> Dict[str, GroundTruthLabel]:
+    """
+    Turn compute_leave_one_out_scores() output into the final Y_i label:
+
+        Y_i = 1  if  (displaced_query_count >= 1)  AND  (p_i < alpha)
+        Y_i = 0  otherwise
+
+    Entities whose Wilcoxon test rests on fewer than min_nonzero_queries
+    non-zero paired differences are labeled `underpowered=True` — the
+    label is still computed (so training data isn't silently dropped),
+    but callers (and the summary logged here) should not treat a
+    significant p-value from an underpowered test as reliable.
+    """
+    labels: Dict[str, GroundTruthLabel] = {}
+    underpowered_ids: List[str] = []
+    positive_count = 0
+
+    for entity_id, result in loo_results.items():
+        p_value, nonzero_count = compute_wilcoxon_significance(result.ndcg_deltas)
+        underpowered = nonzero_count < min_nonzero_queries
+        if underpowered:
+            underpowered_ids.append(entity_id)
+
+        significant = p_value is not None and p_value < alpha
+        label = 1 if (result.any_displacement and significant) else 0
+        positive_count += label
+
+        labels[entity_id] = GroundTruthLabel(
+            entity_id=entity_id,
+            label=label,
+            displaced_query_count=result.displaced_query_count,
+            evaluated_query_count=result.evaluated_query_count,
+            nonzero_delta_count=nonzero_count,
+            mean_ndcg_delta=result.mean_ndcg_delta,
+            p_value=p_value,
+            underpowered=underpowered,
+        )
+
+    total = len(labels)
+    if underpowered_ids:
+        logger.warning(
+            f"binarize_ground_truth: {len(underpowered_ids)}/{total} entities have fewer than "
+            f"{min_nonzero_queries} non-zero paired nDCG differences — their p-values are "
+            f"statistically underpowered and should not be treated as reliable significance "
+            f"tests. Consider adding more curated queries covering these entities."
+        )
+    if total:
+        positive_rate = positive_count / total
+        logger.info(
+            f"binarize_ground_truth: {positive_count}/{total} entities ({positive_rate:.1%}) "
+            f"labeled Y_i=1 (alpha={alpha}, min_nonzero_queries={min_nonzero_queries})."
+        )
+        if positive_rate == 0.0 or positive_rate == 1.0:
+            logger.warning(
+                f"binarize_ground_truth: label distribution is degenerate ({positive_rate:.0%} "
+                f"positive) — this is either a genuine property of the sampled commits or a "
+                f"sign the query set / top_k / alpha need review before training on this label."
+            )
+
+    return labels

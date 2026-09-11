@@ -21,6 +21,11 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from parser.git_helper import GitHelper
 from parser.tree_sitter_repo_parser import TreeSitterRepoParser, Entity
 from embedder.embedding_manager import EmbeddingManager
+from embedder.ground_truth import (
+    binarize_ground_truth,
+    compute_leave_one_out_scores,
+    load_ground_truth_queries,
+)
 from extractor.feature_extractor import FeatureExtractor
 from predictor.predictor import DriftPredictor, train_test_split_temporal
 from evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
@@ -139,7 +144,10 @@ class Experiment:
                  model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
                  commit_stride: int = 20,
                  parser_mode: str = "ast",
-                 device: str = "auto"):
+                 device: str = "auto",
+                 label_source: str = "cosine_threshold",
+                 ground_truth_top_k: int = 10,
+                 ground_truth_queries_path: Optional[str] = None):
         """
         Initialize experiment.
 
@@ -157,7 +165,31 @@ class Experiment:
             parser_mode: Parser mode ("ast", "joern_hybrid", "joern_only")
             device: Embedding model device — "auto" (CUDA if available, else CPU),
                 "cpu", "cuda", or a specific device string (e.g. "cuda:0")
+            label_source: Training label source for the predictor —
+                "cosine_threshold" (default, preserves existing behavior:
+                raw cosine drift binarized by `threshold`/`threshold_mode`)
+                or "leave_one_out" (Y_i from the leave-one-out rank-
+                displacement + Wilcoxon significance ground truth in
+                src/embedder/ground_truth.py — see
+                docs/ground_truth_method_comparison.md). Both label
+                sources use the exact same features and training loop, so
+                a model can be trained on either and compared directly.
+            ground_truth_top_k: Top-K window used by the leave_one_out
+                label source (ignored for cosine_threshold).
+            ground_truth_queries_path: Override path to the curated query
+                set used by the leave_one_out label source. Defaults to
+                src/benchmarking/data/curated_queries.json. Must be an
+                independently-authored query set (see
+                src/embedder/ground_truth.py module docstring) — never
+                point this at anything derived from this experiment's own
+                embedding model.
         """
+        if label_source not in ("cosine_threshold", "leave_one_out"):
+            raise ValueError(
+                f"Unknown label_source: {label_source!r}. Expected "
+                f"'cosine_threshold' or 'leave_one_out'."
+            )
+
         self.repo_url = repo_url
         self.workspace_dir = Path(workspace_dir)
         self.num_commits = num_commits
@@ -170,7 +202,17 @@ class Experiment:
         self.commit_stride = commit_stride
         self.parser_mode = parser_mode
         self.device = device
+        self.label_source = label_source
+        self.ground_truth_top_k = ground_truth_top_k
+        self.ground_truth_queries_path = ground_truth_queries_path
         self.joern_session = None
+
+        # Lazily populated on first use by _get_ground_truth_queries() — the
+        # curated query set and its embeddings are fixed for the whole
+        # experiment (independent of any commit pair), so they're loaded
+        # and embedded once, not per commit pair.
+        self._ground_truth_queries = None
+        self._ground_truth_query_embeddings = None
 
         # Paths
         self.repo_path = self.workspace_dir / "black"
@@ -204,6 +246,7 @@ class Experiment:
         self.test_commits = []
         self.embeddings_history = {}  # commit_hash -> embeddings dict
         self.drifts_history = {}  # (commit_a, commit_b) -> drifts dict
+        self.ground_truth_history = {}  # (commit_a, commit_b) -> {entity_id: Y_i in {0.0, 1.0}}, leave_one_out only
         self.features_history = {}  # (commit_a, commit_b) -> features DataFrame
         self.modification_history = {}  # entity_id -> list of commit hashes
         self.previous_drifts = {}  # entity_id -> last drift value
@@ -420,6 +463,60 @@ class Experiment:
             logger.warning(f"  No entities found in commit {commit_hash[:8]}")
             self.embeddings_history[commit_hash] = {}
 
+    def _get_ground_truth_queries(self) -> Tuple[List, Dict[str, np.ndarray]]:
+        """
+        Lazily load the curated query set and embed each query text once.
+
+        Queries are fixed for the whole experiment (independent of any
+        commit pair), so this only does real work on the first call.
+        """
+        if self._ground_truth_queries is None:
+            self._ground_truth_queries = load_ground_truth_queries(self.ground_truth_queries_path)
+            self._ground_truth_query_embeddings = {
+                q.query_id: self.embedding_manager.generate_embedding(q.query_id, q.query_text)
+                for q in self._ground_truth_queries
+            }
+            logger.info(
+                f"Loaded {len(self._ground_truth_queries)} curated ground-truth queries "
+                f"from {self.ground_truth_queries_path or 'default path'}."
+            )
+            if not self._ground_truth_queries:
+                logger.warning(
+                    "_get_ground_truth_queries: curated query set is empty — "
+                    "leave_one_out label_source will produce no labels at all."
+                )
+        return self._ground_truth_queries, self._ground_truth_query_embeddings
+
+    def compute_ground_truth_labels(self, commit_a: str, commit_b: str) -> Dict[str, float]:
+        """
+        Compute the leave_one_out Y_i label for every entity common to
+        commit_a/commit_b's embeddings, using the independent curated query
+        set (never run_experiment.py's own drift/docstring-derived
+        queries — see src/embedder/ground_truth.py's module docstring).
+
+        Returns entity_id -> float in {0.0, 1.0}, in the same shape as
+        drifts_history entries, so train_model() can swap label sources
+        without touching feature extraction at all.
+        """
+        embeddings_a = self.embeddings_history.get(commit_a, {})
+        embeddings_b = self.embeddings_history.get(commit_b, {})
+        if not embeddings_a or not embeddings_b:
+            return {}
+
+        queries, query_embeddings = self._get_ground_truth_queries()
+        if not queries:
+            return {}
+
+        loo_results = compute_leave_one_out_scores(
+            embeddings_before=embeddings_a,
+            embeddings_after=embeddings_b,
+            queries=queries,
+            query_embeddings=query_embeddings,
+            top_k=self.ground_truth_top_k,
+        )
+        gt_labels = binarize_ground_truth(loo_results)
+        return {entity_id: float(label.label) for entity_id, label in gt_labels.items()}
+
     def compute_drifts_and_features(self, commit_a: str, commit_b: str) -> Tuple[Dict[str, float], pd.DataFrame]:
         """
         Compute drifts and features between two commits.
@@ -569,6 +666,16 @@ class Experiment:
                     self.drifts_history[(commit_prev, commit)] = drifts
                     self.features_history[(commit_prev, commit)] = features
 
+                    if self.label_source == "leave_one_out":
+                        gt_labels = self.compute_ground_truth_labels(commit_prev, commit)
+                        self.ground_truth_history[(commit_prev, commit)] = gt_labels
+                        if not gt_labels:
+                            logger.warning(
+                                f"No leave_one_out ground-truth labels produced for "
+                                f"{commit_prev[:8]} -> {commit[:8]} (empty curated query "
+                                f"overlap with this snapshot's entities)."
+                            )
+
                     # Generate training log diagnostic
                     try:
                         modified_files = self.git_helper.get_modified_files(commit_prev, commit)
@@ -644,10 +751,23 @@ class Experiment:
         logger.info("=" * 80)
         logger.info("TRAINING MODEL")
         logger.info("=" * 80)
+        logger.info(f"Label source: {self.label_source}")
 
-        # Combine features and drifts from training commits
+        if self.label_source == "leave_one_out" and self.predictor.task_type != "classification":
+            logger.error(
+                "label_source='leave_one_out' produces a binary Y_i label, which is not a "
+                "valid regression target. Set task_type='classification' on the predictor, "
+                "or use label_source='cosine_threshold' for regression."
+            )
+            return False
+
+        # Which per-(commit_a, commit_b) label dict to train against — both
+        # are entity_id -> float, so everything below is label-source-agnostic.
+        label_history = self.ground_truth_history if self.label_source == "leave_one_out" else self.drifts_history
+
+        # Combine features and labels from training commits
         all_features = []
-        all_drifts = {}
+        all_labels = {}
 
         if len(self.train_commits) < 2:
             logger.error(
@@ -662,19 +782,24 @@ class Experiment:
             commit_b = self.train_commits[i]
 
             key = (commit_a, commit_b)
-            if key in self.features_history and key in self.drifts_history:
+            if key in self.features_history and key in label_history and label_history[key]:
                 features_df = self.features_history[key].copy()
-                drifts = self.drifts_history[key]
+                entity_labels = label_history[key]
 
                 pair_prefix = f"{commit_a[:8]}_{commit_b[:8]}"
                 features_df.index = [f"{pair_prefix}::{eid}" for eid in features_df.index]
-                drifts_mapped = {f"{pair_prefix}::{eid}": d for eid, d in drifts.items()}
+                labels_mapped = {f"{pair_prefix}::{eid}": v for eid, v in entity_labels.items()}
 
                 all_features.append(features_df)
-                all_drifts.update(drifts_mapped)
+                all_labels.update(labels_mapped)
 
         if not all_features:
-            logger.error("No training data available")
+            logger.error(
+                "No training data available"
+                + (" (leave_one_out label_source produced no labels for any training commit "
+                   "pair — check curated_queries.json target coverage against this repo's "
+                   "entities)" if self.label_source == "leave_one_out" else "")
+            )
             return False
 
         # Combine features
@@ -682,15 +807,26 @@ class Experiment:
         # Remove duplicate composite rows if any exist
         combined_features = combined_features[~combined_features.index.duplicated(keep='first')]
 
-        logger.info(f"Training on {len(combined_features)} entities with {len(all_drifts)} drift values")
+        logger.info(f"Training on {len(combined_features)} entities with {len(all_labels)} label values")
 
-        # Dynamically calculate threshold if configured.
-        # Most entities in any given commit pair are untouched (directly or via
-        # context) and have exactly-zero drift; including them in the percentile
-        # collapses the threshold to ~0 regardless of the percentile chosen. Take
-        # the percentile over entities that actually drifted at all instead.
-        if self.threshold_mode == "dynamic":
-            drift_values = [v for v in all_drifts.values() if not np.isnan(v)]
+        if self.label_source == "leave_one_out":
+            # Y_i is already binary (0.0/1.0) from binarize_ground_truth() — a
+            # percentile-based dynamic threshold would be meaningless here.
+            # 0.5 cleanly separates the two label values regardless of which
+            # one prepare_data()'s `>= threshold` check is applied to.
+            self.predictor.threshold = 0.5
+            positive_rate = sum(all_labels.values()) / len(all_labels) if all_labels else 0.0
+            logger.info(
+                f"leave_one_out labels: {sum(all_labels.values()):.0f}/{len(all_labels)} "
+                f"({positive_rate:.1%}) positive across combined training data."
+            )
+        elif self.threshold_mode == "dynamic":
+            # Dynamically calculate threshold if configured.
+            # Most entities in any given commit pair are untouched (directly or via
+            # context) and have exactly-zero drift; including them in the percentile
+            # collapses the threshold to ~0 regardless of the percentile chosen. Take
+            # the percentile over entities that actually drifted at all instead.
+            drift_values = [v for v in all_labels.values() if not np.isnan(v)]
             nonzero_drift_values = [v for v in drift_values if v > 1e-9]
             if nonzero_drift_values:
                 self.threshold = float(np.percentile(nonzero_drift_values, 85))
@@ -708,14 +844,14 @@ class Experiment:
 
         # Prepare data
         try:
-            X, y = self.predictor.prepare_data(combined_features, all_drifts)
+            X, y = self.predictor.prepare_data(combined_features, all_labels)
         except ValueError as e:
             logger.error(f"Failed to prepare data: {e}")
             return False
 
         # Split data
         X_train, X_test, y_train, y_test = train_test_split_temporal(
-            combined_features, all_drifts, train_ratio=self.train_ratio
+            combined_features, all_labels, train_ratio=self.train_ratio
         )
 
         # Train model
@@ -1288,6 +1424,29 @@ def main():
         help="Whether to use a fixed threshold or compute it dynamically from percentile"
     )
     parser.add_argument(
+        "--label-source",
+        choices=["cosine_threshold", "leave_one_out"],
+        default="cosine_threshold",
+        help=(
+            "Predictor training label: 'cosine_threshold' (default, existing behavior) "
+            "or 'leave_one_out' (rank-displacement + Wilcoxon ground truth from "
+            "src/embedder/ground_truth.py; requires task_type='classification')"
+        )
+    )
+    parser.add_argument(
+        "--ground-truth-top-k",
+        type=int,
+        default=10,
+        help="Top-K window for the leave_one_out label source (ignored otherwise)"
+    )
+    parser.add_argument(
+        "--ground-truth-queries-path",
+        type=str,
+        default=None,
+        help="Override path to the curated query set for leave_one_out (default: "
+             "src/benchmarking/data/curated_queries.json)"
+    )
+    parser.add_argument(
         "--config",
         type=str,
         default=None,
@@ -1386,7 +1545,10 @@ def main():
         model_name=args.model_name,
         commit_stride=args.commit_stride,
         parser_mode=parser_mode,
-        device=args.device
+        device=args.device,
+        label_source=args.label_source,
+        ground_truth_top_k=args.ground_truth_top_k,
+        ground_truth_queries_path=args.ground_truth_queries_path
     )
 
     # Run experiment
