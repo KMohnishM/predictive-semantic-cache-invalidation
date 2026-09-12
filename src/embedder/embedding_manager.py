@@ -104,7 +104,7 @@ class EmbeddingManager:
             if "unixcoder" in self.model_name.lower():
                 self.model.max_seq_length = 512
             elif "jina" in self.model_name.lower():
-                self.model.max_seq_length = 8192
+                self.model.max_seq_length = 8190
             else:
                 try:
                     config = self.model._first_module().auto_model.config
@@ -180,9 +180,10 @@ class EmbeddingManager:
             embeddings = self.model.encode(texts, batch_size=batch_size, convert_to_numpy=True, show_progress_bar=True)
         except Exception as e:
             if self.device.startswith("cuda"):
-                logger.warning(f"CUDA execution failed ({e}). Falling back to CPU...")
+                logger.warning(f"CUDA execution failed ({e}). Reloading model cleanly on CPU...")
                 self.device = "cpu"
-                self.model = self.model.to("cpu")
+                self.model = None
+                self._load_model()
                 batch_size = base_batch_size
                 embeddings = self.model.encode(texts, batch_size=batch_size, convert_to_numpy=True, show_progress_bar=True)
             else:
