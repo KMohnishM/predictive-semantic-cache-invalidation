@@ -28,6 +28,12 @@ without re-running the whole pipeline. It skips `run_experiment.py`'s
 per-commit-pair diagnostic JSON dumping (that's for post-hoc debugging, not
 needed to see how the pipeline behaves here).
 
+Includes the same `label_source` switch as `run_experiment.py`: `"cosine_threshold"`
+(the original raw-cosine-drift label) or `"leave_one_out"` (the rank-displacement +
+Wilcoxon ground truth from `src/embedder/ground_truth.py` — see
+`docs/ground_truth_method_comparison.md`), plus the AST-canonicalization fix so a
+pure rename doesn't count as a semantic change.
+
 **How to use:** set the config in the next cell, then run all cells top to
 bottom. The last section shows a full timing breakdown (which stage/sub-step
 took the most time) and a table of every result produced along the way.
@@ -57,7 +63,19 @@ CONFIG = {
 
     "k_values":          [5, 10],   # Recall@K values to evaluate
     "fixed_hop_values":  [1, 2],    # K values for the fixed-hop baseline
+
+    # Predictor training label. "cosine_threshold" (default, original behavior):
+    # raw cosine drift binarized by threshold/threshold_mode above. "leave_one_out":
+    # Y_i from the leave-one-out rank-displacement + Wilcoxon significance ground
+    # truth in src/embedder/ground_truth.py (see docs/ground_truth_method_comparison.md).
+    # Both use the exact same features/training loop — only this line changes which
+    # label the predictor is trained against.
+    "label_source":              "cosine_threshold",  # "cosine_threshold" or "leave_one_out"
+    "ground_truth_top_k":        10,    # Top-K window for leave_one_out (ignored otherwise)
+    "ground_truth_queries_path": None,  # override path; default: src/benchmarking/data/curated_queries.json
 }
+assert CONFIG["label_source"] in ("cosine_threshold", "leave_one_out"), \
+    f"Unknown label_source: {CONFIG['label_source']!r}"
 
 RANDOM_SEED = 42
 """)
@@ -92,7 +110,12 @@ from embedder.embedding_manager import EmbeddingManager
 from extractor.feature_extractor import FeatureExtractor
 from extractor.gtd import GraphTransitionDescriptor
 from extractor.rsd import RepositoryStateDescriptor
-from predictor.predictor import DriftPredictor, train_test_split_temporal
+from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
+from embedder.ground_truth import (
+    binarize_ground_truth,
+    compute_leave_one_out_scores,
+    load_ground_truth_queries,
+)
 from evaluator.evaluator import (
     Evaluator, BaselineAChangedOnly, BaselineBFullReindex, BaselineCFixedHop,
     BaselineDPageRankPropagation, PredictiveStrategy, WeightedBFSDecayStrategy,
@@ -168,8 +191,33 @@ with timed("0_setup", "construct_components"):
     results_dir.mkdir(parents=True, exist_ok=True)
     visualizer = Visualizer(str(results_dir))
 
+assert not (CONFIG["label_source"] == "leave_one_out" and predictor.task_type != "classification"), (
+    "label_source='leave_one_out' produces a binary Y_i label, which is not a valid "
+    "regression target. Use task_type='classification', or switch to label_source='cosine_threshold'."
+)
+
+# Ground-truth queries are fixed for the whole run (independent of any commit
+# pair) — load and embed once here, not per commit pair. Query independence is
+# load-bearing: this MUST come from curated_queries.json (hand-authored, fixed
+# target_entity_id), never from generate_queries() below, which selects
+# entities by the model's own drift score and builds text from the target's
+# own docstring — see src/embedder/ground_truth.py's module docstring.
+with timed("0_setup", "load_ground_truth_queries"):
+    if CONFIG["label_source"] == "leave_one_out":
+        ground_truth_queries = load_ground_truth_queries(CONFIG["ground_truth_queries_path"])
+        ground_truth_query_embeddings = {
+            q.query_id: embedding_manager.generate_embedding(q.query_id, q.query_text)
+            for q in ground_truth_queries
+        }
+        print(f"Loaded {len(ground_truth_queries)} curated ground-truth queries.")
+        if not ground_truth_queries:
+            print("WARNING: curated query set is empty — leave_one_out will produce no labels at all.")
+    else:
+        ground_truth_queries, ground_truth_query_embeddings = [], {}
+
 print(f"Repo ready at: {repo_path}")
 print(f"Results will be saved under: {results_dir}")
+print(f"Label source: {CONFIG['label_source']}")
 print(f"CUDA available: {torch.cuda.is_available()}"
       + (f"  ({torch.cuda.get_device_name(0)})" if torch.cuda.is_available() else ""))
 print(f"Embedding device resolved to: {embedding_manager.device}")
@@ -287,17 +335,75 @@ md("""## Stage 3 — Compute drift & extract features for each consecutive commi
 
 For each `(commit_a, commit_b)` pair: cosine drift between embeddings, the
 Graph Transition Descriptor, which entities were *semantically* modified (an
-AST-normalization filter drops purely cosmetic diffs), and the full feature
-matrix fed to the predictor.""")
+AST-canonicalization filter alpha-renames local variables/parameters before
+comparing, so a pure rename doesn't count as a change — only whitespace,
+comments, and now identifier renames are excluded; call targets, attributes,
+and docstrings still count, since a docstring is exactly what a retrieval
+embedding represents), and the full feature matrix fed to the predictor. When
+`label_source="leave_one_out"`, this stage also computes the leave-one-out
+rank-displacement + Wilcoxon ground-truth label per entity.""")
 
 code(r"""
 import ast, re as _re
 
+_CANONICALIZE_EXEMPT_NAMES = {"self", "cls"}
+
+
+class _LocalNameCollector(ast.NodeVisitor):
+    # Collects local bindings (assignment targets, function parameters) in
+    # first-appearance order, so they can be alpha-renamed to canonical
+    # placeholders before comparing two versions of an entity's source.
+    # Deliberately does NOT touch call targets, attributes, imports, or
+    # string/docstring literals.
+    def __init__(self):
+        self.order: List[str] = []
+        self._seen: Set[str] = set()
+
+    def _register(self, name: str) -> None:
+        if name in _CANONICALIZE_EXEMPT_NAMES or name in self._seen:
+            return
+        self._seen.add(name)
+        self.order.append(name)
+
+    def visit_Name(self, node):
+        if isinstance(node.ctx, ast.Store):
+            self._register(node.id)
+        self.generic_visit(node)
+
+    def visit_arg(self, node):
+        self._register(node.arg)
+        self.generic_visit(node)
+
+
+class _LocalNameRenamer(ast.NodeTransformer):
+    def __init__(self, mapping: Dict[str, str]):
+        self.mapping = mapping
+
+    def visit_Name(self, node):
+        if node.id in self.mapping:
+            node.id = self.mapping[node.id]
+        return node
+
+    def visit_arg(self, node):
+        if node.arg in self.mapping:
+            node.arg = self.mapping[node.arg]
+        return node
+
+
+def _canonicalize_local_names(tree):
+    collector = _LocalNameCollector()
+    collector.visit(tree)
+    mapping = {name: f"_v{i}" for i, name in enumerate(collector.order)}
+    return _LocalNameRenamer(mapping).visit(tree)
+
 
 def normalize_source(code_str: str) -> str:
-    # AST-normalize source so cosmetic-only diffs (whitespace/comments) don't count as changes.
+    # AST-canonicalize source (alpha-rename locals) so cosmetic-only diffs
+    # AND pure renames don't count as changes.
     try:
-        return ast.dump(ast.parse(code_str), annotate_fields=False)
+        tree = ast.parse(code_str)
+        tree = _canonicalize_local_names(tree)
+        return ast.dump(tree, annotate_fields=False)
     except Exception:
         cleaned = _re.sub(r'#.*', '', code_str)
         return " ".join(cleaned.split())
@@ -307,6 +413,7 @@ modification_history: Dict[str, List[str]] = {}
 previous_drifts: Dict[str, float] = {}
 gtd_history: Dict[Tuple[str, str], GraphTransitionDescriptor] = {}
 drifts_history: Dict[Tuple[str, str], Dict[str, float]] = {}
+ground_truth_history: Dict[Tuple[str, str], Dict[str, float]] = {}
 features_history: Dict[Tuple[str, str], pd.DataFrame] = {}
 pair_stats = []
 
@@ -322,6 +429,21 @@ for i in range(1, len(sampled_commits)):
 
     with timed("3_drift_features", "compute_drift"):
         drifts = embedding_manager.compute_all_drifts(emb_a, emb_b)
+
+    if CONFIG["label_source"] == "leave_one_out":
+        with timed("3_drift_features", "leave_one_out_ground_truth"):
+            if ground_truth_queries:
+                loo_results = compute_leave_one_out_scores(
+                    embeddings_before=emb_a, embeddings_after=emb_b,
+                    queries=ground_truth_queries, query_embeddings=ground_truth_query_embeddings,
+                    top_k=CONFIG["ground_truth_top_k"],
+                )
+                gt_labels = binarize_ground_truth(loo_results)
+                ground_truth_history[(commit_a, commit_b)] = {
+                    eid: float(label.label) for eid, label in gt_labels.items()
+                }
+            else:
+                ground_truth_history[(commit_a, commit_b)] = {}
 
     with timed("3_drift_features", "gtd"):
         gtd = GraphTransitionDescriptor()
@@ -366,11 +488,15 @@ for i in range(1, len(sampled_commits)):
     drifts_history[(commit_a, commit_b)] = drifts
     features_history[(commit_a, commit_b)] = features_df
 
+    gt_labels_this_pair = ground_truth_history.get((commit_a, commit_b), {})
     pair_stats.append({
         "pair": f"{commit_a[:8]}->{commit_b[:8]}",
         "n_entities": len(drifts),
         "n_modified": len(modified_entities),
         "mean_drift": float(np.mean(list(drifts.values()))) if drifts else 0.0,
+        **({"leave_one_out_positive_rate":
+                (sum(gt_labels_this_pair.values()) / len(gt_labels_this_pair)) if gt_labels_this_pair else 0.0}
+           if CONFIG["label_source"] == "leave_one_out" else {}),
     })
     print(f"{commit_a[:8]}->{commit_b[:8]}  entities={len(drifts)}  modified={len(modified_entities)}")
 
@@ -396,29 +522,45 @@ print(rsd.summary_table())
 md("## Stage 4 — Train the drift predictor")
 
 code(r"""
+# Same label-source switch as run_experiment.py's train_model(): both dicts
+# are entity_id -> float, so everything below is label-source-agnostic.
+label_history = ground_truth_history if CONFIG["label_source"] == "leave_one_out" else drifts_history
+
 with timed("4_train", "combine_training_data"):
-    all_features, all_drifts = [], {}
+    all_features, all_labels = [], {}
     for i in range(1, len(train_commits)):
         key = (train_commits[i - 1], train_commits[i])
-        if key not in features_history or key not in drifts_history:
+        if key not in features_history or key not in label_history or not label_history[key]:
             continue
         prefix = f"{key[0][:8]}_{key[1][:8]}"
         fdf = features_history[key].copy()
         fdf.index = [f"{prefix}::{eid}" for eid in fdf.index]
         all_features.append(fdf)
-        all_drifts.update({f"{prefix}::{eid}": d for eid, d in drifts_history[key].items()})
+        all_labels.update({f"{prefix}::{eid}": v for eid, v in label_history[key].items()})
 
-    assert all_features, "No training data — widen num_commits/commit_stride"
+    assert all_features, (
+        "No training data — widen num_commits/commit_stride"
+        + (" (leave_one_out produced no labels for any training pair — check curated_queries.json "
+           "target coverage against this repo's entities)" if CONFIG["label_source"] == "leave_one_out" else "")
+    )
     combined_features = pd.concat(all_features, ignore_index=False)
     combined_features = combined_features[~combined_features.index.duplicated(keep="first")]
 
 threshold = CONFIG["threshold"]
-if CONFIG["threshold_mode"] == "dynamic":
+if CONFIG["label_source"] == "leave_one_out":
+    # Y_i is already binary (0.0/1.0) — a percentile-based dynamic threshold
+    # would be meaningless here. 0.5 cleanly separates the two label values.
+    threshold = 0.5
+    predictor.threshold = threshold
+    positive_rate = sum(all_labels.values()) / len(all_labels) if all_labels else 0.0
+    print(f"leave_one_out labels: {sum(all_labels.values()):.0f}/{len(all_labels)} "
+          f"({positive_rate:.1%}) positive across combined training data.")
+elif CONFIG["threshold_mode"] == "dynamic":
     # Most entities in any given commit pair are untouched (directly or via
     # context) and have exactly-zero drift; including them in the percentile
     # collapses the threshold to ~0 regardless of the percentile chosen. Take
     # the percentile over entities that actually drifted at all instead.
-    vals = [v for v in all_drifts.values() if not np.isnan(v)]
+    vals = [v for v in all_labels.values() if not np.isnan(v)]
     nonzero_vals = [v for v in vals if v > 1e-9]
     if nonzero_vals:
         threshold = float(np.percentile(nonzero_vals, 85))
@@ -430,9 +572,9 @@ if CONFIG["threshold_mode"] == "dynamic":
               f"keeping configured threshold {threshold:.4f} instead of a degenerate dynamic one")
 
 with timed("4_train", "prepare_and_split"):
-    predictor.prepare_data(combined_features, all_drifts)
+    predictor.prepare_data(combined_features, all_labels)
     X_train, X_test, y_train, y_test = train_test_split_temporal(
-        combined_features, all_drifts, train_ratio=CONFIG["train_ratio"]
+        combined_features, all_labels, train_ratio=CONFIG["train_ratio"]
     )
 
 with timed("4_train", "fit"):
@@ -501,28 +643,35 @@ def generate_queries(repo_parser, drifts, num_queries=20) -> Dict[str, np.ndarra
 
 evaluator = Evaluator(embedding_manager, parsers_history.get(sampled_commits[0]))
 strategy_rows = []
-all_predictions, all_labels = [], []
+all_predictions, all_true_labels = [], []
 drift_by_distance: Dict[int, List[float]] = {}
+
+# `threshold` was already set to 0.5 back in Stage 4 for leave_one_out (a
+# single shared variable here, unlike run_experiment.py's separate
+# Experiment.threshold/predictor.threshold), so it's already correct both for
+# y_true_class below AND for the evaluator.evaluate_strategy(threshold=...)
+# calls further down — no separate decision threshold needed.
+decision_threshold = threshold
 
 for i in range(1, len(test_commits)):
     commit_a, commit_b = test_commits[i - 1], test_commits[i]
     key = (commit_a, commit_b)
-    if key not in drifts_history or key not in features_history:
+    if key not in label_history or key not in features_history or not label_history[key]:
         continue
 
-    drifts, features_df = drifts_history[key], features_history[key]
+    drifts, features_df = label_history[key], features_history[key]
     repo_parser_b = parsers_history[commit_b]
 
     with timed("5_evaluate", "predict"):
         X, y_true = predictor.prepare_data(features_df, drifts)
         aligned_ids = predictor.last_common_ids
         y_prob = predictor.predict_proba(X)
-        y_pred = y_prob[:, 1] if y_prob is not None else predictor.predict(X)
+        y_pred = positive_class_proba(predictor.model, y_prob) if y_prob is not None else predictor.predict(X)
         y_pred_class = predictor.predict(X)
 
-    y_true_class = (y_true >= threshold).astype(int)
+    y_true_class = (y_true >= decision_threshold).astype(int)
     all_predictions.extend(y_pred_class)
-    all_labels.extend(y_true_class)
+    all_true_labels.extend(y_true_class)
     predicted_drifts = {eid: d for eid, d in zip(aligned_ids, y_pred)}
 
     ground_truth_embeddings = embeddings_history.get(commit_b, {})
@@ -561,10 +710,20 @@ strategy_df.shape
 code(r"""
 metric_cols = [*RECALL_COLS, "mrr", "ndcg_at_10", "rank_correlation",
                "update_percentage", "entities_updated", "total_entities"]
-averaged_results = (
-    strategy_df.groupby("strategy")[metric_cols].mean()
-    .sort_values(PRIMARY_RECALL_COL, ascending=False)
-)
+
+if strategy_df.empty:
+    # Too few test commits produced zero evaluable pairs (need >= 2 test
+    # commits with data in both drifts_history/label_history and
+    # features_history) — report this clearly instead of a bare KeyError
+    # from groupby() on a columnless empty DataFrame.
+    print("No test commit pairs were evaluated (need at least 2 test commits with data) — "
+          "skipping strategy aggregation. Increase num_commits or reduce commit_stride/train_ratio.")
+    averaged_results = pd.DataFrame(columns=metric_cols)
+else:
+    averaged_results = (
+        strategy_df.groupby("strategy")[metric_cols].mean()
+        .sort_values(PRIMARY_RECALL_COL, ascending=False)
+    )
 averaged_results
 """)
 
@@ -598,18 +757,21 @@ with timed("6_visualize", "plots"):
     if feature_importance:
         plot_paths.append(visualizer.plot_feature_importance(feature_importance))
 
-    plot_paths.append(visualizer.plot_strategy_comparison(results_for_viz["strategy_results"]))
-    plot_paths.append(visualizer.plot_ranking_metrics(results_for_viz["strategy_results"]))
+    if results_for_viz["strategy_results"]:
+        plot_paths.append(visualizer.plot_strategy_comparison(results_for_viz["strategy_results"]))
+        plot_paths.append(visualizer.plot_ranking_metrics(results_for_viz["strategy_results"]))
 
-    pareto_df = evaluator.compute_pareto_frontier(results_for_viz["strategy_results"],
-                                                   recall_metric=PRIMARY_RECALL_COL)
-    cost_df = evaluator.compute_maintenance_cost(results_for_viz["strategy_results"])
-    cost_df = cost_df.merge(
-        pd.DataFrame([{"strategy": k, "recall": v.get(PRIMARY_RECALL_COL, 0)}
-                      for k, v in results_for_viz["strategy_results"].items()]),
-        on="strategy",
-    )
-    plot_paths.append(visualizer.plot_pareto_frontier(pareto_df, cost_df))
+        pareto_df = evaluator.compute_pareto_frontier(results_for_viz["strategy_results"],
+                                                       recall_metric=PRIMARY_RECALL_COL)
+        cost_df = evaluator.compute_maintenance_cost(results_for_viz["strategy_results"])
+        cost_df = cost_df.merge(
+            pd.DataFrame([{"strategy": k, "recall": v.get(PRIMARY_RECALL_COL, 0)}
+                          for k, v in results_for_viz["strategy_results"].items()]),
+            on="strategy",
+        )
+        plot_paths.append(visualizer.plot_pareto_frontier(pareto_df, cost_df))
+    else:
+        print("No strategy results to plot (see the too-few-test-commits note above).")
 
     all_drifts_flat = {}
     for d in drifts_history.values():
@@ -617,8 +779,8 @@ with timed("6_visualize", "plots"):
     if all_drifts_flat:
         plot_paths.append(visualizer.plot_drift_distribution(all_drifts_flat, threshold))
 
-    if all_predictions and all_labels:
-        plot_paths.append(visualizer.plot_confusion_matrix(np.array(all_labels), np.array(all_predictions)))
+    if all_predictions and all_true_labels:
+        plot_paths.append(visualizer.plot_confusion_matrix(np.array(all_true_labels), np.array(all_predictions)))
 
 for p in plot_paths:
     show_plot(p)
