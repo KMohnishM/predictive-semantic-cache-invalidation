@@ -30,6 +30,22 @@ if not hasattr(transformers.PretrainedConfig, "is_decoder"):
 if not hasattr(transformers.PretrainedConfig, "add_cross_attention"):
     transformers.PretrainedConfig.add_cross_attention = False
 
+if not hasattr(transformers.PreTrainedModel, "get_head_mask"):
+    def _get_head_mask(self, head_mask, num_hidden_layers, is_attention_chunked=False):
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.unsqueeze(0).unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
+                head_mask = head_mask.expand(num_hidden_layers, -1, -1, -1, -1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(1).unsqueeze(1)
+            if is_attention_chunked:
+                head_mask = head_mask.unsqueeze(-1)
+        else:
+            head_mask = [None] * num_hidden_layers
+        return head_mask
+    transformers.PreTrainedModel.get_head_mask = _get_head_mask
+
+
 
 
 def resolve_device(device: str = "auto") -> str:
