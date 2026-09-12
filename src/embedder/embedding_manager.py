@@ -6,6 +6,8 @@ import torch
 from sentence_transformers import SentenceTransformer
 import logging
 
+logger = logging.getLogger(__name__)
+
 from .util import remove_comments_and_docstrings, compute_cosine_similarity
 
 # Compatibility patch for Jina embeddings on newer transformers versions (e.g. Kaggle/Colab)
