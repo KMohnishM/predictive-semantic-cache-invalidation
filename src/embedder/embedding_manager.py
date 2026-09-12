@@ -36,10 +36,27 @@ def resolve_device(device: str = "auto") -> str:
     """
     Resolve a device setting ("auto", "cpu", "cuda", "cuda:0", ...) to a
     concrete torch device string. "auto" picks CUDA when available, else CPU.
+    Validates CUDA compute capability to prevent crashes on legacy GPUs (e.g., P100 sm_60).
     """
+    target = "cuda" if device == "auto" else device
+    if target.startswith("cuda") and torch.cuda.is_available():
+        try:
+            major, minor = torch.cuda.get_device_capability()
+            # PyTorch 2.4+ wheel builds dropped CUDA kernels for sm < 7.0 (e.g. Tesla P100 sm_60)
+            if major < 7:
+                dev_name = torch.cuda.get_device_name(0)
+                logger.warning(
+                    f"CUDA device '{dev_name}' (sm_{major}{minor}) is not supported by installed PyTorch binaries (requires sm_70+). "
+                    f"Falling back to CPU. NOTE: In Kaggle notebook Settings -> Accelerator, switch from GPU P100 to 'GPU T4 x2' for fast GPU execution."
+                )
+                return "cpu"
+        except Exception as e:
+            logger.warning(f"Failed to query CUDA capability: {e}")
+        return target
     if device == "auto":
-        return "cuda" if torch.cuda.is_available() else "cpu"
+        return "cpu"
     return device
+
 
 
 class EmbeddingManager:
@@ -143,7 +160,18 @@ class EmbeddingManager:
         # GPUs can push larger batches than CPU for the same model.
         base_batch_size = 2 if "jina" in self.model_name.lower() else 32
         batch_size = base_batch_size * 2 if self.device.startswith("cuda") else base_batch_size
-        embeddings = self.model.encode(texts, batch_size=batch_size, convert_to_numpy=True, show_progress_bar=True)
+        try:
+            embeddings = self.model.encode(texts, batch_size=batch_size, convert_to_numpy=True, show_progress_bar=True)
+        except Exception as e:
+            if self.device.startswith("cuda"):
+                logger.warning(f"CUDA execution failed ({e}). Falling back to CPU...")
+                self.device = "cpu"
+                self.model = self.model.to("cpu")
+                batch_size = base_batch_size
+                embeddings = self.model.encode(texts, batch_size=batch_size, convert_to_numpy=True, show_progress_bar=True)
+            else:
+                raise
+
 
         # Normalize embeddings
         norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
