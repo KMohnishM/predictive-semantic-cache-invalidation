@@ -27,7 +27,7 @@ from embedder.ground_truth import (
     load_ground_truth_queries,
 )
 from extractor.feature_extractor import FeatureExtractor
-from predictor.predictor import DriftPredictor, train_test_split_temporal
+from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
 from evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
                        BaselineCFixedHop, BaselineDPageRankPropagation,
                        PredictiveStrategy)
@@ -886,6 +886,22 @@ class Experiment:
         all_labels = []
         self.predictions_export = {}
 
+        # Same label-source switch as train_model() — both dicts are
+        # entity_id -> float, so everything below is label-source-agnostic
+        # for the parts that only need `drifts` as a plain mapping. Note:
+        # the legacy internal strategy comparison further below
+        # (self.evaluator.evaluate_all_strategies and the diagnostic
+        # strategy_re_embeddings block) still decides using `self.threshold`
+        # unconditionally, which is only correct for cosine_threshold — for
+        # leave_one_out the model's actual decision boundary is
+        # self.predictor.threshold (0.5). That legacy path is NOT what
+        # Phase 6 validates through (see docs/ground_truth_method_comparison.md
+        # and Plans/ground_truth_fix_implementation_plan.md — validation goes
+        # through the independent src/benchmarking/ harness instead, via
+        # predictions.json exported below), so it's left as a known,
+        # explicitly-flagged limitation rather than reworked here.
+        label_history = self.ground_truth_history if self.label_source == "leave_one_out" else self.drifts_history
+
         # Process each test commit pair from the sampled commit sequence.
         for i, commit_b in enumerate(self.test_commits):
             if i == 0:
@@ -896,13 +912,13 @@ class Experiment:
             logger.info(f"\nEvaluating commit pair {i}/{len(self.test_commits)-1}: "
                        f"{commit_a[:8]} -> {commit_b[:8]}")
 
-            # Get drifts and features
+            # Get labels and features (label_history: see label-source note above)
             key = (commit_a, commit_b)
-            if key not in self.drifts_history or key not in self.features_history:
+            if key not in label_history or key not in self.features_history or not label_history[key]:
                 logger.warning(f"No data for commit pair {commit_a[:8]} -> {commit_b[:8]}")
                 continue
 
-            drifts = self.drifts_history[key]
+            drifts = label_history[key]
             features_df = self.features_history[key]
 
             # Prepare data for prediction
@@ -912,7 +928,10 @@ class Experiment:
             # Predict drifts / probabilities
             if self.predictor.task_type == "classification":
                 y_prob = self.predictor.predict_proba(X)
-                y_pred = y_prob[:, 1] if y_prob is not None else self.predictor.predict(X)
+                y_pred = (
+                    positive_class_proba(self.predictor.model, y_prob)
+                    if y_prob is not None else self.predictor.predict(X)
+                )
                 y_pred_class = self.predictor.predict(X)
             else:
                 y_pred = self.predictor.predict(X)

@@ -17,6 +17,22 @@ import os
 logger = logging.getLogger(__name__)
 
 
+def positive_class_proba(model, probs: np.ndarray) -> np.ndarray:
+    """
+    Probability of class 1, robust to a model that only ever saw one class
+    during training (e.g. an all-zero leave_one_out label distribution due
+    to sparse curated-query coverage relative to entity count). In that
+    case sklearn's predict_proba() returns a single column instead of two,
+    and naively indexing [:, 1] raises IndexError. Returns an all-zero or
+    all-one column instead, matching which single class the model learned.
+    """
+    if probs.shape[1] >= 2:
+        return probs[:, 1]
+    only_class = model.classes_[0]
+    fill_value = 1.0 if only_class == 1 else 0.0
+    return np.full(probs.shape[0], fill_value)
+
+
 class DriftPredictor:
     """Trains models to predict semantic drift."""
 
@@ -209,7 +225,10 @@ class DriftPredictor:
                 y = np.array([1 if val >= self.threshold else 0 for val in y])
 
             y_pred = self.model.predict(X_scaled)
-            y_prob = self.model.predict_proba(X_scaled)[:, 1] if hasattr(self.model, 'predict_proba') else None
+            y_prob = (
+                positive_class_proba(self.model, self.model.predict_proba(X_scaled))
+                if hasattr(self.model, 'predict_proba') else None
+            )
 
             metrics['test_accuracy'] = self.model.score(X_scaled, y)
             metrics['test_f1'] = f1_score(y, y_pred, zero_division=0)
