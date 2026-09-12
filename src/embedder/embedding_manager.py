@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 from .util import remove_comments_and_docstrings, compute_cosine_similarity
 
 # Compatibility patch for Jina embeddings on newer transformers versions (e.g. Kaggle/Colab)
+import transformers
 import transformers.pytorch_utils as _pt_utils
 if not hasattr(_pt_utils, "find_pruneable_heads_and_indices"):
     def _find_pruneable_heads_and_indices(heads, n_heads, head_size, already_pruned_heads):
@@ -23,6 +24,12 @@ if not hasattr(_pt_utils, "find_pruneable_heads_and_indices"):
         index = torch.arange(len(mask))[mask].long()
         return heads, index
     _pt_utils.find_pruneable_heads_and_indices = _find_pruneable_heads_and_indices
+
+if not hasattr(transformers.PretrainedConfig, "is_decoder"):
+    transformers.PretrainedConfig.is_decoder = False
+if not hasattr(transformers.PretrainedConfig, "add_cross_attention"):
+    transformers.PretrainedConfig.add_cross_attention = False
+
 
 
 def resolve_device(device: str = "auto") -> str:
