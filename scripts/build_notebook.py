@@ -41,6 +41,16 @@ took the most time) and a table of every result produced along the way.
 
 # ---------------------------------------------------------------------------
 code(r"""
+# Auto-install dependencies if running on Kaggle or Google Colab
+try:
+    import tree_sitter_language_pack
+except ImportError:
+    import sys
+    !{sys.executable} -m pip install -q tree-sitter-language-pack sentence-transformers gitpython networkx scikit-learn
+""")
+
+# ---------------------------------------------------------------------------
+code(r"""
 # =============================================================================
 # SETTINGS — everything you'd normally pass as CLI flags / settings.json
 # =============================================================================
