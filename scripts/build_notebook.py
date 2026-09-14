@@ -94,7 +94,10 @@ RANDOM_SEED = 42
 md("## Setup — imports, timing infrastructure, and the execution plan")
 
 code(r"""
-import sys, os, time, json, logging, warnings
+%load_ext autoreload
+%autoreload 2
+
+import sys, os, time, json, logging, warnings, importlib
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Dict, List, Set, Optional, Tuple
@@ -120,6 +123,8 @@ from embedder.embedding_manager import EmbeddingManager
 from extractor.feature_extractor import FeatureExtractor
 from extractor.gtd import GraphTransitionDescriptor
 from extractor.rsd import RepositoryStateDescriptor
+import predictor.predictor as predictor_module
+importlib.reload(predictor_module)
 from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
 from embedder.ground_truth import (
     binarize_ground_truth,
@@ -130,6 +135,8 @@ from evaluator.evaluator import (
     Evaluator, BaselineAChangedOnly, BaselineBFullReindex, BaselineCFixedHop,
     BaselineDPageRankPropagation, PredictiveStrategy, WeightedBFSDecayStrategy,
 )
+import visualizer.visualize as visualize_module
+importlib.reload(visualize_module)
 from visualizer.visualize import Visualizer
 from IPython.display import Image, display
 
