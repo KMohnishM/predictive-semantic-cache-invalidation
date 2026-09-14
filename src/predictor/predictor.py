@@ -3,12 +3,16 @@
 from typing import Dict, List, Tuple, Optional, Union
 import numpy as np
 import pandas as pd
+import time
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.ensemble import GradientBoostingRegressor, GradientBoostingClassifier
+from sklearn.ensemble import HistGradientBoostingRegressor, HistGradientBoostingClassifier
+from sklearn.ensemble import ExtraTreesRegressor, ExtraTreesClassifier
+from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (mean_squared_error, r2_score, f1_score,
-                             precision_score, recall_score, precision_recall_curve, auc)
+                             precision_score, recall_score, precision_recall_curve, auc, roc_auc_score)
 from sklearn.preprocessing import StandardScaler
 import logging
 import joblib
@@ -36,16 +40,27 @@ def positive_class_proba(model, probs: np.ndarray) -> np.ndarray:
 class DriftPredictor:
     """Trains models to predict semantic drift."""
 
+    SUPPORTED_MODELS = [
+        "random_forest",
+        "gradient_boosting",
+        "hist_gradient_boosting",
+        "extra_trees",
+        "logistic_regression",
+        "mlp",
+    ]
+
     def __init__(self, model_type: str = "random_forest", task_type: str = "regression",
                  threshold: float = 0.02):
         """
         Initialize drift predictor.
 
         Args:
-            model_type: Type of model ("random_forest", "gradient_boosting", "linear")
+            model_type: Type of model ("random_forest", "gradient_boosting", "hist_gradient_boosting", "extra_trees", "linear"/"logistic_regression", "mlp")
             task_type: "regression" or "classification"
             threshold: Threshold for classification (drift >= threshold -> 1)
         """
+        if model_type == "linear" and task_type == "classification":
+            model_type = "logistic_regression"
         self.model_type = model_type
         self.task_type = task_type
         self.threshold = threshold
@@ -78,8 +93,25 @@ class DriftPredictor:
                     learning_rate=0.1,
                     random_state=42
                 )
-            elif self.model_type == "linear":
+            elif self.model_type == "hist_gradient_boosting":
+                return HistGradientBoostingRegressor(
+                    random_state=42
+                )
+            elif self.model_type == "extra_trees":
+                return ExtraTreesRegressor(
+                    n_estimators=100,
+                    max_depth=10,
+                    random_state=42,
+                    n_jobs=-1
+                )
+            elif self.model_type in ("linear", "logistic_regression"):
                 return Ridge(alpha=1.0, random_state=42)
+            elif self.model_type == "mlp":
+                return MLPRegressor(
+                    hidden_layer_sizes=(64, 32),
+                    max_iter=500,
+                    random_state=42
+                )
             else:
                 raise ValueError(f"Unknown model type: {self.model_type}")
 
@@ -101,11 +133,30 @@ class DriftPredictor:
                     learning_rate=0.1,
                     random_state=42
                 )
-            elif self.model_type == "linear":
+            elif self.model_type == "hist_gradient_boosting":
+                return HistGradientBoostingClassifier(
+                    random_state=42,
+                    class_weight='balanced'
+                )
+            elif self.model_type == "extra_trees":
+                return ExtraTreesClassifier(
+                    n_estimators=100,
+                    max_depth=10,
+                    random_state=42,
+                    n_jobs=-1,
+                    class_weight='balanced'
+                )
+            elif self.model_type in ("linear", "logistic_regression"):
                 return LogisticRegression(
                     max_iter=1000,
                     random_state=42,
                     class_weight='balanced'
+                )
+            elif self.model_type == "mlp":
+                return MLPClassifier(
+                    hidden_layer_sizes=(64, 32),
+                    max_iter=500,
+                    random_state=42
                 )
             else:
                 raise ValueError(f"Unknown model type: {self.model_type}")
@@ -409,3 +460,52 @@ def train_test_split_temporal(features_df: pd.DataFrame, drifts: Dict[str, float
     logger.info(f"Test set: {len(test_ids)} rows")
 
     return X_train, X_test, y_train, y_test
+
+
+def compare_all_models(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    task_type: str = "classification",
+    threshold: float = 0.5,
+    model_types: Optional[List[str]] = None,
+) -> Tuple[pd.DataFrame, Dict[str, DriftPredictor]]:
+    """
+    Train and evaluate multiple ML models on identical train/test splits.
+
+    Returns:
+        Tuple of (results_df, trained_predictors_dict)
+    """
+    if model_types is None:
+        model_types = DriftPredictor.SUPPORTED_MODELS
+
+    results = []
+    predictors = {}
+
+    for m_type in model_types:
+        try:
+            pred = DriftPredictor(model_type=m_type, task_type=task_type, threshold=threshold)
+            t0 = time.perf_counter()
+            pred.train(X_train, y_train)
+            train_time = time.perf_counter() - t0
+
+            t1 = time.perf_counter()
+            metrics = pred.evaluate(X_test, y_test)
+            eval_time = time.perf_counter() - t1
+
+            row = {
+                "model_type": m_type,
+                "train_time_sec": round(train_time, 4),
+                "eval_time_sec": round(eval_time, 4),
+                **{k: round(v, 4) for k, v in metrics.items()},
+            }
+            results.append(row)
+            predictors[m_type] = pred
+        except Exception as exc:
+            logger.warning(f"Model comparison failed for '{m_type}': {exc}")
+
+    df = pd.DataFrame(results)
+    if not df.empty and "test_f1" in df.columns:
+        df = df.sort_values("test_f1", ascending=False).reset_index(drop=True)
+    return df, predictors

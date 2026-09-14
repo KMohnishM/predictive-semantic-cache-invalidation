@@ -602,6 +602,31 @@ pd.DataFrame([{"split": "train", **train_metrics}, {"split": "test", **test_metr
 """)
 
 # ---------------------------------------------------------------------------
+md("## Multi-Model ML Architecture Comparison")
+
+code(r"""
+from predictor.predictor import compare_all_models
+
+with timed("4_train", "compare_all_models"):
+    model_comparison_df, trained_predictors = compare_all_models(
+        X_train, y_train, X_test, y_test,
+        task_type=predictor.task_type,
+        threshold=predictor.threshold
+    )
+
+comp_csv_path = results_dir / "model_comparison.csv"
+model_comparison_df.to_csv(comp_csv_path, index=False)
+print("Multi-Model Classification Leaderboard:")
+display(model_comparison_df)
+
+with timed("4_train", "plot_multi_model_comparison"):
+    p_comp = visualizer.plot_model_comparison(model_comparison_df)
+    p_pr = visualizer.plot_model_roc_pr_curves(trained_predictors, X_test, y_test)
+    show_plot(p_comp)
+    show_plot(p_pr)
+""")
+
+# ---------------------------------------------------------------------------
 md("""## Stage 5 — Evaluate cache-invalidation strategies
 
 For each test commit pair: predict drift with the trained model, generate a

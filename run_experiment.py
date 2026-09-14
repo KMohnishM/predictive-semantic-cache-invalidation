@@ -147,7 +147,8 @@ class Experiment:
                  device: str = "auto",
                  label_source: str = "cosine_threshold",
                  ground_truth_top_k: int = 10,
-                 ground_truth_queries_path: Optional[str] = None):
+                 ground_truth_queries_path: Optional[str] = None,
+                 compare_models: bool = False):
         """
         Initialize experiment.
 
@@ -205,6 +206,7 @@ class Experiment:
         self.label_source = label_source
         self.ground_truth_top_k = ground_truth_top_k
         self.ground_truth_queries_path = ground_truth_queries_path
+        self.compare_models = compare_models
         self.joern_session = None
 
         # Lazily populated on first use by _get_ground_truth_queries() — the
@@ -867,6 +869,26 @@ class Experiment:
         logger.info(f"Model saved to {model_path}")
         logger.info(f"Test metrics: {test_metrics}")
 
+        # If --compare-models is enabled, train & evaluate all candidate model architectures
+        if getattr(self, "compare_models", False):
+            logger.info("=" * 80)
+            logger.info("RUNNING MULTI-MODEL COMPARISON")
+            logger.info("=" * 80)
+            from predictor.predictor import compare_all_models
+            comp_df, predictors_dict = compare_all_models(
+                X_train, y_train, X_test, y_test,
+                task_type=self.predictor.task_type,
+                threshold=self.predictor.threshold
+            )
+            comp_csv_path = self.results_dir / "model_comparison.csv"
+            comp_df.to_csv(comp_csv_path, index=False)
+            logger.info(f"Saved multi-model comparison table to {comp_csv_path}")
+            logger.info("\n" + comp_df.to_string())
+
+            if self.visualizer:
+                self.visualizer.plot_model_comparison(comp_df, "model_comparison.png")
+                self.visualizer.plot_model_roc_pr_curves(predictors_dict, X_test, y_test, "model_pr_curves.png")
+
         return True
 
     def evaluate_strategies(self) -> Dict:
@@ -1493,6 +1515,11 @@ def main():
         default="auto",
         help="Device for the embedding model: auto (CUDA if available, else CPU), cpu, or cuda"
     )
+    parser.add_argument(
+        "--compare-models",
+        action="store_true",
+        help="Train and compare multiple ML model architectures (Random Forest, Gradient Boosting, HistGB, Extra Trees, Logistic Regression, MLP)"
+    )
 
     args = parser.parse_args()
 
@@ -1567,7 +1594,8 @@ def main():
         device=args.device,
         label_source=args.label_source,
         ground_truth_top_k=args.ground_truth_top_k,
-        ground_truth_queries_path=args.ground_truth_queries_path
+        ground_truth_queries_path=args.ground_truth_queries_path,
+        compare_models=getattr(args, "compare_models", False)
     )
 
     # Run experiment

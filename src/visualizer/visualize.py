@@ -475,3 +475,104 @@ class Visualizer:
 
         logger.info(f"Summary report saved to {output_path}")
         return str(output_path)
+
+    def plot_model_comparison(self, comparison_df: pd.DataFrame,
+                              output_file: str = "model_comparison.png") -> str:
+        """
+        Plot grouped bar chart comparing multiple ML model architectures.
+
+        Args:
+            comparison_df: DataFrame containing model comparison metrics
+            output_file: Output filename
+
+        Returns:
+            Path to saved plot
+        """
+        logger.info("Generating multi-model comparison plot...")
+
+        if comparison_df.empty:
+            logger.warning("Empty comparison_df provided to plot_model_comparison")
+            return ""
+
+        metrics_to_plot = [col for col in ['test_accuracy', 'test_f1', 'test_precision', 'test_recall', 'test_pr_auc']
+                           if col in comparison_df.columns]
+
+        if not metrics_to_plot:
+            logger.warning("No plottable test metrics found in comparison_df")
+            return ""
+
+        fig, ax1 = plt.subplots(figsize=(12, 6))
+
+        df_plot = comparison_df.set_index("model_type")[metrics_to_plot]
+        # Clean up metric names for display
+        df_plot.columns = [c.replace("test_", "").upper() for c in df_plot.columns]
+
+        df_plot.plot(kind='bar', ax=ax1, width=0.7, colormap='viridis')
+        ax1.set_title('Multi-Model ML Classification Performance Comparison', fontsize=14, fontweight='bold')
+        ax1.set_xlabel('Model Architecture', fontsize=12, fontweight='bold')
+        ax1.set_ylabel('Metric Score (0.0 to 1.0)', fontsize=12, fontweight='bold')
+        ax1.set_ylim(0, 1.05)
+        ax1.legend(loc='lower right')
+        ax1.grid(True, alpha=0.3, axis='y')
+
+        plt.xticks(rotation=15, ha='right')
+        plt.tight_layout()
+
+        output_path = self.output_dir / output_file
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
+        logger.info(f"Multi-model comparison plot saved to {output_path}")
+        return str(output_path)
+
+    def plot_model_roc_pr_curves(self, predictors_dict: Dict, X_test: np.ndarray, y_test: np.ndarray,
+                                 output_file: str = "model_pr_curves.png") -> str:
+        """
+        Plot Precision-Recall curves for all evaluated models on a single figure.
+
+        Args:
+            predictors_dict: Dict mapping model_type name to trained DriftPredictor instance
+            X_test: Test features
+            y_test: Test binary labels
+            output_file: Output filename
+
+        Returns:
+            Path to saved plot
+        """
+        from sklearn.metrics import precision_recall_curve, auc
+        from predictor.predictor import positive_class_proba
+
+        logger.info("Generating Precision-Recall comparison curves...")
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        colors = plt.cm.tab10(np.linspace(0, 1, max(1, len(predictors_dict))))
+
+        for idx, (m_name, pred) in enumerate(predictors_dict.items()):
+            try:
+                y_prob = pred.predict_proba(X_test)
+                if y_prob is None:
+                    continue
+                probs = positive_class_proba(pred.model, y_prob)
+                precisions, recalls, _ = precision_recall_curve(y_test, probs)
+                pr_auc_val = auc(recalls, precisions)
+
+                ax.plot(recalls, precisions, label=f"{m_name} (AUC = {pr_auc_val:.3f})",
+                        color=colors[idx % len(colors)], linewidth=2)
+            except Exception as exc:
+                logger.warning(f"Could not compute PR curve for {m_name}: {exc}")
+
+        ax.set_xlabel('Recall', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Precision', fontsize=12, fontweight='bold')
+        ax.set_title('Precision-Recall Curves Across Model Architectures', fontsize=14, fontweight='bold')
+        ax.legend(loc='lower left')
+        ax.grid(True, alpha=0.3)
+        ax.set_xlim(0, 1.05)
+        ax.set_ylim(0, 1.05)
+
+        plt.tight_layout()
+        output_path = self.output_dir / output_file
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
+        logger.info(f"PR curve comparison plot saved to {output_path}")
+        return str(output_path)

@@ -5,7 +5,16 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional
 import networkx as nx
 import logging
-import tree_sitter_language_pack
+try:
+    import tree_sitter_language_pack
+except ImportError:
+    tree_sitter_language_pack = None
+
+try:
+    import tree_sitter_python
+    from tree_sitter import Language, Parser
+except ImportError:
+    tree_sitter_python = None
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +74,17 @@ class TreeSitterRepoParser:
         """
         self.repo_path = Path(repo_path).resolve()
         self.language_name = language.lower()
-        self.parser = tree_sitter_language_pack.get_parser(self.language_name)
+        try:
+            if tree_sitter_language_pack is not None:
+                self.parser = tree_sitter_language_pack.get_parser(self.language_name)
+            else:
+                raise ImportError("tree_sitter_language_pack not available")
+        except Exception as exc:
+            if tree_sitter_python is not None and self.language_name == "python":
+                logger.info("Using local tree_sitter_python parser fallback")
+                self.parser = Parser(Language(tree_sitter_python.language()))
+            else:
+                raise RuntimeError(f"Could not load tree-sitter parser for {self.language_name}: {exc}")
         self.graph = nx.DiGraph()
         self.entities: Dict[str, Entity] = {}
         self.symbol_table: Dict[str, Dict[str, str]] = {}  # RelPath -> {ImportName: Target}
