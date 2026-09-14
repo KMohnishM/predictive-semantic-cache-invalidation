@@ -131,6 +131,11 @@ from evaluator.evaluator import (
     BaselineDPageRankPropagation, PredictiveStrategy, WeightedBFSDecayStrategy,
 )
 from visualizer.visualize import Visualizer
+from IPython.display import Image, display
+
+def show_plot(path: str):
+    if path and os.path.exists(path):
+        display(Image(filename=path))
 
 logging.basicConfig(level=logging.WARNING)
 logging.getLogger("sentence_transformers").setLevel(logging.ERROR)
@@ -620,10 +625,15 @@ print("Multi-Model Classification Leaderboard:")
 display(model_comparison_df)
 
 with timed("4_train", "plot_multi_model_comparison"):
-    p_comp = visualizer.plot_model_comparison(model_comparison_df)
+    p_comp_model = visualizer.plot_model_comparison(model_comparison_df, group_by="model")
+    p_comp_metric = visualizer.plot_model_comparison(model_comparison_df, output_file="model_comparison_by_metric.png", group_by="metric")
     p_pr = visualizer.plot_model_roc_pr_curves(trained_predictors, X_test, y_test)
-    show_plot(p_comp)
+    cm_paths = visualizer.plot_model_confusion_matrices(trained_predictors, X_test, y_test)
+    show_plot(p_comp_model)
+    show_plot(p_comp_metric)
     show_plot(p_pr)
+    for p_cm in cm_paths:
+        show_plot(p_cm)
 """)
 
 # ---------------------------------------------------------------------------

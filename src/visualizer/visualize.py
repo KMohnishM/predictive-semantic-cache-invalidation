@@ -316,7 +316,8 @@ class Visualizer:
         return str(output_path)
 
     def plot_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray,
-                              output_file: str = "confusion_matrix.png") -> str:
+                              output_file: str = "confusion_matrix.png",
+                              title: str = "Confusion Matrix") -> str:
         """
         Plot confusion matrix for classification results.
 
@@ -324,13 +325,14 @@ class Visualizer:
             y_true: True labels
             y_pred: Predicted labels
             output_file: Output filename
+            title: Title for plot
 
         Returns:
             Path to saved plot
         """
         from sklearn.metrics import confusion_matrix
 
-        logger.info("Generating confusion matrix plot...")
+        logger.info(f"Generating confusion matrix plot ({output_file})...")
 
         cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
 
@@ -340,7 +342,7 @@ class Visualizer:
 
         ax.set_xlabel('Predicted Label', fontsize=12, fontweight='bold')
         ax.set_ylabel('True Label', fontsize=12, fontweight='bold')
-        ax.set_title('Confusion Matrix', fontsize=14, fontweight='bold')
+        ax.set_title(title, fontsize=14, fontweight='bold')
         ax.set_xticklabels(['No Drift', 'Drift'])
         ax.set_yticklabels(['No Drift', 'Drift'])
 
@@ -477,18 +479,20 @@ class Visualizer:
         return str(output_path)
 
     def plot_model_comparison(self, comparison_df: pd.DataFrame,
-                              output_file: str = "model_comparison.png") -> str:
+                              output_file: str = "model_comparison.png",
+                              group_by: str = "both") -> str:
         """
-        Plot grouped bar chart comparing multiple ML model architectures.
+        Plot grouped bar charts comparing multiple ML model architectures.
 
         Args:
             comparison_df: DataFrame containing model comparison metrics
-            output_file: Output filename
+            output_file: Primary output filename
+            group_by: 'model' (X-axis=Model), 'metric' (X-axis=Metric), or 'both' (generates model_comparison.png and model_comparison_by_metric.png)
 
         Returns:
             Path to saved plot
         """
-        logger.info("Generating multi-model comparison plot...")
+        logger.info(f"Generating multi-model comparison plot (group_by='{group_by}')...")
 
         if comparison_df.empty:
             logger.warning("Empty comparison_df provided to plot_model_comparison")
@@ -501,23 +505,40 @@ class Visualizer:
             logger.warning("No plottable test metrics found in comparison_df")
             return ""
 
-        fig, ax1 = plt.subplots(figsize=(12, 6))
+        if group_by == "both":
+            path_model = self._plot_single_model_comparison(comparison_df, metrics_to_plot, "model_comparison.png", group_by="model")
+            self._plot_single_model_comparison(comparison_df, metrics_to_plot, "model_comparison_by_metric.png", group_by="metric")
+            return path_model
+        elif group_by == "metric":
+            return self._plot_single_model_comparison(comparison_df, metrics_to_plot, output_file, group_by="metric")
+        else:
+            return self._plot_single_model_comparison(comparison_df, metrics_to_plot, output_file, group_by="model")
 
+    def _plot_single_model_comparison(self, comparison_df: pd.DataFrame, metrics_to_plot: List[str],
+                                      output_file: str, group_by: str) -> str:
+        fig, ax1 = plt.subplots(figsize=(12, 6))
         df_plot = comparison_df.set_index("model_type")[metrics_to_plot]
-        # Clean up metric names for display
         df_plot.columns = [c.replace("test_", "").upper() for c in df_plot.columns]
 
-        df_plot.plot(kind='bar', ax=ax1, width=0.7, colormap='viridis')
-        ax1.set_title('Multi-Model ML Classification Performance Comparison', fontsize=14, fontweight='bold')
-        ax1.set_xlabel('Model Architecture', fontsize=12, fontweight='bold')
+        if group_by == "metric":
+            df_plot = df_plot.T
+            df_plot.plot(kind='bar', ax=ax1, width=0.75, colormap='tab10')
+            ax1.set_title('Multi-Model ML Performance Comparison (by Metric)', fontsize=14, fontweight='bold')
+            ax1.set_xlabel('Evaluation Metric', fontsize=12, fontweight='bold')
+            ax1.legend(title='Model Architecture', loc='lower right')
+            plt.xticks(rotation=0, ha='center')
+        else:
+            df_plot.plot(kind='bar', ax=ax1, width=0.75, colormap='viridis')
+            ax1.set_title('Multi-Model ML Performance Comparison (by Model Architecture)', fontsize=14, fontweight='bold')
+            ax1.set_xlabel('Model Architecture', fontsize=12, fontweight='bold')
+            ax1.legend(title='Metric', loc='lower right')
+            plt.xticks(rotation=15, ha='right')
+
         ax1.set_ylabel('Metric Score (0.0 to 1.0)', fontsize=12, fontweight='bold')
         ax1.set_ylim(0, 1.05)
-        ax1.legend(loc='lower right')
         ax1.grid(True, alpha=0.3, axis='y')
 
-        plt.xticks(rotation=15, ha='right')
         plt.tight_layout()
-
         output_path = self.output_dir / output_file
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close(fig)
@@ -553,7 +574,15 @@ class Visualizer:
                 if y_prob is None:
                     continue
                 probs = positive_class_proba(pred.model, y_prob)
-                precisions, recalls, _ = precision_recall_curve(y_test, probs)
+                y_bin = np.asarray(y_test)
+                if not np.all(np.isin(y_bin, [0, 1])):
+                    y_bin = np.array([1 if val >= pred.threshold else 0 for val in y_bin])
+
+                if len(np.unique(y_bin)) < 2:
+                    logger.debug(f"Single-class target for {m_name}, skipping PR curve plotting")
+                    continue
+
+                precisions, recalls, _ = precision_recall_curve(y_bin, probs)
                 pr_auc_val = auc(recalls, precisions)
 
                 ax.plot(recalls, precisions, label=f"{m_name} (AUC = {pr_auc_val:.3f})",
@@ -575,4 +604,45 @@ class Visualizer:
         plt.close(fig)
 
         logger.info(f"PR curve comparison plot saved to {output_path}")
-        return str(output_path)
+        return str(output_path)
+
+    def plot_model_confusion_matrices(self, predictors_dict: Dict, X_test: np.ndarray, y_test: np.ndarray) -> List[str]:
+        """
+        Generate and save individual confusion matrix plots for each model architecture.
+
+        Args:
+            predictors_dict: Dict mapping model_type name to trained DriftPredictor instance
+            X_test: Test features
+            y_test: Test binary or continuous labels
+
+        Returns:
+            List of paths to saved confusion matrix plots
+        """
+        logger.info("Generating individual confusion matrices for all models...")
+        saved_paths = []
+        y_raw = np.asarray(y_test)
+
+        for m_name, pred in predictors_dict.items():
+            try:
+                if not np.all(np.isin(y_raw, [0, 1])):
+                    y_bin_model = np.array([1 if val >= pred.threshold else 0 for val in y_raw])
+                else:
+                    y_bin_model = y_raw
+
+                raw_pred = pred.predict(X_test)
+                if raw_pred is None:
+                    continue
+                if not np.all(np.isin(raw_pred, [0, 1])):
+                    y_pred = np.array([1 if val >= pred.threshold else 0 for val in raw_pred])
+                else:
+                    y_pred = raw_pred
+
+                output_file = f"confusion_matrix_{m_name}.png"
+                title = f"Confusion Matrix — {m_name.replace('_', ' ').title()}"
+                path = self.plot_confusion_matrix(y_bin_model, y_pred, output_file=output_file, title=title)
+                saved_paths.append(path)
+            except Exception as exc:
+                logger.warning(f"Could not generate confusion matrix for {m_name}: {exc}")
+
+        return saved_paths
+

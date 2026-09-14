@@ -888,6 +888,7 @@ class Experiment:
             if self.visualizer:
                 self.visualizer.plot_model_comparison(comp_df, "model_comparison.png")
                 self.visualizer.plot_model_roc_pr_curves(predictors_dict, X_test, y_test, "model_pr_curves.png")
+                self.visualizer.plot_model_confusion_matrices(predictors_dict, X_test, y_test)
 
         return True
 
