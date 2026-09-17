@@ -145,6 +145,14 @@ for p in possible_src_paths:
         SRC = p
         break
 
+# If running on Colab/Kaggle and repo already exists, update it to latest hybrid-ground-truth branch
+target_repo_dir = Path("/content/predictive-semantic-cache-invalidation") if os.path.exists("/content") else Path.cwd() / "predictive-semantic-cache-invalidation"
+if target_repo_dir.exists():
+    print(f"Updating existing repository at {target_repo_dir}...")
+    !git -C "{target_repo_dir}" fetch origin hybrid-ground-truth
+    !git -C "{target_repo_dir}" checkout hybrid-ground-truth
+    !git -C "{target_repo_dir}" pull origin hybrid-ground-truth
+
 # If src is still not found on Colab/Kaggle, auto-clone the repository
 if SRC is None and (os.path.exists("/content") or os.path.exists("/kaggle")):
     print("Repository source files not found. Auto-cloning repository on cloud environment...")
