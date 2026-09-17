@@ -1,0 +1,222 @@
+[
+  {
+    "query_id": "self_cq_001",
+    "query_text": "What component retrieves the chronological list of commit hashes from a local git repository?",
+    "category": "changed_entity",
+    "target_entity_id": "src/parser/git_helper.py::GitHelper::get_commit_history",
+    "target_entity_name": "get_commit_history",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/parser/git_helper.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_002",
+    "query_text": "How does the system parse source files into abstract syntax trees to extract functions and classes?",
+    "category": "changed_entity",
+    "target_entity_id": "src/parser/tree_sitter_repo_parser.py::TreeSitterRepoParser::parse_directory",
+    "target_entity_name": "parse_directory",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/parser/tree_sitter_repo_parser.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_003",
+    "query_text": "Which module generates dense vector representations in batches for a dictionary of code entities?",
+    "category": "changed_entity",
+    "target_entity_id": "src/embedder/embedding_manager.py::EmbeddingManager::generate_embeddings_batch",
+    "target_entity_name": "generate_embeddings_batch",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/embedder/embedding_manager.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_004",
+    "query_text": "How is operational staleness calculated by measuring rank displacement when retaining pre-commit embeddings?",
+    "category": "changed_entity",
+    "target_entity_id": "src/embedder/ground_truth.py::compute_leave_one_out_scores",
+    "target_entity_name": "compute_leave_one_out_scores",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/embedder/ground_truth.py",
+    "entity_type": "function"
+  },
+  {
+    "query_id": "self_cq_005",
+    "query_text": "What mechanism converts continuous rank displacement metrics into binary ground truth classification labels?",
+    "category": "changed_entity",
+    "target_entity_id": "src/embedder/ground_truth.py::binarize_ground_truth",
+    "target_entity_name": "binarize_ground_truth",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/embedder/ground_truth.py",
+    "entity_type": "function"
+  },
+  {
+    "query_id": "self_cq_006",
+    "query_text": "How are call-graph metrics, PageRank, and structural distances extracted into a tabular dataset for ML training?",
+    "category": "changed_entity",
+    "target_entity_id": "src/extractor/feature_extractor.py::FeatureExtractor::extract_features_batch",
+    "target_entity_name": "extract_features_batch",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/extractor/feature_extractor.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_007",
+    "query_text": "Which component computes transition categories across dependency graph changes between commit pairs?",
+    "category": "changed_entity",
+    "target_entity_id": "src/extractor/gtd.py::GraphTransitionDescriptor::compute",
+    "target_entity_name": "compute",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/extractor/gtd.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_008",
+    "query_text": "How does the machine learning pipeline train a classifier to predict semantic drift probability?",
+    "category": "changed_entity",
+    "target_entity_id": "src/predictor/predictor.py::DriftPredictor::train",
+    "target_entity_name": "train",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/predictor/predictor.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_009",
+    "query_text": "What safeguard handles single-class model outputs during probability estimation to prevent array index errors?",
+    "category": "unchanged_entity",
+    "target_entity_id": "src/predictor/predictor.py::positive_class_proba",
+    "target_entity_name": "positive_class_proba",
+    "expected_behavior": "cached_snapshot",
+    "commit_after": "",
+    "file_path": "src/predictor/predictor.py",
+    "entity_type": "function"
+  },
+  {
+    "query_id": "self_cq_010",
+    "query_text": "How are candidate cache invalidation strategies benchmarked against full re-indexing and changed-only baselines?",
+    "category": "changed_entity",
+    "target_entity_id": "src/evaluator/evaluator.py::Evaluator::evaluate_strategy",
+    "target_entity_name": "evaluate_strategy",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/evaluator/evaluator.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_011",
+    "query_text": "How are evaluation queries constructed non-circularly from docstring summaries and caller dependencies?",
+    "category": "changed_entity",
+    "target_entity_id": "src/benchmarking/query_sources.py::build_synthetic_queries",
+    "target_entity_name": "build_synthetic_queries",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/benchmarking/query_sources.py",
+    "entity_type": "function"
+  },
+  {
+    "query_id": "self_cq_012",
+    "query_text": "What function calculates non-dominated points to plot the trade-off between re-indexing cost and retrieval quality?",
+    "category": "changed_entity",
+    "target_entity_id": "src/benchmarking/reporting.py::compute_pareto_frontier",
+    "target_entity_name": "compute_pareto_frontier",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/benchmarking/reporting.py",
+    "entity_type": "function"
+  },
+  {
+    "query_id": "self_cq_013",
+    "query_text": "How does the system sample commit pairs at fixed stride intervals across repository history?",
+    "category": "unchanged_entity",
+    "target_entity_id": "src/benchmarking/commit_sampler.py::sample_commit_pairs",
+    "target_entity_name": "sample_commit_pairs",
+    "expected_behavior": "cached_snapshot",
+    "commit_after": "",
+    "file_path": "src/benchmarking/commit_sampler.py",
+    "entity_type": "function"
+  },
+  {
+    "query_id": "self_cq_014",
+    "query_text": "What function queries the git log to determine which specific source files changed between two commit hashes?",
+    "category": "changed_entity",
+    "target_entity_id": "src/parser/git_helper.py::GitHelper::get_modified_files",
+    "target_entity_name": "get_modified_files",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/parser/git_helper.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_015",
+    "query_text": "How does the parser retrieve direct function dependencies within 1 hop in the call graph?",
+    "category": "changed_entity",
+    "target_entity_id": "src/parser/tree_sitter_repo_parser.py::TreeSitterRepoParser::get_dependencies",
+    "target_entity_name": "get_dependencies",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/parser/tree_sitter_repo_parser.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_016",
+    "query_text": "What function computes pairwise cosine distances between pre-commit and post-commit entity embeddings?",
+    "category": "changed_entity",
+    "target_entity_id": "src/embedder/embedding_manager.py::EmbeddingManager::compute_all_drifts",
+    "target_entity_name": "compute_all_drifts",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/embedder/embedding_manager.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_017",
+    "query_text": "How does the system build repository state descriptors to summarize graph topology before split?",
+    "category": "unchanged_entity",
+    "target_entity_id": "src/extractor/rsd.py::RepositoryStateDescriptor::build_all_rsds",
+    "target_entity_name": "build_all_rsds",
+    "expected_behavior": "cached_snapshot",
+    "commit_after": "",
+    "file_path": "src/extractor/rsd.py",
+    "entity_type": "method"
+  },
+  {
+    "query_id": "self_cq_018",
+    "query_text": "What module reads curated ground truth queries from JSON or CSV files?",
+    "category": "changed_entity",
+    "target_entity_id": "src/benchmarking/query_sources.py::load_curated_queries",
+    "target_entity_name": "load_curated_queries",
+    "expected_behavior": "latest_snapshot",
+    "commit_after": "",
+    "file_path": "src/benchmarking/query_sources.py",
+    "entity_type": "function"
+  },
+  {
+    "query_id": "self_cq_019",
+    "query_text": "How are benchmark summary text reports formatted and written to disk?",
+    "category": "unchanged_entity",
+    "target_entity_id": "src/benchmarking/reporting.py::write_summary_report",
+    "target_entity_name": "write_summary_report",
+    "expected_behavior": "cached_snapshot",
+    "commit_after": "",
+    "file_path": "src/benchmarking/reporting.py",
+    "entity_type": "function"
+  },
+  {
+    "query_id": "self_cq_020",
+    "query_text": "What visualization method renders the cost versus accuracy Pareto curve image?",
+    "category": "unchanged_entity",
+    "target_entity_id": "src/visualizer/visualize.py::Visualizer::plot_pareto_frontier",
+    "target_entity_name": "plot_pareto_frontier",
+    "expected_behavior": "cached_snapshot",
+    "commit_after": "",
+    "file_path": "src/visualizer/visualize.py",
+    "entity_type": "method"
+  }
+]

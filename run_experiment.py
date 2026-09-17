@@ -25,6 +25,7 @@ from embedder.ground_truth import (
     binarize_ground_truth,
     compute_leave_one_out_scores,
     load_ground_truth_queries,
+    load_hybrid_ground_truth_queries,
 )
 from extractor.feature_extractor import FeatureExtractor
 from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
@@ -185,10 +186,10 @@ class Experiment:
                 point this at anything derived from this experiment's own
                 embedding model.
         """
-        if label_source not in ("cosine_threshold", "leave_one_out"):
+        if label_source not in ("cosine_threshold", "leave_one_out", "hybrid"):
             raise ValueError(
                 f"Unknown label_source: {label_source!r}. Expected "
-                f"'cosine_threshold' or 'leave_one_out'."
+                f"'cosine_threshold', 'leave_one_out', or 'hybrid'."
             )
 
         self.repo_url = repo_url
@@ -217,7 +218,10 @@ class Experiment:
         self._ground_truth_query_embeddings = None
 
         # Paths
-        self.repo_path = self.workspace_dir / "black"
+        repo_name = Path(self.repo_url.rstrip("/\\")).name
+        if repo_name.endswith(".git"):
+            repo_name = repo_name[:-4]
+        self.repo_path = self.workspace_dir / repo_name
         
         # Determine unique results directory name based on configuration and timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -467,25 +471,29 @@ class Experiment:
 
     def _get_ground_truth_queries(self) -> Tuple[List, Dict[str, np.ndarray]]:
         """
-        Lazily load the curated query set and embed each query text once.
-
-        Queries are fixed for the whole experiment (independent of any
-        commit pair), so this only does real work on the first call.
+        Lazily load the ground truth query set (curated or hybrid) and embed each query text once.
         """
         if self._ground_truth_queries is None:
-            self._ground_truth_queries = load_ground_truth_queries(self.ground_truth_queries_path)
+            if self.label_source == "hybrid":
+                self._ground_truth_queries = load_hybrid_ground_truth_queries(
+                    path=self.ground_truth_queries_path,
+                    repo_parser=self.repo_parser,
+                )
+            else:
+                self._ground_truth_queries = load_ground_truth_queries(self.ground_truth_queries_path)
+
             self._ground_truth_query_embeddings = {
                 q.query_id: self.embedding_manager.generate_embedding(q.query_id, q.query_text)
                 for q in self._ground_truth_queries
             }
             logger.info(
-                f"Loaded {len(self._ground_truth_queries)} curated ground-truth queries "
-                f"from {self.ground_truth_queries_path or 'default path'}."
+                f"Loaded {len(self._ground_truth_queries)} ground-truth queries "
+                f"(label_source={self.label_source}, path={self.ground_truth_queries_path or 'default'})."
             )
             if not self._ground_truth_queries:
                 logger.warning(
-                    "_get_ground_truth_queries: curated query set is empty — "
-                    "leave_one_out label_source will produce no labels at all."
+                    "_get_ground_truth_queries: query set is empty — "
+                    "leave_one_out/hybrid label_source will produce no labels."
                 )
         return self._ground_truth_queries, self._ground_truth_query_embeddings
 
@@ -668,13 +676,13 @@ class Experiment:
                     self.drifts_history[(commit_prev, commit)] = drifts
                     self.features_history[(commit_prev, commit)] = features
 
-                    if self.label_source == "leave_one_out":
+                    if self.label_source in ("leave_one_out", "hybrid"):
                         gt_labels = self.compute_ground_truth_labels(commit_prev, commit)
                         self.ground_truth_history[(commit_prev, commit)] = gt_labels
                         if not gt_labels:
                             logger.warning(
-                                f"No leave_one_out ground-truth labels produced for "
-                                f"{commit_prev[:8]} -> {commit[:8]} (empty curated query "
+                                f"No {self.label_source} ground-truth labels produced for "
+                                f"{commit_prev[:8]} -> {commit[:8]} (empty query "
                                 f"overlap with this snapshot's entities)."
                             )
 
@@ -755,9 +763,9 @@ class Experiment:
         logger.info("=" * 80)
         logger.info(f"Label source: {self.label_source}")
 
-        if self.label_source == "leave_one_out" and self.predictor.task_type != "classification":
+        if self.label_source in ("leave_one_out", "hybrid") and self.predictor.task_type != "classification":
             logger.error(
-                "label_source='leave_one_out' produces a binary Y_i label, which is not a "
+                f"label_source='{self.label_source}' produces a binary Y_i label, which is not a "
                 "valid regression target. Set task_type='classification' on the predictor, "
                 "or use label_source='cosine_threshold' for regression."
             )
@@ -765,7 +773,7 @@ class Experiment:
 
         # Which per-(commit_a, commit_b) label dict to train against — both
         # are entity_id -> float, so everything below is label-source-agnostic.
-        label_history = self.ground_truth_history if self.label_source == "leave_one_out" else self.drifts_history
+        label_history = self.ground_truth_history if self.label_source in ("leave_one_out", "hybrid") else self.drifts_history
 
         # Combine features and labels from training commits
         all_features = []
@@ -798,9 +806,9 @@ class Experiment:
         if not all_features:
             logger.error(
                 "No training data available"
-                + (" (leave_one_out label_source produced no labels for any training commit "
-                   "pair — check curated_queries.json target coverage against this repo's "
-                   "entities)" if self.label_source == "leave_one_out" else "")
+                + (f" ({self.label_source} label_source produced no labels for any training commit "
+                   "pair — check query target coverage against this repo's entities)"
+                   if self.label_source in ("leave_one_out", "hybrid") else "")
             )
             return False
 
@@ -811,7 +819,7 @@ class Experiment:
 
         logger.info(f"Training on {len(combined_features)} entities with {len(all_labels)} label values")
 
-        if self.label_source == "leave_one_out":
+        if self.label_source in ("leave_one_out", "hybrid"):
             # Y_i is already binary (0.0/1.0) from binarize_ground_truth() — a
             # percentile-based dynamic threshold would be meaningless here.
             # 0.5 cleanly separates the two label values regardless of which
@@ -1467,12 +1475,12 @@ def main():
     )
     parser.add_argument(
         "--label-source",
-        choices=["cosine_threshold", "leave_one_out"],
+        choices=["cosine_threshold", "leave_one_out", "hybrid"],
         default="cosine_threshold",
         help=(
-            "Predictor training label: 'cosine_threshold' (default, existing behavior) "
-            "or 'leave_one_out' (rank-displacement + Wilcoxon ground truth from "
-            "src/embedder/ground_truth.py; requires task_type='classification')"
+            "Predictor training label: 'cosine_threshold' (default), 'leave_one_out' "
+            "(curated query rank-displacement), or 'hybrid' (curated + synthetic queries "
+            "for 100% snapshot entity coverage)"
         )
     )
     parser.add_argument(
@@ -1524,7 +1532,11 @@ def main():
 
     args = parser.parse_args()
 
-    # If --config is passed, load JSON file and merge parameters
+    # If --config is not specified, auto-load settings.json if it exists
+    if not args.config and Path("settings.json").exists():
+        args.config = "settings.json"
+
+    # If --config is passed or auto-loaded, load JSON file and merge parameters
     if args.config:
         config_path = Path(args.config)
         if config_path.exists():

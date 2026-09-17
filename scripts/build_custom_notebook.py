@@ -63,37 +63,41 @@ code(r"""
 # =============================================================================
 # SETTINGS — everything you'd normally pass as CLI flags / settings.json
 # =============================================================================
+import os
+
+# Auto-detect Kaggle / Colab environment
+IS_KAGGLE_OR_COLAB = os.path.exists("/kaggle") or os.path.exists("/content")
+DEFAULT_REPO_URL = (
+    "https://github.com/KMohnishM/predictive-semantic-cache-invalidation.git"
+    if IS_KAGGLE_OR_COLAB
+    else "c:/Users/kmohn/New folder/Project-1"
+)
 
 CONFIG = {
-    "repo_url":        "https://github.com/psf/black.git",
-    "workspace_dir":   "workspace",
-    "model_name":      "sentence-transformers/all-MiniLM-L6-v2",
-    "device":          "cuda",  # "auto" (CUDA if available, else CPU), "cpu", "cuda", "cuda:0", ...
+    "repo_url":                  DEFAULT_REPO_URL,
+    "workspace_dir":             "workspace",
+    "model_name":                "sentence-transformers/all-MiniLM-L6-v2",
+    "device":                    "auto",
 
-    "num_commits":     150,    # number of sampled commits to analyze
-    "commit_stride":   15,     # step size between sampled commits
-    "train_ratio":     0.7,    # fraction of commits used for training
+    "num_commits":               20,     # 20 sampled commits over 80 commits of history
+    "commit_stride":             4,      # stride 4 to sample across project evolution
+    "train_ratio":               0.7,    # 70% train / 30% test split
 
-    "threshold":       0.05,   # drift threshold for classification (ignored when threshold_mode="dynamic")
-    "threshold_mode":  "dynamic",   # "fixed" or "dynamic" (85th percentile of train drift)
+    "threshold":                 0.05,   # drift threshold
+    "threshold_mode":            "fixed",
 
-    "clean_mode":       False,  # strip comments/docstrings before embedding
-    "context_chunking": True,   # splice dependency stubs into embedded source
+    "clean_mode":                 False,  # contextual source code preservation
+    "context_chunking":           True,   # call-graph aware contextual stubs
 
-    "k_values":          [5, 10],   # Recall@K values to evaluate
-    "fixed_hop_values":  [1, 2],    # K values for the fixed-hop baseline
+    "k_values":                  [5, 10],   # Recall@K values
+    "fixed_hop_values":          [1, 2],    # Hop values for Baseline C
 
-    # Predictor training label. "cosine_threshold" (default, original behavior):
-    # raw cosine drift binarized by threshold/threshold_mode above. "leave_one_out":
-    # Y_i from the leave-one-out rank-displacement + Wilcoxon significance ground
-    # truth in src/embedder/ground_truth.py (see docs/ground_truth_method_comparison.md).
-    # Both use the exact same features/training loop — only this line changes which
-    # label the predictor is trained against.
-    "label_source":              "cosine_threshold",  # "cosine_threshold" or "leave_one_out"
-    "ground_truth_top_k":        10,    # Top-K window for leave_one_out (ignored otherwise)
-    "ground_truth_queries_path": None,  # override path; default: src/benchmarking/data/curated_queries.json
+    "label_source":              "hybrid",  # Hybrid Leave-One-Out (Curated + Synthetic)
+    "max_queries_per_entity":    10,        # 10 queries per entity scaling
+    "ground_truth_top_k":        10,        # Top-K window for Leave-One-Out scoring
+    "ground_truth_queries_path": "src/benchmarking/data/curated_queries_self.json",
 }
-assert CONFIG["label_source"] in ("cosine_threshold", "leave_one_out"), \
+assert CONFIG["label_source"] in ("cosine_threshold", "leave_one_out", "hybrid"), \
     f"Unknown label_source: {CONFIG['label_source']!r}"
 
 RANDOM_SEED = 42
@@ -273,8 +277,8 @@ assert not (CONFIG["label_source"] == "leave_one_out" and predictor.task_type !=
 # entities by the model's own drift score and builds text from the target's
 # own docstring — see src/embedder/ground_truth.py's module docstring.
 with timed("0_setup", "load_ground_truth_queries"):
-    if CONFIG["label_source"] == "leave_one_out":
-        ground_truth_queries = load_ground_truth_queries(CONFIG["ground_truth_queries_path"])
+    if CONFIG["label_source"] in ("leave_one_out", "hybrid"):
+        ground_truth_queries = load_hybrid_ground_truth_queries(CONFIG["ground_truth_queries_path"], repo_parser=repo_parser) if CONFIG["label_source"] == "hybrid" else load_ground_truth_queries(CONFIG["ground_truth_queries_path"])
         ground_truth_query_embeddings = {
             q.query_id: embedding_manager.generate_embedding(q.query_id, q.query_text)
             for q in ground_truth_queries
@@ -500,7 +504,7 @@ for i in range(1, len(sampled_commits)):
     with timed("3_drift_features", "compute_drift"):
         drifts = embedding_manager.compute_all_drifts(emb_a, emb_b)
 
-    if CONFIG["label_source"] == "leave_one_out":
+    if CONFIG["label_source"] in ("leave_one_out", "hybrid"):
         with timed("3_drift_features", "leave_one_out_ground_truth"):
             if ground_truth_queries:
                 loo_results = compute_leave_one_out_scores(
@@ -617,7 +621,7 @@ with timed("4_train", "combine_training_data"):
     combined_features = combined_features[~combined_features.index.duplicated(keep="first")]
 
 threshold = CONFIG["threshold"]
-if CONFIG["label_source"] == "leave_one_out":
+if CONFIG["label_source"] in ("leave_one_out", "hybrid"):
     # Y_i is already binary (0.0/1.0) — a percentile-based dynamic threshold
     # would be meaningless here. 0.5 cleanly separates the two label values.
     threshold = 0.5
@@ -932,7 +936,7 @@ nb["metadata"] = {
     "language_info": {"name": "python", "version": "3"},
 }
 
-out_path = "pipeline_walkthrough.ipynb"
+out_path = "pipeline_walkthrough_custom.ipynb"
 with open(out_path, "w", encoding="utf-8") as f:
     nbf.write(nb, f)
 print(f"Wrote {out_path} with {len(cells)} cells")
