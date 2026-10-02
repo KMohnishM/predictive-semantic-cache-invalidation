@@ -6,7 +6,7 @@
   "repo_url": "https://github.com/psf/black.git",
   "model_name": "sentence-transformers/all-MiniLM-L6-v2",
   "parser_mode": "tree_sitter",
-  "num_commits": 5,
+  "num_commits": 35,
   "commit_stride": 20,
   "train_ratio": 0.7,
   "threshold": 0.05,
