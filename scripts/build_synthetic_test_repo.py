@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-REPO_PATH = Path(r"c:\Users\kmohn\New folder\Project-1\test_repo_project1")
+REPO_PATH = Path(__file__).parent.parent.resolve() / "test_repo_project1"
 
 def run_git(cmd_args):
     result = subprocess.run(

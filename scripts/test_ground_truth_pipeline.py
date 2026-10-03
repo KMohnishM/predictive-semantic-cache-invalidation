@@ -36,7 +36,9 @@ def run_strict_ground_truth_test():
     
     commits = git_helper.get_commit_history(count=10)
 
-    query_path = repo_root / "src" / "benchmarking" / "data" / "curated_queries_perfect_sc.json"
+    query_path = repo_root / "src" / "benchmarking" / "data" / "curated_queries_sanitized_5x.json"
+    if not query_path.exists():
+        query_path = repo_root / "src" / "benchmarking" / "data" / "curated_queries_perfect_sc.json"
     queries = load_ground_truth_queries(str(query_path))
     print(f"\nLoaded {len(queries)} queries with N >= 5 queries per entity from {query_path.name}")
     print(f"Target Repository: {test_repo_path}")
@@ -83,13 +85,13 @@ def run_strict_ground_truth_test():
             top_k=10,
         )
 
-        gt_labels = compute_strict_ground_truth(loo_results, alpha=0.05, min_queries=3)
+        gt_labels = compute_strict_ground_truth(loo_results, alpha=0.05, min_queries=5)
 
         commit_rows = []
         for eid, label_obj in gt_labels.items():
             is_direct = eid in direct_modified
             # Operational rank displacement ground truth label
-            strict_drift = (label_obj.displaced_query_count >= 1)
+            strict_drift = 1 if (label_obj.is_covered and label_obj.label == 1) else 0
 
             rec = {
                 "Commit Pair": pair_label,
@@ -98,7 +100,7 @@ def run_strict_ground_truth_test():
                 "Entity Type": parser_b.entities[eid].entity_type if eid in parser_b.entities else "",
                 "Is Direct Edit": "YES" if is_direct else "NO",
                 "Strict Ground Truth Drifted": "DRIFTED" if strict_drift else "NOT DRIFTED",
-                "Strict Label": 1 if strict_drift else 0,
+                "Strict Label": strict_drift,
                 "Displaced Queries": label_obj.displaced_query_count,
                 "Evaluated Queries": label_obj.evaluated_query_count,
                 "Positive Deltas": label_obj.positive_delta_count,
@@ -112,7 +114,9 @@ def run_strict_ground_truth_test():
         df_c = pd.DataFrame(commit_rows)
         all_commit_audits[pair_label] = df_c
 
-    git_helper.checkout_commit("main")
+    for bname in ["main", "master"]:
+        if git_helper.checkout_commit(bname):
+            break
 
     df_master = pd.DataFrame(master_records)
 

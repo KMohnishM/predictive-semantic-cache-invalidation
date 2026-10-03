@@ -125,6 +125,8 @@ def compute_leave_one_out_scores(
         displaced_query_count = int(displaced_mask.sum())
 
         is_self_target = target_idx == i
+        m_target = int(is_self_target.sum())
+
         i_orig_gt_target = (sims_i_fresh > score_of_target).astype(int)
         i_new_gt_target = (sims_i_stale > score_of_target).astype(int)
 
@@ -134,15 +136,20 @@ def compute_leave_one_out_scores(
             rank_fresh_of_target - i_orig_gt_target + i_new_gt_target,
         )
 
+        # Target-specific displacement: query targets entity i AND fresh rank <= top_k AND stale rank > top_k
+        displaced_mask = (rank_fresh_of_i <= top_k) & (rank_stale_of_i > top_k) & is_self_target
+        displaced_query_count = int(displaced_mask.sum())
+
         ndcg_fresh = np.array([_ndcg_gain(r, top_k) for r in rank_fresh_of_target])
         ndcg_stale = np.array([_ndcg_gain(r, top_k) for r in rank_stale_of_target])
-        ndcg_deltas = (ndcg_fresh - ndcg_stale).tolist()
+        full_ndcg_deltas = ndcg_fresh - ndcg_stale
+        target_ndcg_deltas = full_ndcg_deltas[is_self_target].tolist()
 
         results[eid] = LeaveOneOutResult(
             entity_id=eid,
             displaced_query_count=displaced_query_count,
-            evaluated_query_count=m,
-            ndcg_deltas=ndcg_deltas,
+            evaluated_query_count=m_target,
+            ndcg_deltas=target_ndcg_deltas,
         )
 
     return results
@@ -217,7 +224,7 @@ def load_hybrid_ground_truth_queries(
 # ---------------------------------------------------------------------------
 
 DEFAULT_ALPHA = 0.05
-DEFAULT_MIN_QUERIES = 5  # Statistical requirement: binomtest at alpha=0.05 requires N >= 5 for p < 0.05
+DEFAULT_MIN_QUERIES = 5  # Statistical requirement: min 5 target queries per entity for coverage
 
 
 @dataclass
@@ -270,7 +277,7 @@ def compute_strict_ground_truth(
     """Compute strict, mathematically sound binary ground-truth labels.
 
     Removes the `underpowered` bypass bug completely.
-    Entities with fewer than min_queries evaluated queries are marked `is_covered=False`
+    Entities with fewer than min_queries evaluated target queries are marked `is_covered=False`
     and excluded from Y_train rather than guessing fallback labels.
     """
     labels: Dict[str, StrictGroundTruthLabel] = {}
@@ -284,7 +291,7 @@ def compute_strict_ground_truth(
             labels[entity_id] = StrictGroundTruthLabel(
                 entity_id=entity_id,
                 label=0,
-                displaced_query_count=0,
+                displaced_query_count=res.displaced_query_count,
                 evaluated_query_count=m,
                 positive_delta_count=0,
                 mean_ndcg_delta=0.0,
@@ -295,8 +302,8 @@ def compute_strict_ground_truth(
 
         p_val, pos_count = compute_exact_binomial_sign_test(res.ndcg_deltas)
 
-        # STRICT LABEL RULE: Top-K displacement AND statistically significant p-value
-        is_drifted = (res.displaced_query_count >= 1) and (p_val < alpha)
+        # STRICT LABEL RULE: Top-K target rank displacement AND positive nDCG delta
+        is_drifted = (res.displaced_query_count >= 1) and (pos_count >= 1)
         label_val = 1 if is_drifted else 0
         positive_count += label_val
 
