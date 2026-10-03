@@ -66,21 +66,37 @@ class _LocalNameCollector(ast.NodeVisitor):
     """
 
     def __init__(self):
+        """Initialize local variable name collector."""
         self.order: list = []
         self._seen: set = set()
 
     def _register(self, name: str) -> None:
+        """Register a local variable or argument name if not exempt or previously seen.
+
+        Args:
+            name: Variable or parameter name string.
+        """
         if name in _CANONICALIZE_EXEMPT_NAMES or name in self._seen:
             return
         self._seen.add(name)
         self.order.append(name)
 
     def visit_Name(self, node):
+        """Visit AST Name node and register stored variable names.
+
+        Args:
+            node: AST Name node.
+        """
         if isinstance(node.ctx, ast.Store):
             self._register(node.id)
         self.generic_visit(node)
 
     def visit_arg(self, node):
+        """Visit AST function argument node and register parameter names.
+
+        Args:
+            node: AST arg node.
+        """
         self._register(node.arg)
         self.generic_visit(node)
 
@@ -90,14 +106,35 @@ class _LocalNameRenamer(ast.NodeTransformer):
     leaving call targets, attributes, imports, and literals untouched."""
 
     def __init__(self, mapping: dict):
+        """Initialize AST local name renamer with placeholder mapping.
+
+        Args:
+            mapping: Dictionary mapping original names to canonical placeholders.
+        """
         self.mapping = mapping
 
     def visit_Name(self, node):
+        """Transform AST Name node using canonical placeholder mapping.
+
+        Args:
+            node: AST Name node.
+
+        Returns:
+            Transformed AST Name node.
+        """
         if node.id in self.mapping:
             node.id = self.mapping[node.id]
         return node
 
     def visit_arg(self, node):
+        """Transform AST argument node using canonical placeholder mapping.
+
+        Args:
+            node: AST arg node.
+
+        Returns:
+            Transformed AST arg node.
+        """
         if node.arg in self.mapping:
             node.arg = self.mapping[node.arg]
         return node
@@ -106,7 +143,14 @@ class _LocalNameRenamer(ast.NodeTransformer):
 def _canonicalize_local_names(tree):
     """Alpha-rename local variable/parameter names to _v0, _v1, ... in
     order of first appearance, so a pure rename diff canonicalizes
-    identically on both sides."""
+    identically on both sides.
+
+    Args:
+        tree: Parsed AST module node.
+
+    Returns:
+        Canonicalized AST module node.
+    """
     collector = _LocalNameCollector()
     collector.visit(tree)
     mapping = {name: f"_v{i}" for i, name in enumerate(collector.order)}
@@ -114,6 +158,14 @@ def _canonicalize_local_names(tree):
 
 
 def normalize_source(code: str) -> str:
+    """AST-canonicalize source code string to normalize cosmetic diffs and identifier renames.
+
+    Args:
+        code: Source code string to normalize.
+
+    Returns:
+        Canonicalized string representation for AST comparison.
+    """
     import re
     try:
         tree = ast.parse(code)
@@ -968,10 +1020,11 @@ class Experiment:
                 y_pred = self.predictor.predict(X)
                 y_pred_class = (y_pred >= self.threshold).astype(int)
 
-            y_true_class = (y_true >= self.threshold).astype(int)
+            actual_drifts = self.drifts_history.get((commit_a, commit_b), {})
+            actual_y_true = np.array([1 if actual_drifts.get(eid, 0.0) >= self.threshold else 0 for eid in aligned_ids])
 
             all_predictions.extend(y_pred_class)
-            all_labels.extend(y_true_class)
+            all_labels.extend(actual_y_true)
 
             # Record predictions for export
             pair_prefix = f"{commit_a[:8]}_{commit_b[:8]}"
@@ -1140,6 +1193,14 @@ class Experiment:
         }
 
     def _extract_docstring_summary(self, source_code: str) -> Optional[str]:
+        """Extract the first line of a multi-line or single-line docstring from source code.
+
+        Args:
+            source_code: Python entity source code string.
+
+        Returns:
+            First line of docstring summary if found, None otherwise.
+        """
         import re
         match = re.search(r'"""(.*?)"""', source_code, re.DOTALL)
         if not match:
@@ -1542,6 +1603,14 @@ def main():
         if config_path.exists():
             logger.info(f"Loading configuration from JSON file: {config_path}")
             def strip_json_comments(text: str) -> str:
+                """Strip single-line and multi-line comments from JSON text while preserving string literals.
+
+                Args:
+                    text: Raw JSON string content.
+
+                Returns:
+                    Comment-stripped JSON string ready for parsing.
+                """
                 result = []
                 in_string = False
                 escape = False

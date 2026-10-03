@@ -30,6 +30,14 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def _safe_mean(values) -> float:
+    """Compute mean of valid non-NaN numbers safely, returning 0.0 for empty sequences.
+
+    Args:
+        values: Iterable of numeric values or NaN.
+
+    Returns:
+        Float mean or 0.0.
+    """
     arr = [v for v in values if v is not None and not np.isnan(v)]
     return float(np.mean(arr)) if arr else 0.0
 
@@ -50,6 +58,14 @@ def _graph_diameter(G: nx.DiGraph) -> float:
 
 
 def _avg_shortest_path(G: nx.DiGraph) -> float:
+    """Compute average shortest path length on largest weakly connected component.
+
+    Args:
+        G: NetworkX Directed Graph.
+
+    Returns:
+        Average path length float or 0.0.
+    """
     try:
         if G.number_of_nodes() < 2:
             return 0.0
@@ -293,6 +309,7 @@ class GraphTransitionDescriptor:
     """
 
     def __init__(self):
+        """Initialize GraphTransitionDescriptor instance."""
         self.global_vector: Dict[str, float] = {}
         self._node_features: Dict[str, Dict[str, float]] = {}
         self._graph_a: Optional[nx.DiGraph] = None

@@ -11,10 +11,26 @@ from .types import CommitPair, QueryCase, RepositorySnapshot
 
 
 def _normalize_query(text: str) -> str:
+    """Normalize query text string by collapsing whitespace.
+
+    Args:
+        text: Raw query text.
+
+    Returns:
+        Normalized query string.
+    """
     return " ".join(text.strip().split())
 
 
 def _extract_docstring_summary(source_code: str) -> Optional[str]:
+    """Extract docstring summary first-line from entity source code.
+
+    Args:
+        source_code: Python source code string.
+
+    Returns:
+        First line of docstring summary if found, None otherwise.
+    """
     import re
     match = re.search(r'"""(.*?)"""', source_code, re.DOTALL)
     if not match:

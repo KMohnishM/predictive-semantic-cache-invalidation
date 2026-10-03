@@ -1,9 +1,9 @@
 {
-  "repo_url": "c:/Users/kmohn/New folder/Project-1",
+  "repo_url": "c:/Users/kmohn/New folder/Project-1/test_repo_project1",
   "model_name": "sentence-transformers/all-MiniLM-L6-v2",
   "parser_mode": "tree_sitter",
-  "num_commits": 5,
-  "commit_stride": 2,
+  "num_commits": 10,
+  "commit_stride": 1,
   "train_ratio": 0.7,
   "threshold": 0.05,
   "threshold_mode": "fixed",
@@ -14,3 +14,4 @@
   "max_queries_per_entity": 10,
   "ground_truth_queries_path": "src/benchmarking/data/curated_queries_self.json"
 }
+

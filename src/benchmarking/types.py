@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 @dataclass(frozen=True)
 class RepositoryEntity:
+    """Dataclass representing a code entity (function, class, method) in a snapshot."""
     entity_id: str
     entity_type: str
     file_path: str
@@ -18,11 +19,13 @@ class RepositoryEntity:
     source_code: str
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert RepositoryEntity to dictionary."""
         return asdict(self)
 
 
 @dataclass(frozen=True)
 class RepositorySnapshot:
+    """Dataclass representing the parsed state of a repository at a specific commit."""
     commit_hash: str
     entities: Dict[str, RepositoryEntity]
     # Phase 1.2: call graph and parser stored on snapshot for use by strategy_runner
@@ -30,6 +33,7 @@ class RepositorySnapshot:
     parser: Optional[Any] = None   # repo parser — used by fixed_hop propagation
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert RepositorySnapshot to dictionary excluding live objects."""
         return {
             "commit_hash": self.commit_hash,
             "entities": {eid: e.to_dict() for eid, e in self.entities.items()},
@@ -39,6 +43,7 @@ class RepositorySnapshot:
 
 @dataclass(frozen=True)
 class EntityEmbeddingComparison:
+    """Dataclass storing cosine similarity comparison for an individual code entity."""
     entity_id: str
     entity_type: str
     file_path: str
@@ -49,11 +54,13 @@ class EntityEmbeddingComparison:
     candidate_raw_vector: Optional[List[float]] = None
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert EntityEmbeddingComparison to dictionary."""
         return asdict(self)
 
 
 @dataclass(frozen=True)
 class StrategyEmbeddingComparisonResult:
+    """Dataclass summarizing embedding similarity comparison across a strategy run."""
     strategy_name: str
     total_entities: int
     mean_cosine_similarity: float
@@ -65,6 +72,7 @@ class StrategyEmbeddingComparisonResult:
     per_entity_comparisons: List[EntityEmbeddingComparison] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert StrategyEmbeddingComparisonResult to dictionary."""
         return {
             "strategy_name": self.strategy_name,
             "total_entities": self.total_entities,
@@ -80,6 +88,7 @@ class StrategyEmbeddingComparisonResult:
 
 @dataclass(frozen=True)
 class BenchmarkConfig:
+    """Dataclass encapsulating all configuration parameters for benchmark execution."""
     repo_url: str
     repo_path: str
     output_dir: str
@@ -112,6 +121,7 @@ class BenchmarkConfig:
     n_seeds: int = 1
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert BenchmarkConfig to dictionary."""
         d = asdict(self)
         # graph/parser fields are not in BenchmarkConfig, nothing extra to strip
         return d
@@ -119,16 +129,19 @@ class BenchmarkConfig:
 
 @dataclass(frozen=True)
 class CommitPair:
+    """Dataclass representing a pair of consecutive or sampled commits."""
     commit_before: str
     commit_after: str
     index: int
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert CommitPair to dictionary."""
         return asdict(self)
 
 
 @dataclass(frozen=True)
 class QueryCase:
+    """Dataclass representing an evaluation test query case."""
     query_id: str
     query_text: str
     query_source: str
@@ -141,32 +154,38 @@ class QueryCase:
     entity_type: str
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert QueryCase to dictionary."""
         return asdict(self)
 
 
 @dataclass(frozen=True)
 class IndexSnapshot:
+    """Dataclass storing float vector embeddings and metadata for an index snapshot."""
     commit_hash: str
     entity_embeddings: Dict[str, List[float]]
     entity_metadata: Dict[str, Dict[str, Any]]
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert IndexSnapshot to dictionary."""
         return asdict(self)
 
 
 @dataclass(frozen=True)
 class StrategyDecision:
+    """Dataclass recording entity update decisions made by a cache invalidation strategy."""
     strategy_name: str
     updated_entity_ids: List[str]
     updated_fraction: float
     decision_latency_seconds: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert StrategyDecision to dictionary."""
         return asdict(self)
 
 
 @dataclass(frozen=True)
 class PerQueryResult:
+    """Dataclass storing evaluation metrics for a single query case under a strategy."""
     run_id: str
     commit_before: str
     commit_after: str
@@ -191,11 +210,13 @@ class PerQueryResult:
     strategy_name: str
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert PerQueryResult to dictionary."""
         return asdict(self)
 
 
 @dataclass(frozen=True)
 class BenchmarkSummary:
+    """Dataclass aggregating summary metrics across an entire benchmark run."""
     run_id: str
     total_queries: int
     changed_query_count: int
@@ -213,8 +234,18 @@ class BenchmarkSummary:
     strategy_summaries: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert BenchmarkSummary to dictionary."""
         return asdict(self)
 
 
 def resolve_output_dir(base_dir: str, run_id: str) -> Path:
+    """Resolve output directory Path from base directory string and run ID string.
+
+    Args:
+        base_dir: Base directory path string.
+        run_id: Benchmark run ID string.
+
+    Returns:
+        Resolved Path object.
+    """
     return Path(base_dir).resolve() / run_id
