@@ -58,6 +58,7 @@ class Entity:
         self.return_count = return_count
 
     def __repr__(self):
+        """Return string representation of Entity."""
         return f"Entity({self.entity_id}, {self.entity_type})"
 
 
@@ -132,6 +133,7 @@ class TreeSitterRepoParser:
         return_count = 0
 
         def walk(n, current_depth):
+            """Walk AST node tree recursively to compute node metrics and nesting depth."""
             nonlocal branch_count, node_count, max_depth, return_count
             node_count += 1
 
@@ -170,6 +172,7 @@ class TreeSitterRepoParser:
         symbol_table = {}
 
         def _traverse_imports(node):
+            """Traverse AST nodes recursively to collect import statements into symbol table."""
             if node.type in ('import_statement', 'import_from_statement'):
                 if node.type == 'import_statement':
                     for child in node.children:
@@ -225,6 +228,7 @@ class TreeSitterRepoParser:
         symbol_table = self._build_symbol_table(tree.root_node, rel_path, source_bytes)
 
         def _traverse_nodes(node, current_class: Optional[str] = None):
+            """Traverse AST nodes recursively to extract function and class entities."""
             if node.type == 'class_definition':
                 name_node = node.child_by_field_name('name')
                 class_name = name_node.text.decode('utf-8', errors='ignore') if name_node else "UnknownClass"
@@ -380,6 +384,7 @@ class TreeSitterRepoParser:
         edges = []
 
         def _scan_calls_and_definitions(node, current_entity_id: Optional[str] = None):
+            """Scan AST nodes recursively to record call graph edges between entities."""
             nonlocal edges
             active_id = current_entity_id
 
@@ -461,7 +466,8 @@ class TreeSitterRepoParser:
         dir_path = Path(directory).resolve()
         py_files = []
         for py_file in dir_path.rglob("*.py"):
-            if "__pycache__" in str(py_file) or "test" in str(py_file).lower():
+            rel_p = str(py_file.relative_to(dir_path)).replace("\\", "/")
+            if "__pycache__" in rel_p or rel_p.startswith("tests/") or "/tests/" in rel_p or py_file.name.startswith("test_"):
                 continue
             py_files.append(str(py_file.resolve()))
 

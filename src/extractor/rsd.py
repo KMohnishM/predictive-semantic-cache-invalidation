@@ -263,6 +263,7 @@ class RepositoryStateDescriptor:
     DIMENSIONS = ["Scale", "Topology", "Semantic", "Complexity", "Evolution"]
 
     def __init__(self):
+        """Initialize RepositoryStateDescriptor instance."""
         # commit_hash -> raw metric dict per category
         self._raw: Dict[str, Dict[str, Dict[str, float]]] = {}
         # commit_hash -> 5D RSD vector

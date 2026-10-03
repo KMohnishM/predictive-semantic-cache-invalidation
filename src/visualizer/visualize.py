@@ -516,6 +516,17 @@ class Visualizer:
 
     def _plot_single_model_comparison(self, comparison_df: pd.DataFrame, metrics_to_plot: List[str],
                                       output_file: str, group_by: str) -> str:
+        """Render a single multi-model comparison bar chart grouped by model or by metric.
+
+        Args:
+            comparison_df: DataFrame containing model comparison metrics.
+            metrics_to_plot: List of metric column names to include.
+            output_file: Target output filename string.
+            group_by: Grouping dimension ('model' or 'metric').
+
+        Returns:
+            Absolute path string pointing to saved PNG image file.
+        """
         fig, ax1 = plt.subplots(figsize=(12, 6))
         df_plot = comparison_df.set_index("model_type")[metrics_to_plot]
         df_plot.columns = [c.replace("test_", "").upper() for c in df_plot.columns]
