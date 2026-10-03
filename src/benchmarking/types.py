@@ -104,6 +104,7 @@ class BenchmarkConfig:
     store_raw_vectors: bool = True
     parser_mode: str = "ast"
     predictions_path: Optional[str] = None
+    model_path: Optional[str] = None
     # Phase 2.3: hop depth for fixed_hop strategy
     hop_k: int = 2
     # Phase 2.3: score threshold for predictive_ml continuous scores

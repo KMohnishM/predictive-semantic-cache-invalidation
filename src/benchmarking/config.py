@@ -71,7 +71,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--predictions-path",
         default=None,
-        help="Path to JSON file containing Pipeline A's ML predictions: {entity_id: float_score}",
+        help="[Deprecated] Path to JSON file containing Pipeline A's ML predictions",
+    )
+    parser.add_argument(
+        "--model-path",
+        default=None,
+        help="Path to trained DriftPredictor .pkl model artifact for dynamic inference",
     )
     # Phase 2.3: hop depth for fixed_hop
     parser.add_argument(
@@ -119,6 +124,7 @@ def build_config(args: argparse.Namespace) -> BenchmarkConfig:
     store_raw_vectors = getattr(args, "store_raw_vectors", True)
     parser_mode = getattr(args, "parser_mode", "ast")
     predictions_path = getattr(args, "predictions_path", None)
+    model_path = getattr(args, "model_path", None)
     hop_k = getattr(args, "hop_k", 2)
     ml_threshold = getattr(args, "ml_threshold", 0.5)
     n_seeds = getattr(args, "n_seeds", 1)
@@ -142,6 +148,7 @@ def build_config(args: argparse.Namespace) -> BenchmarkConfig:
         store_raw_vectors=store_raw_vectors,
         parser_mode=parser_mode,
         predictions_path=predictions_path,
+        model_path=model_path,
         hop_k=hop_k,
         ml_threshold=ml_threshold,
         n_seeds=n_seeds,

@@ -862,11 +862,11 @@ class Experiment:
         # Evaluate on test set
         test_metrics = self.predictor.evaluate(X_test, y_test)
 
-        # Save model
+        # Save model artifact bundle
         model_path = self.results_dir / "drift_predictor.pkl"
-        self.predictor.save(str(model_path))
+        self.predictor.save_artifact(str(model_path))
 
-        logger.info(f"Model saved to {model_path}")
+        logger.info(f"Model artifact saved to {model_path}")
         logger.info(f"Test metrics: {test_metrics}")
 
         # If --compare-models is enabled, train & evaluate all candidate model architectures

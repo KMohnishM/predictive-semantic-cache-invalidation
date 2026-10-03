@@ -44,8 +44,11 @@ from .reporting import (
     write_summary_report,
 )
 from .serialization import persist_run
+from .visualizer import generate_benchmark_charts
 from .strategy_runner import decide_updated_entities
 from .repository_snapshot import build_repository_snapshot
+from .cache_tracker import StatefulCacheTracker
+from .model_runner import ModelRunner
 from .types import (
     BenchmarkConfig,
     BenchmarkSummary,
@@ -127,12 +130,22 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
     git_helper = GitHelper(config.repo_path)
     embedding_manager = EmbeddingManager(model_name=config.model_name, clean_mode=config.clean_mode)
 
-    # Load ML predictions if provided (Phase 2.1/3.2: float score support)
+    # Load dynamic .pkl model artifact if provided (Phase 3.2: full switch to .pkl)
+    model_runner: Optional[ModelRunner] = None
+    if getattr(config, "model_path", None):
+        model_file = Path(config.model_path)
+        if model_file.exists():
+            logger.info(f"Loading dynamic .pkl model artifact from {model_file}...")
+            model_runner = ModelRunner(str(model_file))
+        else:
+            logger.warning(f"Model path {model_file} does not exist — predictive_ml will fall back.")
+
+    # Load ML predictions if provided (legacy fallback)
     ml_predictions: Optional[Dict] = None
-    if config.predictions_path:
+    if getattr(config, "predictions_path", None) and not model_runner:
         pred_path = Path(config.predictions_path)
         if pred_path.exists():
-            logger.info(f"Loading ML predictions from {pred_path}")
+            logger.info(f"Loading legacy ML predictions from {pred_path}")
             with pred_path.open("r", encoding="utf-8") as f:
                 ml_predictions = json.load(f)
             # Log score distribution for sanity-checking
@@ -164,6 +177,12 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
     all_queries = []
     run_id = _build_run_id(config, commit_pairs[0].commit_before, commit_pairs[0].commit_after)
 
+    # Initialize per-strategy stateful cache trackers and active cached vector snapshots
+    cache_trackers: Dict[str, StatefulCacheTracker] = {
+        s: StatefulCacheTracker(strategy_name=s) for s in config.strategies
+    }
+    cached_index_snapshots: Dict[str, Any] = {}
+
     for pair_idx, commit_pair in enumerate(commit_pairs, start=1):
         logger.info(
             f"\n--- [Commit Pair {pair_idx}/{len(commit_pairs)}] "
@@ -171,7 +190,6 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         )
 
         logger.info(f"Parsing repository snapshot at commit_before (mode={config.parser_mode})...")
-        # Phase 1.2: build_repository_snapshot now returns snapshot with .graph and .parser populated
         before_snapshot = build_repository_snapshot(
             git_helper,
             commit_pair.commit_before,
@@ -197,7 +215,6 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         )
 
         logger.info("Generating evaluation queries...")
-        # Phase 1.2: pass after_snapshot.graph for caller-perspective synthetic queries
         queries = build_queries(
             snapshot=after_snapshot,
             commit_pair=commit_pair,
@@ -205,7 +222,7 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
             curated_queries_path=config.curated_queries_path,
             max_queries_per_entity=config.max_queries_per_entity,
             modified_entity_ids=set(changed_entity_ids),
-            repo_graph=after_snapshot.graph,  # Phase 1.2
+            repo_graph=after_snapshot.graph,
         )
         all_queries.extend(queries)
         logger.info(f"  Generated {len(queries)} query case(s).")
@@ -214,23 +231,40 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         logger.info("Generating Baseline index embeddings for commit_after (Full Re-index)...")
         baseline_snapshot = build_index_snapshot(after_snapshot, embedding_manager)
 
-        logger.info("Generating Cached index embeddings for commit_before...")
-        before_index_snapshot = build_index_snapshot(before_snapshot, embedding_manager)
+        # On the very first pair, initialize stateful trackers and cached vector indices with before_snapshot
+        if pair_idx == 1:
+            initial_before_index = build_index_snapshot(before_snapshot, embedding_manager)
+            for s in config.strategies:
+                cache_trackers[s].initialize(before_snapshot.entities.keys(), commit_pair.commit_before)
+                cached_index_snapshots[s] = initial_before_index
 
         for strategy_name in config.strategies:
             logger.info(f"\nEvaluating Candidate Strategy: '{strategy_name}'...")
-            # Phase 2.2: pass repo_parser (from snapshot.parser) and strategy_params
+            tracker = cache_trackers[strategy_name]
+            prev_cached_index = cached_index_snapshots.get(strategy_name)
+
+            # Underlying repo_parser instance for dependency resolution and code metrics
+            raw_parser = (
+                after_snapshot.parser._parser
+                if hasattr(after_snapshot.parser, "_parser")
+                else after_snapshot.parser
+            )
+
             strategy_decision = decide_updated_entities(
                 strategy_name,
                 changed_entity_ids,
                 len(after_snapshot.entities),
                 all_entity_ids=all_entity_ids,
                 ml_predictions=ml_predictions,
-                repo_parser=after_snapshot.parser,          # Phase 2.2
-                strategy_params={                            # Phase 2.2/2.3
-                    "hop_k":        config.hop_k,
+                repo_parser=raw_parser,
+                strategy_params={
+                    "hop_k": config.hop_k,
                     "ml_threshold": config.ml_threshold,
                 },
+                cache_tracker=tracker,
+                model_runner=model_runner,
+                git_helper=git_helper,
+                current_commit=commit_pair.commit_after,
             )
             logger.info(
                 f"  Strategy '{strategy_name}' re-embeds "
@@ -238,21 +272,31 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                 f"entities ({strategy_decision.updated_fraction:.2%})."
             )
 
+            # Build selective candidate snapshot combining baseline with statefully cached vectors
             candidate_snapshot = build_selective_snapshot(
                 baseline_snapshot,
-                before_index_snapshot,
+                prev_cached_index if prev_cached_index is not None else baseline_snapshot,
                 strategy_decision.updated_entity_ids,
             )
 
+            # Advance stateful anchor pointers and update cached vector index for this strategy
+            tracker.mark_updated(strategy_decision.updated_entity_ids, commit_pair.commit_after)
+            cached_index_snapshots[strategy_name] = candidate_snapshot
+
             if config.compare_embeddings:
                 logger.info(f"  Computing direct vector embedding similarity for '{strategy_name}'...")
+                before_ids = (
+                    set(prev_cached_index.entity_embeddings.keys())
+                    if prev_cached_index is not None
+                    else set(before_snapshot.entities.keys())
+                )
                 comp_result = compare_index_snapshots(
                     baseline_snapshot=baseline_snapshot,
                     candidate_snapshot=candidate_snapshot,
                     modified_files=modified_files,
                     strategy_name=strategy_name,
                     store_raw_vectors=config.store_raw_vectors,
-                    before_entity_ids=set(before_snapshot.entities.keys()),
+                    before_entity_ids=before_ids,
                     updated_entity_ids=strategy_decision.updated_entity_ids,
                 )
                 all_embedding_comparisons.append(comp_result)
@@ -452,6 +496,20 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
     )
     write_summary_report(str(output_dir), summary, embedding_comparisons=all_embedding_comparisons)
     logger.info(f"Benchmark run complete. Report saved to: {output_dir / 'summary_report.md'}")
+
+    # Auto-generate visual charts alongside the markdown report
+    from .reporting import compute_pareto_frontier
+    real_summaries = {k: v for k, v in strategy_summaries.items() if not k.startswith("__")}
+    pareto = compute_pareto_frontier(real_summaries) if len(real_summaries) >= 2 else []
+    chart_paths = generate_benchmark_charts(
+        str(output_dir),
+        strategy_summaries=strategy_summaries,
+        embedding_comparisons=all_embedding_comparisons if all_embedding_comparisons else None,
+        pareto_strategies=pareto,
+    )
+    if chart_paths:
+        logger.info(f"Charts generated: {', '.join(p.name for p in chart_paths)}")
+
     return output_dir
 
 
