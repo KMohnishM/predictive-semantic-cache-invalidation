@@ -577,7 +577,7 @@ class Experiment:
             top_k=self.ground_truth_top_k,
         )
         gt_labels = binarize_ground_truth(loo_results)
-        return {entity_id: float(label.label) for entity_id, label in gt_labels.items()}
+        return {entity_id: float(label.label) for entity_id, label in gt_labels.items() if label.is_covered}
 
     def compute_drifts_and_features(self, commit_a: str, commit_b: str) -> Tuple[Dict[str, float], pd.DataFrame]:
         """
@@ -983,7 +983,7 @@ class Experiment:
         # through the independent src/benchmarking/ harness instead, via
         # predictions.json exported below), so it's left as a known,
         # explicitly-flagged limitation rather than reworked here.
-        label_history = self.ground_truth_history if self.label_source == "leave_one_out" else self.drifts_history
+        label_history = self.ground_truth_history if self.label_source in ("leave_one_out", "hybrid") else self.drifts_history
 
         # Process each test commit pair from the sampled commit sequence.
         for i, commit_b in enumerate(self.test_commits):
@@ -1020,8 +1020,11 @@ class Experiment:
                 y_pred = self.predictor.predict(X)
                 y_pred_class = (y_pred >= self.threshold).astype(int)
 
-            actual_drifts = self.drifts_history.get((commit_a, commit_b), {})
-            actual_y_true = np.array([1 if actual_drifts.get(eid, 0.0) >= self.threshold else 0 for eid in aligned_ids])
+            if self.label_source in ("leave_one_out", "hybrid"):
+                actual_y_true = np.array([int(drifts.get(eid, 0.0)) for eid in aligned_ids])
+            else:
+                actual_drifts = self.drifts_history.get((commit_a, commit_b), {})
+                actual_y_true = np.array([1 if actual_drifts.get(eid, 0.0) >= self.threshold else 0 for eid in aligned_ids])
 
             all_predictions.extend(y_pred_class)
             all_labels.extend(actual_y_true)

@@ -106,12 +106,9 @@ def build_synthetic_queries(
                 for callee in callees[:3]:
                     callee_short = callee.split("::")[-1]
                     templates.append(f"Which function coordinates the execution of {callee_short}?")
-            except Exception:
-                pass
-
-        if not templates:
-            templates.append(f"Which function performs {entity.entity_type} operations in {file_short}?")
-            templates.append(f"What component in {file_short} manages {entity.entity_type} execution?")
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).debug(f"Graph context lookup failed for {entity.entity_id}: {e}")
 
         # Deduplicate templates
         seen: Set[str] = set()

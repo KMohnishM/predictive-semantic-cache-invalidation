@@ -153,12 +153,71 @@ def load_ground_truth_queries(path: Optional[str] = None) -> List["QueryCase"]:
     return load_curated_queries(path or DEFAULT_CURATED_QUERIES_PATH)
 
 
+def load_hybrid_ground_truth_queries(
+    path: Optional[str] = None,
+    repo_parser: Optional[Any] = None,
+    commit_pair: Optional[Any] = None,
+    max_queries_per_entity: int = 5,
+) -> List["QueryCase"]:
+    """Load curated queries, and if repo_parser is provided, supplement with synthetic
+    queries for any snapshot entities that lack curated query coverage.
+    """
+    curated = load_ground_truth_queries(path)
+    if repo_parser is None:
+        return curated
+
+    covered_entities = {q.target_entity_id for q in curated}
+
+    try:
+        from benchmarking.query_sources import build_synthetic_queries
+        from benchmarking.types import CommitPair, RepositorySnapshot, RepositoryEntity
+    except ImportError:
+        from src.benchmarking.query_sources import build_synthetic_queries
+        from src.benchmarking.types import CommitPair, RepositorySnapshot, RepositoryEntity
+
+    entities = repo_parser.get_all_entities()
+    snapshot_entities = {}
+    for e in entities:
+        entity_name = getattr(e, "name", e.entity_id.split("::")[-1])
+        snapshot_entities[e.entity_id] = RepositoryEntity(
+            entity_id=e.entity_id,
+            entity_type=getattr(e, "entity_type", "function"),
+            file_path=e.file_path,
+            lineno=getattr(e, "lineno", 1),
+            end_lineno=getattr(e, "end_lineno", 1),
+            name=entity_name,
+            source_code=e.source_code,
+        )
+
+    snapshot = RepositorySnapshot(commit_hash="current", entities=snapshot_entities)
+    cp = commit_pair or CommitPair(commit_before="prev", commit_after="curr", index=0)
+
+    repo_graph = getattr(repo_parser, "graph", None) or (
+        repo_parser.get_graph() if hasattr(repo_parser, "get_graph") else None
+    )
+
+    synthetic = build_synthetic_queries(
+        snapshot=snapshot,
+        commit_pair=cp,
+        max_queries_per_entity=max_queries_per_entity,
+        repo_graph=repo_graph,
+    )
+
+    uncovered_synthetic = [q for q in synthetic if q.target_entity_id not in covered_entities]
+
+    logger.info(
+        f"load_hybrid_ground_truth_queries: {len(curated)} curated queries + "
+        f"{len(uncovered_synthetic)} synthetic queries (covering {len(entities)} snapshot entities)."
+    )
+    return curated + uncovered_synthetic
+
+
 # ---------------------------------------------------------------------------
 # Stage 2 PhD-Level Strict Ground Truth Labeling & Binomial Sign Test
 # ---------------------------------------------------------------------------
 
 DEFAULT_ALPHA = 0.05
-DEFAULT_MIN_QUERIES = 3
+DEFAULT_MIN_QUERIES = 5  # Statistical requirement: binomtest at alpha=0.05 requires N >= 5 for p < 0.05
 
 
 @dataclass
@@ -186,16 +245,18 @@ def compute_exact_binomial_sign_test(
 ) -> Tuple[float, int]:
     """Exact Binomial Sign Test: H1: P(delta > 0) > 0.5.
 
+    Operates on non-zero deltas (standard sign-test behavior ignoring ties).
     Returns (p_value, positive_delta_count).
     """
     if not ndcg_deltas:
         return 1.0, 0
 
     pos_count = sum(1 for d in ndcg_deltas if d > 0.0)
-    m = len(ndcg_deltas)
+    non_zero_deltas = [d for d in ndcg_deltas if d != 0.0]
+    m = len(non_zero_deltas)
 
-    if pos_count == 0:
-        return 1.0, 0
+    if pos_count == 0 or m == 0:
+        return 1.0, pos_count
 
     p_val = float(binomtest(pos_count, m, p=0.5, alternative="greater").pvalue)
     return p_val, pos_count
