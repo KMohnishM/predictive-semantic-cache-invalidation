@@ -63,7 +63,7 @@ notebook = {
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## 1. Setup Repository & Load Sanitized 408-Query Dataset ($SC = 100.00\%$)"
+    "## 1. Setup Repository & Load Sanitized 408-Query Dataset ($SC = 100.00%$)"
    ]
   },
   {
