@@ -25,6 +25,7 @@ from embedder.ground_truth import (
     binarize_ground_truth,
     compute_leave_one_out_scores,
     load_ground_truth_queries,
+    load_hybrid_ground_truth_queries,
 )
 from extractor.feature_extractor import FeatureExtractor
 from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
@@ -65,21 +66,37 @@ class _LocalNameCollector(ast.NodeVisitor):
     """
 
     def __init__(self):
+        """Initialize local variable name collector."""
         self.order: list = []
         self._seen: set = set()
 
     def _register(self, name: str) -> None:
+        """Register a local variable or argument name if not exempt or previously seen.
+
+        Args:
+            name: Variable or parameter name string.
+        """
         if name in _CANONICALIZE_EXEMPT_NAMES or name in self._seen:
             return
         self._seen.add(name)
         self.order.append(name)
 
     def visit_Name(self, node):
+        """Visit AST Name node and register stored variable names.
+
+        Args:
+            node: AST Name node.
+        """
         if isinstance(node.ctx, ast.Store):
             self._register(node.id)
         self.generic_visit(node)
 
     def visit_arg(self, node):
+        """Visit AST function argument node and register parameter names.
+
+        Args:
+            node: AST arg node.
+        """
         self._register(node.arg)
         self.generic_visit(node)
 
@@ -89,14 +106,35 @@ class _LocalNameRenamer(ast.NodeTransformer):
     leaving call targets, attributes, imports, and literals untouched."""
 
     def __init__(self, mapping: dict):
+        """Initialize AST local name renamer with placeholder mapping.
+
+        Args:
+            mapping: Dictionary mapping original names to canonical placeholders.
+        """
         self.mapping = mapping
 
     def visit_Name(self, node):
+        """Transform AST Name node using canonical placeholder mapping.
+
+        Args:
+            node: AST Name node.
+
+        Returns:
+            Transformed AST Name node.
+        """
         if node.id in self.mapping:
             node.id = self.mapping[node.id]
         return node
 
     def visit_arg(self, node):
+        """Transform AST argument node using canonical placeholder mapping.
+
+        Args:
+            node: AST arg node.
+
+        Returns:
+            Transformed AST arg node.
+        """
         if node.arg in self.mapping:
             node.arg = self.mapping[node.arg]
         return node
@@ -105,7 +143,14 @@ class _LocalNameRenamer(ast.NodeTransformer):
 def _canonicalize_local_names(tree):
     """Alpha-rename local variable/parameter names to _v0, _v1, ... in
     order of first appearance, so a pure rename diff canonicalizes
-    identically on both sides."""
+    identically on both sides.
+
+    Args:
+        tree: Parsed AST module node.
+
+    Returns:
+        Canonicalized AST module node.
+    """
     collector = _LocalNameCollector()
     collector.visit(tree)
     mapping = {name: f"_v{i}" for i, name in enumerate(collector.order)}
@@ -113,6 +158,14 @@ def _canonicalize_local_names(tree):
 
 
 def normalize_source(code: str) -> str:
+    """AST-canonicalize source code string to normalize cosmetic diffs and identifier renames.
+
+    Args:
+        code: Source code string to normalize.
+
+    Returns:
+        Canonicalized string representation for AST comparison.
+    """
     import re
     try:
         tree = ast.parse(code)
@@ -185,10 +238,10 @@ class Experiment:
                 point this at anything derived from this experiment's own
                 embedding model.
         """
-        if label_source not in ("cosine_threshold", "leave_one_out"):
+        if label_source not in ("cosine_threshold", "leave_one_out", "hybrid"):
             raise ValueError(
                 f"Unknown label_source: {label_source!r}. Expected "
-                f"'cosine_threshold' or 'leave_one_out'."
+                f"'cosine_threshold', 'leave_one_out', or 'hybrid'."
             )
 
         self.repo_url = repo_url
@@ -217,7 +270,10 @@ class Experiment:
         self._ground_truth_query_embeddings = None
 
         # Paths
-        self.repo_path = self.workspace_dir / "black"
+        repo_name = Path(self.repo_url.rstrip("/\\")).name
+        if repo_name.endswith(".git"):
+            repo_name = repo_name[:-4]
+        self.repo_path = self.workspace_dir / repo_name
         
         # Determine unique results directory name based on configuration and timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -467,25 +523,29 @@ class Experiment:
 
     def _get_ground_truth_queries(self) -> Tuple[List, Dict[str, np.ndarray]]:
         """
-        Lazily load the curated query set and embed each query text once.
-
-        Queries are fixed for the whole experiment (independent of any
-        commit pair), so this only does real work on the first call.
+        Lazily load the ground truth query set (curated or hybrid) and embed each query text once.
         """
         if self._ground_truth_queries is None:
-            self._ground_truth_queries = load_ground_truth_queries(self.ground_truth_queries_path)
+            if self.label_source == "hybrid":
+                self._ground_truth_queries = load_hybrid_ground_truth_queries(
+                    path=self.ground_truth_queries_path,
+                    repo_parser=self.repo_parser,
+                )
+            else:
+                self._ground_truth_queries = load_ground_truth_queries(self.ground_truth_queries_path)
+
             self._ground_truth_query_embeddings = {
                 q.query_id: self.embedding_manager.generate_embedding(q.query_id, q.query_text)
                 for q in self._ground_truth_queries
             }
             logger.info(
-                f"Loaded {len(self._ground_truth_queries)} curated ground-truth queries "
-                f"from {self.ground_truth_queries_path or 'default path'}."
+                f"Loaded {len(self._ground_truth_queries)} ground-truth queries "
+                f"(label_source={self.label_source}, path={self.ground_truth_queries_path or 'default'})."
             )
             if not self._ground_truth_queries:
                 logger.warning(
-                    "_get_ground_truth_queries: curated query set is empty — "
-                    "leave_one_out label_source will produce no labels at all."
+                    "_get_ground_truth_queries: query set is empty — "
+                    "leave_one_out/hybrid label_source will produce no labels."
                 )
         return self._ground_truth_queries, self._ground_truth_query_embeddings
 
@@ -517,7 +577,7 @@ class Experiment:
             top_k=self.ground_truth_top_k,
         )
         gt_labels = binarize_ground_truth(loo_results)
-        return {entity_id: float(label.label) for entity_id, label in gt_labels.items()}
+        return {entity_id: float(label.label) for entity_id, label in gt_labels.items() if label.is_covered}
 
     def compute_drifts_and_features(self, commit_a: str, commit_b: str) -> Tuple[Dict[str, float], pd.DataFrame]:
         """
@@ -668,13 +728,13 @@ class Experiment:
                     self.drifts_history[(commit_prev, commit)] = drifts
                     self.features_history[(commit_prev, commit)] = features
 
-                    if self.label_source == "leave_one_out":
+                    if self.label_source in ("leave_one_out", "hybrid"):
                         gt_labels = self.compute_ground_truth_labels(commit_prev, commit)
                         self.ground_truth_history[(commit_prev, commit)] = gt_labels
                         if not gt_labels:
                             logger.warning(
-                                f"No leave_one_out ground-truth labels produced for "
-                                f"{commit_prev[:8]} -> {commit[:8]} (empty curated query "
+                                f"No {self.label_source} ground-truth labels produced for "
+                                f"{commit_prev[:8]} -> {commit[:8]} (empty query "
                                 f"overlap with this snapshot's entities)."
                             )
 
@@ -755,9 +815,9 @@ class Experiment:
         logger.info("=" * 80)
         logger.info(f"Label source: {self.label_source}")
 
-        if self.label_source == "leave_one_out" and self.predictor.task_type != "classification":
+        if self.label_source in ("leave_one_out", "hybrid") and self.predictor.task_type != "classification":
             logger.error(
-                "label_source='leave_one_out' produces a binary Y_i label, which is not a "
+                f"label_source='{self.label_source}' produces a binary Y_i label, which is not a "
                 "valid regression target. Set task_type='classification' on the predictor, "
                 "or use label_source='cosine_threshold' for regression."
             )
@@ -765,7 +825,7 @@ class Experiment:
 
         # Which per-(commit_a, commit_b) label dict to train against — both
         # are entity_id -> float, so everything below is label-source-agnostic.
-        label_history = self.ground_truth_history if self.label_source == "leave_one_out" else self.drifts_history
+        label_history = self.ground_truth_history if self.label_source in ("leave_one_out", "hybrid") else self.drifts_history
 
         # Combine features and labels from training commits
         all_features = []
@@ -798,9 +858,9 @@ class Experiment:
         if not all_features:
             logger.error(
                 "No training data available"
-                + (" (leave_one_out label_source produced no labels for any training commit "
-                   "pair — check curated_queries.json target coverage against this repo's "
-                   "entities)" if self.label_source == "leave_one_out" else "")
+                + (f" ({self.label_source} label_source produced no labels for any training commit "
+                   "pair — check query target coverage against this repo's entities)"
+                   if self.label_source in ("leave_one_out", "hybrid") else "")
             )
             return False
 
@@ -811,7 +871,7 @@ class Experiment:
 
         logger.info(f"Training on {len(combined_features)} entities with {len(all_labels)} label values")
 
-        if self.label_source == "leave_one_out":
+        if self.label_source in ("leave_one_out", "hybrid"):
             # Y_i is already binary (0.0/1.0) from binarize_ground_truth() — a
             # percentile-based dynamic threshold would be meaningless here.
             # 0.5 cleanly separates the two label values regardless of which
@@ -923,7 +983,7 @@ class Experiment:
         # through the independent src/benchmarking/ harness instead, via
         # predictions.json exported below), so it's left as a known,
         # explicitly-flagged limitation rather than reworked here.
-        label_history = self.ground_truth_history if self.label_source == "leave_one_out" else self.drifts_history
+        label_history = self.ground_truth_history if self.label_source in ("leave_one_out", "hybrid") else self.drifts_history
 
         # Process each test commit pair from the sampled commit sequence.
         for i, commit_b in enumerate(self.test_commits):
@@ -960,10 +1020,14 @@ class Experiment:
                 y_pred = self.predictor.predict(X)
                 y_pred_class = (y_pred >= self.threshold).astype(int)
 
-            y_true_class = (y_true >= self.threshold).astype(int)
+            if self.label_source in ("leave_one_out", "hybrid"):
+                actual_y_true = np.array([int(drifts.get(eid, 0.0)) for eid in aligned_ids])
+            else:
+                actual_drifts = self.drifts_history.get((commit_a, commit_b), {})
+                actual_y_true = np.array([1 if actual_drifts.get(eid, 0.0) >= self.threshold else 0 for eid in aligned_ids])
 
             all_predictions.extend(y_pred_class)
-            all_labels.extend(y_true_class)
+            all_labels.extend(actual_y_true)
 
             # Record predictions for export
             pair_prefix = f"{commit_a[:8]}_{commit_b[:8]}"
@@ -1132,6 +1196,14 @@ class Experiment:
         }
 
     def _extract_docstring_summary(self, source_code: str) -> Optional[str]:
+        """Extract the first line of a multi-line or single-line docstring from source code.
+
+        Args:
+            source_code: Python entity source code string.
+
+        Returns:
+            First line of docstring summary if found, None otherwise.
+        """
         import re
         match = re.search(r'"""(.*?)"""', source_code, re.DOTALL)
         if not match:
@@ -1467,12 +1539,12 @@ def main():
     )
     parser.add_argument(
         "--label-source",
-        choices=["cosine_threshold", "leave_one_out"],
+        choices=["cosine_threshold", "leave_one_out", "hybrid"],
         default="cosine_threshold",
         help=(
-            "Predictor training label: 'cosine_threshold' (default, existing behavior) "
-            "or 'leave_one_out' (rank-displacement + Wilcoxon ground truth from "
-            "src/embedder/ground_truth.py; requires task_type='classification')"
+            "Predictor training label: 'cosine_threshold' (default), 'leave_one_out' "
+            "(curated query rank-displacement), or 'hybrid' (curated + synthetic queries "
+            "for 100% snapshot entity coverage)"
         )
     )
     parser.add_argument(
@@ -1524,12 +1596,24 @@ def main():
 
     args = parser.parse_args()
 
-    # If --config is passed, load JSON file and merge parameters
+    # If --config is not specified, auto-load settings.json if it exists
+    if not args.config and Path("settings.json").exists():
+        args.config = "settings.json"
+
+    # If --config is passed or auto-loaded, load JSON file and merge parameters
     if args.config:
         config_path = Path(args.config)
         if config_path.exists():
             logger.info(f"Loading configuration from JSON file: {config_path}")
             def strip_json_comments(text: str) -> str:
+                """Strip single-line and multi-line comments from JSON text while preserving string literals.
+
+                Args:
+                    text: Raw JSON string content.
+
+                Returns:
+                    Comment-stripped JSON string ready for parsing.
+                """
                 result = []
                 in_string = False
                 escape = False

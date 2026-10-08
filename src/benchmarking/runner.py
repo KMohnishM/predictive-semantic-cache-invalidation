@@ -60,6 +60,16 @@ logger = logging.getLogger("benchmarking")
 
 
 def _build_run_id(config: BenchmarkConfig, commit_before: str, commit_after: str) -> str:
+    """Build unique run identifier string from benchmark config and commit hashes.
+
+    Args:
+        config: BenchmarkConfig instance.
+        commit_before: Previous commit hash string.
+        commit_after: Target commit hash string.
+
+    Returns:
+        Formatted run ID string.
+    """
     return f"benchmark_v{config.benchmark_version}_seed{config.seed}_{commit_before[:8]}_{commit_after[:8]}"
 
 
@@ -116,6 +126,14 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
 # ---------------------------------------------------------------------------
 
 def _run_single_benchmark(config: BenchmarkConfig) -> Path:
+    """Execute a single benchmark run for the given configuration.
+
+    Args:
+        config: BenchmarkConfig instance.
+
+    Returns:
+        Path pointing to output directory containing benchmark artifacts.
+    """
     logger.info("==================================================================")
     logger.info("Initializing Retrieval & Embedding Quality Benchmarking Pipeline")
     logger.info(f"Repository Path : {config.repo_path}")
@@ -514,6 +532,14 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
 
 
 def main(argv: list[str] | None = None) -> Path:
+    """CLI entrypoint for standalone benchmark execution.
+
+    Args:
+        argv: Optional command-line argument list.
+
+    Returns:
+        Path to output directory containing benchmark results.
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",

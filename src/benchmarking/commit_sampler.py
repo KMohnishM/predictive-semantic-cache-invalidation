@@ -22,6 +22,17 @@ def sample_commit_pairs(
     sampling_mode: str = "adjacent",
     commit_stride: int = 1,
 ) -> List[CommitPair]:
+    """Sample commit pair transitions chronologically from repository history.
+
+    Args:
+        git_helper: GitHelper instance attached to the repository.
+        num_commits: Number of commits or pairs to sample.
+        sampling_mode: Sampling strategy ('adjacent' or 'stride').
+        commit_stride: Stride multiplier when sampling in stride mode.
+
+    Returns:
+        List of sampled CommitPair instances.
+    """
     # Auto-adjust count to fetch enough raw commits for stride pairs
     raw_count = num_commits * commit_stride if sampling_mode == "stride" else num_commits
     commits = git_helper.get_commit_history(count=raw_count)

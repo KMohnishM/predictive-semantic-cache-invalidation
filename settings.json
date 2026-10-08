@@ -1,17 +1,16 @@
 {
-  // =========================================================================
-  // PREDICTIVE SEMANTIC CACHE INVALIDATION - TUNED RUNTIME SETTINGS
-  // =========================================================================
-
-  "repo_url": "https://github.com/psf/black.git",
+  "repo_url": "test_repo_project1",
   "model_name": "sentence-transformers/all-MiniLM-L6-v2",
   "parser_mode": "tree_sitter",
-  "num_commits": 35,
+  "num_commits": 10,
   "commit_stride": 20,
   "train_ratio": 0.7,
   "threshold": 0.05,
   "threshold_mode": "fixed",
   "clean_mode": false,
   "context_chunking": true,
-  "device": "auto"
+  "device": "auto",
+  "label_source": "hybrid",
+  "max_queries_per_entity": 10,
+  "ground_truth_queries_path": "src/benchmarking/data/curated_queries_perfect_sc.json"
 }

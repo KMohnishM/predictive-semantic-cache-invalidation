@@ -14,6 +14,11 @@ DEFAULT_REPO_URL = "https://github.com/psf/black.git"
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build CLI argument parser for benchmarking configuration.
+
+    Returns:
+        Configured ArgumentParser instance.
+    """
     parser = argparse.ArgumentParser(description="Run the retrieval benchmark pipeline")
     parser.add_argument("--repo-url", default=DEFAULT_REPO_URL)
     parser.add_argument("--repo-path", default="workspace/black")
@@ -103,6 +108,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def parse_top_k_values(raw_value: str) -> list[int]:
+    """Parse comma-separated top-K values string into sorted integer list.
+
+    Args:
+        raw_value: Comma-separated string or list of values.
+
+    Returns:
+        Sorted list of unique integer K cutoffs.
+    """
     if isinstance(raw_value, list):
         return sorted({int(value) for value in raw_value})
     values = [item.strip() for item in raw_value.split(",") if item.strip()]
@@ -110,6 +123,14 @@ def parse_top_k_values(raw_value: str) -> list[int]:
 
 
 def parse_strategies(raw_value: str) -> list[str]:
+    """Parse comma-separated strategy names string into ordered list.
+
+    Args:
+        raw_value: Comma-separated string or list of strategy names.
+
+    Returns:
+        List of unique strategy names.
+    """
     if isinstance(raw_value, list):
         return raw_value
     strategies = [item.strip() for item in raw_value.split(",") if item.strip()]
@@ -117,6 +138,14 @@ def parse_strategies(raw_value: str) -> list[str]:
 
 
 def build_config(args: argparse.Namespace) -> BenchmarkConfig:
+    """Build BenchmarkConfig instance from parsed CLI arguments.
+
+    Args:
+        args: Parsed argparse.Namespace object.
+
+    Returns:
+        Constructed BenchmarkConfig object.
+    """
     repo_path = str(Path(args.repo_path).resolve())
     output_dir = str(Path(args.output_dir).resolve())
     raw_strategies = getattr(args, "strategies", "changed_only,fixed_hop,predictive_ml,full_reindex")
@@ -156,6 +185,14 @@ def build_config(args: argparse.Namespace) -> BenchmarkConfig:
 
 
 def load_config(argv: Optional[list[str]] = None) -> BenchmarkConfig:
+    """Load benchmark configuration by merging CLI flags and JSON config file if present.
+
+    Args:
+        argv: Command-line arguments list or None to use sys.argv.
+
+    Returns:
+        Constructed BenchmarkConfig instance.
+    """
     parser = build_parser()
     args = parser.parse_args(argv)
 
