@@ -1,4 +1,4 @@
-﻿"""Model runner for dynamic .pkl inference in Pipeline B."""
+"""Model runner for dynamic .pkl inference in Pipeline B."""
 
 from __future__ import annotations
 
@@ -154,6 +154,11 @@ class ModelRunner:
 
             # Align columns to model's expected feature names
             if self.feature_names:
+                missing_cols = set(self.feature_names) - set(df_features.columns)
+                if missing_cols:
+                    logger.warning(
+                        f"Model expected {len(missing_cols)} feature columns missing from extracted features: {missing_cols}. Filling with 0.0."
+                    )
                 for col in self.feature_names:
                     if col not in df_features.columns:
                         df_features[col] = 0.0

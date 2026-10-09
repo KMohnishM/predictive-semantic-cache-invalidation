@@ -209,6 +209,9 @@ class PerQueryResult:
     score_delta: float
     updated_entity_fraction: float
     strategy_name: str
+    rank_agreement: bool = False
+    relative_freshness_pass: bool = False
+    ndcg_ratio: float = 1.0
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert PerQueryResult to dictionary."""

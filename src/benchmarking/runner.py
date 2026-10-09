@@ -354,6 +354,11 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                 )
 
                 top_k = max(config.top_k_values)
+                top_k_hit_b = recall_at_k(baseline_result.ranked_entity_ids, target_id, top_k) > 0
+                top_k_hit_s = recall_at_k(selective_result.ranked_entity_ids, target_id, top_k) > 0
+                b_ndcg = 1.0 / np.log2(baseline_rank + 1) if baseline_rank <= top_k else 0.0
+                s_ndcg = 1.0 / np.log2(selective_rank + 1) if selective_rank <= top_k else 0.0
+
                 all_results.append(
                     PerQueryResult(
                         run_id=run_id,
@@ -370,20 +375,23 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                         selective_rank=selective_rank,
                         baseline_score=baseline_score,
                         selective_score=selective_score,
-                        top_k_hit_baseline=recall_at_k(baseline_result.ranked_entity_ids, target_id, top_k) > 0,
-                        top_k_hit_selective=recall_at_k(selective_result.ranked_entity_ids, target_id, top_k) > 0,
+                        top_k_hit_baseline=top_k_hit_b,
+                        top_k_hit_selective=top_k_hit_s,
                         freshness_pass=(
                             query_row.query.expected_behavior == "latest_snapshot"
-                            and target_id in selective_result.ranked_entity_ids[:top_k]
+                            and top_k_hit_s
                         ),
                         cache_preservation_pass=(
                             query_row.query.expected_behavior != "latest_snapshot"
-                            and target_id in selective_result.ranked_entity_ids[:top_k]
+                            and top_k_hit_s
                         ),
                         rank_delta=rank_delta(baseline_rank, selective_rank),
                         score_delta=score_delta(baseline_score, selective_score),
                         updated_entity_fraction=strategy_decision.updated_fraction,
                         strategy_name=strategy_decision.strategy_name,
+                        rank_agreement=(selective_rank == baseline_rank),
+                        relative_freshness_pass=(top_k_hit_s if top_k_hit_b else True),
+                        ndcg_ratio=(s_ndcg / b_ndcg if b_ndcg > 0 else 1.0),
                     )
                 )
 
@@ -401,11 +409,30 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
     strategy_summaries: Dict = {}
     for strategy_name, strategy_results in results_by_strategy.items():
         strat_queries = len(strategy_results)
+        changed_queries_strat = sum(1 for r in strategy_results if r.expected_behavior == "latest_snapshot")
+        unchanged_queries_strat = strat_queries - changed_queries_strat
+
         n_freshness_successes = sum(1 for r in strategy_results if r.freshness_pass)
         n_cache_successes     = sum(1 for r in strategy_results if r.cache_preservation_pass)
-        strat_freshness_success = n_freshness_successes / strat_queries if strat_queries else 0.0
-        strat_cache_success     = n_cache_successes     / strat_queries if strat_queries else 0.0
-        # Phase 3.1: benchmark_passed REMOVED — Wilson CIs computed in reporting.py instead
+
+        strat_freshness_success = (
+            n_freshness_successes / changed_queries_strat if changed_queries_strat > 0 else 0.0
+        )
+        strat_cache_success = (
+            n_cache_successes / unchanged_queries_strat if unchanged_queries_strat > 0 else 0.0
+        )
+
+        # Baseline Agreement Metrics
+        baseline_hits = sum(1 for r in strategy_results if r.top_k_hit_baseline)
+        relative_freshness_successes = sum(
+            1 for r in strategy_results if r.top_k_hit_baseline and r.top_k_hit_selective
+        )
+        relative_freshness_rate = (
+            relative_freshness_successes / baseline_hits if baseline_hits > 0 else 1.0
+        )
+
+        rank_agreements = sum(1 for r in strategy_results if r.rank_agreement)
+        rank_agreement_rate = rank_agreements / strat_queries if strat_queries > 0 else 1.0
 
         strat_baseline_mrr = float(
             sum(1.0 / r.baseline_rank for r in strategy_results) / strat_queries
@@ -426,6 +453,9 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                 for r in strategy_results
             ) / strat_queries
         ) if strat_queries else 0.0
+
+        mrr_ratio = strat_selective_mrr / strat_baseline_mrr if strat_baseline_mrr > 0 else 1.0
+        ndcg_ratio = strat_selective_ndcg / strat_baseline_ndcg if strat_baseline_ndcg > 0 else 1.0
 
         # Get update fraction from embedding comparisons (if available)
         strat_update_fraction = 0.0
@@ -449,12 +479,14 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
             },
             "freshness_success_rate":          strat_freshness_success,
             "cache_preservation_success_rate": strat_cache_success,
+            "relative_freshness_rate":         relative_freshness_rate,
+            "rank_agreement_rate":             rank_agreement_rate,
+            "mrr_ratio":                       mrr_ratio,
+            "ndcg_ratio":                      ndcg_ratio,
             "candidate_update_fraction":       strat_update_fraction,
-            # Phase 3.1: raw counts stored so reporting.py can compute Wilson CIs
             "freshness_successes": n_freshness_successes,
             "cache_successes":     n_cache_successes,
             "total_queries":       strat_queries,
-            # benchmark_passed REMOVED (was: strat_freshness_success >= 0.5 and strat_cache_success >= 0.5)
         }
 
     # Phase 1.4: run saturation guard after strategy_summaries are built

@@ -205,8 +205,29 @@ def build_queries(
 
     curated_queries = load_curated_queries(curated_queries_path) if curated_queries_path else []
 
+    if modified_entity_ids is not None and curated_queries:
+        updated_curated = []
+        for q in curated_queries:
+            is_changed = q.target_entity_id in modified_entity_ids
+            updated_curated.append(
+                QueryCase(
+                    query_id=f"{commit_pair.commit_after[:8]}::{q.query_id}",
+                    query_text=q.query_text,
+                    query_source=q.query_source,
+                    category="changed_entity" if is_changed else "unchanged_entity",
+                    target_entity_id=q.target_entity_id,
+                    target_entity_name=q.target_entity_name,
+                    expected_behavior="latest_snapshot" if is_changed else "cached_snapshot",
+                    commit_after=commit_pair.commit_after,
+                    file_path=q.file_path,
+                    entity_type=q.entity_type,
+                )
+            )
+        curated_queries = updated_curated
+
     if query_mode == "curated":
         return curated_queries
 
     # hybrid: curated first (better quality), then synthetic as supplement
     return curated_queries + synthetic_queries
+

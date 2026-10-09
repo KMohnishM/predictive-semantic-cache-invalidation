@@ -279,7 +279,7 @@ def write_summary_report(
         "",
         "## Strategy Performance Comparison",
         "",
-        "| Strategy | Update Cost | Freshness [95% CI] (n) | Cache Pres. [95% CI] (n) | MRR Δ | nDCG@10 Δ |",
+        "| Strategy | Update Cost | Freshness ($N_{\\text{changed}}$) | Cache Pres. ($N_{\\text{unchanged}}$) | Relative Baseline Agreement | nDCG@10 Ratio |",
         "| :--- | :---: | :--- | :--- | :---: | :---: |",
     ])
 
@@ -293,27 +293,13 @@ def write_summary_report(
             n_cache     = stats.get("cache_successes", 0)
             fresh_rate  = stats.get("freshness_success_rate", 0.0)
             cache_rate  = stats.get("cache_preservation_success_rate", 0.0)
+            rel_fresh   = stats.get("relative_freshness_rate", 1.0)
+            ndcg_ratio  = stats.get("ndcg_ratio", 1.0)
             update_frac = stats.get("candidate_update_fraction", 0.0)
-            deltas      = stats.get("metric_deltas", {})
-            mrr_delta   = deltas.get("mrr", 0.0)
-            ndcg_delta  = deltas.get("ndcg_at_10", 0.0)
-
-            # Compute Wilson CIs from raw success counts
-            fresh_lo, fresh_hi = wilson_ci(n_fresh, n_total)
-            cache_lo,  cache_hi = wilson_ci(n_cache,  n_total)
-
-            fresh_str = (
-                f"{fresh_rate:.3f} [{fresh_lo:.3f}–{fresh_hi:.3f}] (n={n_total})"
-                if n_total > 0 else "n/a"
-            )
-            cache_str = (
-                f"{cache_rate:.3f} [{cache_lo:.3f}–{cache_hi:.3f}] (n={n_total})"
-                if n_total > 0 else "n/a"
-            )
 
             lines.append(
-                f"| `{name}` | {update_frac:.4f} | {fresh_str} | {cache_str} | "
-                f"{mrr_delta:+.4f} | {ndcg_delta:+.4f} |"
+                f"| `{name}` | {update_frac:.4f} | {fresh_rate:.3f} | {cache_rate:.3f} | "
+                f"**{rel_fresh:.4f}** | **{ndcg_ratio:.4f}** |"
             )
     else:
         # Backward-compat: flat summary (single strategy, no strategy_summaries dict)

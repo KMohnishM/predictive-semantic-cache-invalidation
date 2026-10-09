@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
+import hashlib
 import numpy as np
 
 try:
@@ -25,20 +26,55 @@ class RetrievalResult:
     ranked_scores: List[float]
 
 
-def build_index_snapshot(snapshot: RepositorySnapshot, embedding_manager: EmbeddingManager) -> IndexSnapshot:
+def _extract_docstring_first_line(code: str) -> str:
+    import re
+    match = re.search(r'"""(.*?)"""', code, re.DOTALL)
+    if not match:
+        match = re.search(r"'''(.*?)'''", code, re.DOTALL)
+    if match:
+        doc = match.group(1).strip().split('\n')[0].strip()
+        if len(doc) > 5:
+            return doc
+    lines = [line.strip() for line in code.splitlines() if line.strip() and not line.strip().startswith("#")]
+    return lines[0] if lines else ""
+
+
+def build_index_snapshot(
+    snapshot: RepositorySnapshot,
+    embedding_manager: EmbeddingManager,
+    contextual: bool = True,
+) -> IndexSnapshot:
     """Generate vector embeddings for all entities in a repository snapshot.
 
-    Args:
-        snapshot: RepositorySnapshot containing parsed entities.
-        embedding_manager: EmbeddingManager instance.
-
-    Returns:
-        IndexSnapshot containing serialized float vector embeddings and metadata.
+    When contextual=True, appends callee dependency signatures/docstrings to
+    each entity's source code, creating true indirect semantic drift when dependencies change.
     """
     if not snapshot.entities:
         return IndexSnapshot(commit_hash=snapshot.commit_hash, entity_embeddings={}, entity_metadata={})
 
-    entities_dict = {entity_id: entity.source_code for entity_id, entity in snapshot.entities.items()}
+    entities_dict = {}
+    graph = getattr(snapshot, "graph", None)
+
+    for entity_id, entity in snapshot.entities.items():
+        text = entity.source_code
+        if contextual and graph is not None and graph.has_node(entity_id):
+            try:
+                # Callees (successors in call graph)
+                callees = list(graph.successors(entity_id))
+                callee_ctx = []
+                for callee_id in callees[:5]:
+                    callee_entity = snapshot.entities.get(callee_id)
+                    if callee_entity:
+                        callee_name = callee_entity.name
+                        callee_hash = hashlib.md5(callee_entity.source_code.encode("utf-8")).hexdigest()[:8]
+                        callee_desc = _extract_docstring_first_line(callee_entity.source_code)
+                        callee_ctx.append(f"Depends on {callee_name} (ver: {callee_hash}): {callee_desc}")
+                if callee_ctx:
+                    text = text + "\n\n# Contextual Dependencies:\n" + "\n".join(callee_ctx)
+            except Exception:
+                pass
+        entities_dict[entity_id] = text
+
     raw_embeddings = embedding_manager.generate_embeddings_batch(entities_dict)
 
     entity_embeddings: Dict[str, List[float]] = {
