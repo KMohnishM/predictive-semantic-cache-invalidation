@@ -5,15 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-import hashlib
 import numpy as np
 
 try:
+    from embedder.context_builder import build_contextual_source
     from embedder.embedding_manager import EmbeddingManager
 except ImportError:
     try:
+        from src.embedder.context_builder import build_contextual_source
         from src.embedder.embedding_manager import EmbeddingManager
     except ImportError:
+        from ..embedder.context_builder import build_contextual_source
         from ..embedder.embedding_manager import EmbeddingManager
 
 from .types import IndexSnapshot, RepositorySnapshot
@@ -26,17 +28,35 @@ class RetrievalResult:
     ranked_scores: List[float]
 
 
-def _extract_docstring_first_line(code: str) -> str:
-    import re
-    match = re.search(r'"""(.*?)"""', code, re.DOTALL)
-    if not match:
-        match = re.search(r"'''(.*?)'''", code, re.DOTALL)
-    if match:
-        doc = match.group(1).strip().split('\n')[0].strip()
-        if len(doc) > 5:
-            return doc
-    lines = [line.strip() for line in code.splitlines() if line.strip() and not line.strip().startswith("#")]
-    return lines[0] if lines else ""
+def build_entity_texts(
+    snapshot: RepositorySnapshot,
+    embedding_manager: EmbeddingManager,
+    contextual: bool = True,
+) -> Dict[str, str]:
+    """Return entity_id -> the exact text that gets embedded for this snapshot.
+
+    When contextual=True, each entity's text is built by the shared
+    build_contextual_source() (src/embedder/context_builder.py) — the exact
+    representation Pipeline A trains on — so benchmark vectors and training
+    labels come from the same embedding text.
+    """
+    repo_parser = getattr(snapshot.parser, "_parser", snapshot.parser)
+    if contextual and repo_parser is None:
+        raise ValueError(
+            f"Contextual indexing requires snapshot.parser for commit {snapshot.commit_hash[:8]}"
+        )
+    large_context = embedding_manager.is_large_context() if contextual else False
+
+    texts: Dict[str, str] = {}
+    for entity_id, entity in snapshot.entities.items():
+        if contextual:
+            parser_entity = repo_parser.get_entity(entity_id) or entity
+            texts[entity_id] = build_contextual_source(
+                parser_entity, repo_parser, large_context=large_context
+            )
+        else:
+            texts[entity_id] = entity.source_code
+    return texts
 
 
 def build_index_snapshot(
@@ -44,37 +64,11 @@ def build_index_snapshot(
     embedding_manager: EmbeddingManager,
     contextual: bool = True,
 ) -> IndexSnapshot:
-    """Generate vector embeddings for all entities in a repository snapshot.
-
-    When contextual=True, appends callee dependency signatures/docstrings to
-    each entity's source code, creating true indirect semantic drift when dependencies change.
-    """
+    """Generate vector embeddings for all entities in a repository snapshot."""
     if not snapshot.entities:
         return IndexSnapshot(commit_hash=snapshot.commit_hash, entity_embeddings={}, entity_metadata={})
 
-    entities_dict = {}
-    graph = getattr(snapshot, "graph", None)
-
-    for entity_id, entity in snapshot.entities.items():
-        text = entity.source_code
-        if contextual and graph is not None and graph.has_node(entity_id):
-            try:
-                # Callees (successors in call graph)
-                callees = list(graph.successors(entity_id))
-                callee_ctx = []
-                for callee_id in callees[:5]:
-                    callee_entity = snapshot.entities.get(callee_id)
-                    if callee_entity:
-                        callee_name = callee_entity.name
-                        callee_hash = hashlib.md5(callee_entity.source_code.encode("utf-8")).hexdigest()[:8]
-                        callee_desc = _extract_docstring_first_line(callee_entity.source_code)
-                        callee_ctx.append(f"Depends on {callee_name} (ver: {callee_hash}): {callee_desc}")
-                if callee_ctx:
-                    text = text + "\n\n# Contextual Dependencies:\n" + "\n".join(callee_ctx)
-            except Exception:
-                pass
-        entities_dict[entity_id] = text
-
+    entities_dict = build_entity_texts(snapshot, embedding_manager, contextual=contextual)
     raw_embeddings = embedding_manager.generate_embeddings_batch(entities_dict)
 
     entity_embeddings: Dict[str, List[float]] = {

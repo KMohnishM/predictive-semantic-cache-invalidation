@@ -34,8 +34,11 @@ class ModelRunner:
         self.task_type: str = "classification"
         self.model_type: str = "unknown"
         self.threshold: float = 0.5
+        # Probability cut-off chosen at training time (DriftPredictor.fit_decision_threshold)
+        self.decision_threshold: float = 0.5
         self.version: str = "1.0"
         self.is_loaded: bool = False
+        self._parser_cache: Dict[str, Any] = {}
 
         if model_path:
             self.load(model_path)
@@ -55,6 +58,7 @@ class ModelRunner:
             self.task_type = loaded_data.get("task_type", "classification")
             self.model_type = loaded_data.get("model_type", "unknown")
             self.threshold = float(loaded_data.get("threshold", 0.5))
+            self.decision_threshold = float(loaded_data.get("decision_threshold", 0.5))
             self.version = str(loaded_data.get("version", "1.0"))
         elif hasattr(loaded_data, "model") and hasattr(loaded_data, "scaler"):
             self.model = getattr(loaded_data, "model")
@@ -63,6 +67,7 @@ class ModelRunner:
             self.task_type = getattr(loaded_data, "task_type", "classification")
             self.model_type = getattr(loaded_data, "model_type", "unknown")
             self.threshold = float(getattr(loaded_data, "threshold", 0.5))
+            self.decision_threshold = float(getattr(loaded_data, "decision_threshold", 0.5))
             self.version = "1.0"
         else:
             raise ValueError(f"Unrecognized model bundle structure in: {path}")
@@ -73,8 +78,21 @@ class ModelRunner:
         self.is_loaded = True
         logger.info(
             f"Successfully loaded model artifact '{self.model_type}' ({self.task_type}) "
-            f"from {path.name} (version: {self.version}, features: {len(self.feature_names or [])})"
+            f"from {path.name} (version: {self.version}, features: {len(self.feature_names or [])}, "
+            f"decision threshold: {self.decision_threshold:.4f})"
         )
+
+    def _get_parser_at(self, commit: str, git_helper: Any, parser_provider: Optional[Any]) -> Any:
+        """Return a TreeSitterRepoParser for ``commit`` (provider first, then a cached snapshot build)."""
+        if parser_provider is not None:
+            parser = parser_provider(commit)
+            if parser is not None:
+                return parser
+        if commit not in self._parser_cache:
+            from .repository_snapshot import build_repository_snapshot
+            snapshot = build_repository_snapshot(git_helper, commit)
+            self._parser_cache[commit] = getattr(snapshot.parser, "_parser", snapshot.parser)
+        return self._parser_cache[commit]
 
     def predict_entities(
         self,
@@ -84,10 +102,24 @@ class ModelRunner:
         git_helper: Any,
         repo_parser: Any,
         ml_threshold: Optional[float] = None,
+        parser_provider: Optional[Any] = None,
+        modification_history: Optional[Dict[str, List[str]]] = None,
+        previous_drifts: Optional[Dict[str, float]] = None,
     ) -> Dict[str, float]:
         """
         Dynamically extract features and predict drift scores for entities
         comparing each entity against its specific anchor commit.
+
+        Features are built exactly as in Pipeline A training (run_experiment.py):
+          - is_modified / distance features use the shared AST-normalized
+            definition (compute_semantic_modified_entities), not "file touched";
+          - the Graph Transition Descriptor is computed from the anchor and
+            current call graphs;
+          - modification_history / previous_drifts are the running state the
+            benchmark maintains across commit pairs.
+
+        The GTD runs in code-change mode (modified = semantically modified code),
+        exactly as in training, so no feature depends on post-commit embeddings.
         """
         if not self.is_loaded:
             raise RuntimeError("ModelRunner must load a model artifact before calling predict_entities.")
@@ -97,13 +129,18 @@ class ModelRunner:
 
         try:
             from src.extractor.feature_extractor import FeatureExtractor
+            from src.extractor.gtd import GraphTransitionDescriptor
+            from src.extractor.semantic_modification import compute_semantic_modified_entities
         except ImportError:
-            try:
-                from extractor.feature_extractor import FeatureExtractor
-            except ImportError:
-                raise ImportError("Could not import FeatureExtractor from src.extractor.feature_extractor")
+            from extractor.feature_extractor import FeatureExtractor
+            from extractor.gtd import GraphTransitionDescriptor
+            from extractor.semantic_modification import compute_semantic_modified_entities
 
-        # Group entities by their anchor commit to batch feature extraction
+        modification_history = modification_history if modification_history is not None else {}
+        previous_drifts = previous_drifts if previous_drifts is not None else {}
+
+        # Group entities by their anchor commit to batch feature extraction.
+        # Entities with no anchor (never seen before) are new -> anchor = current.
         anchor_groups: Dict[str, List[str]] = {}
         for eid in entity_ids:
             anchor = anchor_commits.get(eid, current_commit)
@@ -124,10 +161,14 @@ class ModelRunner:
                 logger.warning(f"Failed to get modified files between {anchor_commit[:8]} and {current_commit[:8]}: {exc}")
                 modified_files = set()
 
-            modified_entities = {
-                eid for eid in group_eids
-                if repo_parser.get_entity(eid) and repo_parser.get_entity(eid).file_path in modified_files
-            }
+            anchor_parser = self._get_parser_at(anchor_commit, git_helper, parser_provider)
+            modified_entities = compute_semantic_modified_entities(
+                anchor_parser, repo_parser, modified_files
+            )
+
+            gtd = GraphTransitionDescriptor()
+            gtd.compute(parser_a=anchor_parser, parser_b=repo_parser,
+                        modified_entities=modified_entities)
 
             extractor = FeatureExtractor(
                 repo_parser=repo_parser,
@@ -142,9 +183,10 @@ class ModelRunner:
                 commit_a=anchor_commit,
                 commit_b=current_commit,
                 modified_entities=modified_entities,
-                modification_history={},
-                previous_drifts={},
+                modification_history=modification_history,
+                previous_drifts=previous_drifts,
                 git_helper=git_helper,
+                gtd=gtd,
             )
 
             if df_features.empty:
@@ -191,5 +233,5 @@ class ModelRunner:
         threshold: Optional[float] = None,
     ) -> List[str]:
         """Return list of entity IDs exceeding the threshold."""
-        thresh = threshold if threshold is not None else self.threshold
+        thresh = threshold if threshold is not None else self.decision_threshold
         return [eid for eid, score in scores.items() if score >= thresh]

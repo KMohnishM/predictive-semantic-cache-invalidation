@@ -105,6 +105,9 @@ class BenchmarkConfig:
     top_k_values: List[int] = field(default_factory=lambda: [1, 5, 10])
     output_format: str = "jsonl"
     max_queries_per_entity: int = 2
+    # Embed entities with one-hop call-graph context (shared with Pipeline A's
+    # context_chunking via src/embedder/context_builder.py).
+    context_chunking: bool = True
     # Phase 2.4: predictive_ml and fixed_hop in default strategy list
     strategies: List[str] = field(
         default_factory=lambda: ["changed_only", "fixed_hop", "predictive_ml", "full_reindex"]
@@ -117,9 +120,14 @@ class BenchmarkConfig:
     # Phase 2.3: hop depth for fixed_hop strategy
     hop_k: int = 2
     # Phase 2.3: score threshold for predictive_ml continuous scores
-    ml_threshold: float = 0.5
+    # None -> use the decision threshold stored in the trained model artifact
+    ml_threshold: Optional[float] = None
     # Phase 3.3: number of independent runs for mean +- CI aggregation
     n_seeds: int = 1
+    # Skip this many most-recent commits when sampling (multi-window runs set it)
+    history_offset: int = 0
+    # Git ref the sampled window ends at (pin to a commit for reproducible runs)
+    ref: str = "HEAD"
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert BenchmarkConfig to dictionary."""

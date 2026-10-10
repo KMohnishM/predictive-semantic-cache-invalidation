@@ -213,17 +213,19 @@ class FeatureExtractor:
     def _get_historical_features(self, entity_id: str,
                                  modification_history: Dict[str, List[str]],
                                  previous_drifts: Dict[str, float]) -> Dict[str, float]:
-        """Extract historical features for an entity."""
+        """Extract historical features for an entity.
+
+        ``previous_drifts`` is accepted for API compatibility but no longer used:
+        an entity's past embedding drift is only observable when it was
+        re-embedded, so training (which sees every entity's drift) and inference
+        (which sees only re-embedded ones) would disagree on it.
+        """
         features = {
             'modification_frequency': 0.0,
-            'previous_drift': 0.0
         }
 
         if entity_id in modification_history:
             features['modification_frequency'] = float(len(modification_history[entity_id]))
-
-        if entity_id in previous_drifts:
-            features['previous_drift'] = float(previous_drifts[entity_id])
 
         return features
 
@@ -300,7 +302,7 @@ class FeatureExtractor:
         else:
             from .gtd import GraphTransitionDescriptor
             dummy = GraphTransitionDescriptor()
-            dummy.compute(nx.DiGraph(), nx.DiGraph(), {})
+            dummy.compute(None, None, modified_entities=set())
             global_feats = {k: 0.0 for k in dummy.get_global_features()}
 
         features_list = []

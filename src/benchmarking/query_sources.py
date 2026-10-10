@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import Iterable, List, Optional, Set
 
+from .query_validation import query_violations
 from .types import CommitPair, QueryCase, RepositorySnapshot
 
 
@@ -60,6 +61,10 @@ def build_synthetic_queries(
     - For entities without a docstring: generate a caller-perspective query using
       the dependency graph (predecessors of the entity).
     - If neither is available: skip the entity entirely.
+    - Every candidate is checked with query_validation.query_violations() and
+      dropped if it contains the target's name / name tokens / class / file name,
+      or copies 4+ consecutive words from the target's source (e.g. a verbatim
+      docstring line — the docstring is part of the embedded text).
 
     Rationale: Queries that embed the target's own identity make retrieval trivially
     solvable regardless of embedding freshness, saturating the benchmark at Recall@10
@@ -82,8 +87,6 @@ def build_synthetic_queries(
             else entity_index % 2 == 0
         )
 
-        file_short = Path(entity.file_path).name
-        entity_short = entity.entity_id.split("::")[-1]
         doc_summary = _extract_docstring_summary(entity.source_code)
         templates = []
 
@@ -92,7 +95,6 @@ def build_synthetic_queries(
             templates.append(f"Which function is described as: {doc_summary}?")
             templates.append(f"How is the following behavior implemented: {doc_summary}?")
             templates.append(f"What module handles: {doc_summary}?")
-            templates.append(f"Which component in {file_short} handles: {doc_summary}?")
 
         if repo_graph is not None:
             try:
@@ -110,14 +112,17 @@ def build_synthetic_queries(
                 import logging
                 logging.getLogger(__name__).debug(f"Graph context lookup failed for {entity.entity_id}: {e}")
 
-        # Deduplicate templates
+        # Deduplicate templates and drop any that leak the target's identity or copy its source
         seen: Set[str] = set()
         unique_templates = []
         for t in templates:
             t_norm = _normalize_query(t)
-            if t_norm not in seen:
-                seen.add(t_norm)
-                unique_templates.append(t)
+            if t_norm in seen:
+                continue
+            seen.add(t_norm)
+            if query_violations(t_norm, entity.entity_id, entity.file_path, entity.source_code):
+                continue
+            unique_templates.append(t)
 
         for template_index, template in enumerate(unique_templates[:max_queries_per_entity]):
             query_id = f"{commit_pair.commit_after[:8]}::{entity.entity_id}::{template_index}"

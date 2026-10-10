@@ -109,17 +109,26 @@ class EmbeddingManager:
             elif "jina" in self.model_name.lower():
                 self.model.max_seq_length = 8190
             else:
+                # Keep the model's own configured max_seq_length (e.g. 256 for
+                # all-MiniLM-L6-v2, the length it was fine-tuned with); only cap it
+                # when it exceeds the position-embedding table, which would crash.
                 try:
                     config = self.model._first_module().auto_model.config
                     max_pos = getattr(config, "max_position_embeddings", None)
                     if max_pos is not None:
                         model_type = getattr(config, "model_type", "")
                         offset = 2 if "roberta" in model_type else 0
-                        self.model.max_seq_length = max_pos - offset
+                        configured = getattr(self.model, "max_seq_length", None) or (max_pos - offset)
+                        self.model.max_seq_length = min(configured, max_pos - offset)
                 except Exception:
                     self.model.max_seq_length = min(getattr(self.model, "max_seq_length", 512), 512)
                     
             logger.info(f"Model loaded successfully with max_seq_length={self.model.max_seq_length}")
+
+    def is_large_context(self) -> bool:
+        """True when the loaded model accepts 8k+ tokens (loads the model if needed)."""
+        self._load_model()
+        return getattr(self.model, "max_seq_length", 512) >= 8192
 
     def _prepare_text(self, source_code: str) -> str:
         """

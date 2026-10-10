@@ -69,6 +69,9 @@ class DriftPredictor:
         self.model_type = model_type
         self.task_type = task_type
         self.threshold = threshold
+        # Probability cut-off for calling an entity stale (classification). Chosen
+        # by fit_decision_threshold(); 0.5 until then.
+        self.decision_threshold = 0.5
         self.model = None
         self.scaler = StandardScaler()
         self.feature_names = None
@@ -267,6 +270,53 @@ class DriftPredictor:
 
         return metrics
 
+    def fit_decision_threshold(self, X: np.ndarray, y: np.ndarray, groups: List[str],
+                               n_splits: int = 5) -> float:
+        """
+        Choose the probability cut-off that maximises F1 on out-of-fold predictions.
+
+        Rows are grouped (by commit pair) so every row is scored by a model that
+        never saw its pair. With rare positives a fixed 0.5 cut-off is almost
+        never reached, so the threshold has to come from the data. The final
+        model (already trained on all of X) is not changed.
+        """
+        if self.task_type != "classification":
+            return self.decision_threshold
+        from sklearn.base import clone
+        from sklearn.model_selection import GroupKFold
+
+        y = np.asarray(y)
+        if not np.all(np.isin(y, [0, 1])):
+            y = np.array([1 if val >= self.threshold else 0 for val in y])
+        groups = np.asarray(groups)
+        n_groups = len(set(groups))
+        if y.sum() == 0 or n_groups < 2:
+            logger.warning("fit_decision_threshold: not enough positives/groups; keeping 0.5")
+            return self.decision_threshold
+
+        oof = np.full(len(y), np.nan)
+        for train_idx, val_idx in GroupKFold(n_splits=min(n_splits, n_groups)).split(X, y, groups):
+            if len(np.unique(y[train_idx])) < 2:
+                continue
+            scaler = StandardScaler().fit(X[train_idx])
+            fold_model = clone(self._create_model()).fit(scaler.transform(X[train_idx]), y[train_idx])
+            oof[val_idx] = positive_class_proba(fold_model, fold_model.predict_proba(scaler.transform(X[val_idx])))
+
+        scored = ~np.isnan(oof)
+        if y[scored].sum() == 0:
+            logger.warning("fit_decision_threshold: no positives in scored folds; keeping 0.5")
+            return self.decision_threshold
+        precisions, recalls, thresholds = precision_recall_curve(y[scored], oof[scored])
+        f1 = 2 * precisions[:-1] * recalls[:-1] / np.clip(precisions[:-1] + recalls[:-1], 1e-12, None)
+        best = int(np.argmax(f1))
+        self.decision_threshold = float(thresholds[best])
+        logger.info(
+            f"Decision threshold set to {self.decision_threshold:.4f} from out-of-fold predictions "
+            f"(F1={f1[best]:.3f}, precision={precisions[best]:.3f}, recall={recalls[best]:.3f}, "
+            f"{int(scored.sum())} rows, {int(y[scored].sum())} positives, {n_groups} pairs)"
+        )
+        return self.decision_threshold
+
     def evaluate(self, X: np.ndarray, y: np.ndarray) -> Dict[str, float]:
         """
         Evaluate the model on test data.
@@ -303,13 +353,17 @@ class DriftPredictor:
             if not np.all(np.isin(y, [0, 1])):
                 y = np.array([1 if val >= self.threshold else 0 for val in y])
 
-            y_pred = self.model.predict(X_scaled)
             y_prob = (
                 positive_class_proba(self.model, self.model.predict_proba(X_scaled))
                 if hasattr(self.model, 'predict_proba') else None
             )
+            y_pred = (
+                (y_prob >= self.decision_threshold).astype(int)
+                if y_prob is not None else self.model.predict(X_scaled)
+            )
 
-            metrics['test_accuracy'] = self.model.score(X_scaled, y)
+            metrics['test_accuracy'] = float(np.mean(y_pred == y))
+            metrics['decision_threshold'] = self.decision_threshold
             metrics['test_f1'] = f1_score(y, y_pred, zero_division=0)
             metrics['test_precision'] = precision_score(y, y_pred, zero_division=0)
             metrics['test_recall'] = recall_score(y, y_pred, zero_division=0)
@@ -346,6 +400,9 @@ class DriftPredictor:
             raise RuntimeError("Model must be trained before prediction")
 
         X_scaled = self.scaler.transform(X)
+        if self.task_type == "classification" and hasattr(self.model, 'predict_proba'):
+            probs = positive_class_proba(self.model, self.model.predict_proba(X_scaled))
+            return (probs >= self.decision_threshold).astype(int)
         return self.model.predict(X_scaled)
 
     def predict_proba(self, X: np.ndarray) -> Optional[np.ndarray]:
@@ -413,7 +470,8 @@ class DriftPredictor:
             'model_type': self.model_type,
             'task_type': self.task_type,
             'threshold': self.threshold,
-            'version': "2.0",
+            'decision_threshold': self.decision_threshold,
+            'version': "2.1",
         }
 
         joblib.dump(model_data, filepath)
@@ -438,6 +496,7 @@ class DriftPredictor:
         self.model_type = model_data['model_type']
         self.task_type = model_data['task_type']
         self.threshold = model_data['threshold']
+        self.decision_threshold = float(model_data.get('decision_threshold', 0.5))
         self.is_trained = True
 
         logger.info(f"Model loaded from {filepath} (version: {model_data.get('version', '1.0')})")
@@ -549,4 +608,4 @@ def compare_all_models(
     df = pd.DataFrame(results)
     if not df.empty and "test_f1" in df.columns:
         df = df.sort_values("test_f1", ascending=False).reset_index(drop=True)
-    return df, predictors
+    return df, predictors

@@ -209,7 +209,7 @@ def write_aggregated_report(
     lines = [
         "# Aggregated Benchmark Report",
         "",
-        f"Aggregated over **{n_seeds} independent seeds**.",
+        f"Aggregated over **{n_seeds} disjoint commit windows** (each run ends further back in history).",
         "",
         "| Strategy | Freshness (mean ± std) | Cache Pres. (mean ± std) | Update Cost (mean ± std) | MRR Δ (mean ± std) |",
         "| :--- | :--- | :--- | :--- | :--- |",
@@ -279,7 +279,7 @@ def write_summary_report(
         "",
         "## Strategy Performance Comparison",
         "",
-        "| Strategy | Update Cost | Freshness ($N_{\\text{changed}}$) | Cache Pres. ($N_{\\text{unchanged}}$) | Relative Baseline Agreement | nDCG@10 Ratio |",
+        "| Strategy | Update Cost | Freshness [95% CI] ($N_{\\text{changed}}$) | Cache Pres. [95% CI] ($N_{\\text{unchanged}}$) | Relative Baseline Agreement | nDCG Ratio |",
         "| :--- | :---: | :--- | :--- | :---: | :---: |",
     ])
 
@@ -297,8 +297,15 @@ def write_summary_report(
             ndcg_ratio  = stats.get("ndcg_ratio", 1.0)
             update_frac = stats.get("candidate_update_fraction", 0.0)
 
+            n_changed   = stats.get("changed_queries", n_total)
+            n_unchanged = stats.get("unchanged_queries", n_total)
+            fresh_ci = stats.get("freshness_ci_95") or wilson_ci(n_fresh, n_changed)
+            cache_ci = stats.get("cache_preservation_ci_95") or wilson_ci(n_cache, n_unchanged)
+
             lines.append(
-                f"| `{name}` | {update_frac:.4f} | {fresh_rate:.3f} | {cache_rate:.3f} | "
+                f"| `{name}` | {update_frac:.4f} | "
+                f"{fresh_rate:.3f} [{fresh_ci[0]:.3f}, {fresh_ci[1]:.3f}] (n={n_changed}) | "
+                f"{cache_rate:.3f} [{cache_ci[0]:.3f}, {cache_ci[1]:.3f}] (n={n_unchanged}) | "
                 f"**{rel_fresh:.4f}** | **{ndcg_ratio:.4f}** |"
             )
     else:

@@ -81,17 +81,21 @@ def _plot_strategy_comparison(
                 ha="center", va="bottom", fontsize=7.5, fontweight="bold",
             )
 
-    # Wilson CI error bars for Freshness Rate
-    fresh_lo = [strategy_summaries[s].get("_fresh_ci_lo", 0.0) for s in strategies]
-    fresh_hi = [strategy_summaries[s].get("_fresh_ci_hi", 0.0) for s in strategies]
-    fresh_vals = metrics["Freshness Rate"]
-    yerr_lo = [max(f - lo, 0) for f, lo in zip(fresh_vals, fresh_lo)]
-    yerr_hi = [max(hi - f, 0) for f, hi in zip(fresh_vals, fresh_hi)]
-    ax.errorbar(
-        x + offsets[0] * width, fresh_vals,
-        yerr=[yerr_lo, yerr_hi],
-        fmt="none", color="black", capsize=3, linewidth=1.2,
-    )
+    # 95% Wilson CI error bars for Freshness and Cache Preservation (computed in runner.py).
+    # Strategies without a CI (older summaries) get no error bar rather than a fake one.
+    for idx, (label, ci_key) in enumerate([("Freshness Rate", "freshness_ci_95"),
+                                           ("Cache Preservation", "cache_preservation_ci_95")]):
+        vals = metrics[label]
+        cis = [strategy_summaries[s].get(ci_key) for s in strategies]
+        if not all(ci and len(ci) == 2 for ci in cis):
+            continue
+        yerr_lo = [max(v - ci[0], 0) for v, ci in zip(vals, cis)]
+        yerr_hi = [max(ci[1] - v, 0) for v, ci in zip(vals, cis)]
+        ax.errorbar(
+            x + offsets[idx] * width, vals,
+            yerr=[yerr_lo, yerr_hi],
+            fmt="none", color="black", capsize=3, linewidth=1.2,
+        )
 
     ax.set_xticks(x)
     ax.set_xticklabels([s.replace("_", "\n") for s in strategies], fontsize=9)

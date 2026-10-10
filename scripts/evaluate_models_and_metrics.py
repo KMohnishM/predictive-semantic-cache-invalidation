@@ -59,8 +59,16 @@ def run_stage4_ml_evaluation():
 
     test_repo = repo_root / "test_repo_project1"
     git_helper = GitHelper(str(test_repo))
-    git_helper.checkout_commit("main")
-    commits = git_helper.get_commit_history(count=10)
+    original_ref = git_helper.get_checkout_ref()
+    try:
+        _run_stage4(git_helper, test_repo)
+    finally:
+        # The commit loop below checks out every commit; restore the checkout.
+        git_helper.checkout_commit(original_ref)
+
+
+def _run_stage4(git_helper, test_repo):
+    commits = git_helper.get_commit_history(count=10, ref="main")
 
     # Load Strict Ground Truth Target Y
     gt_csv_path = repo_root / "results" / "ground_truth_sanitized_strict_entities.csv"
@@ -132,12 +140,12 @@ def run_stage4_ml_evaluation():
 
     print(f"\nConstructed Feature Matrix X shape: {df_X.shape}, Target y shape: {y.shape}")
 
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(df_X)
-
-    # Time-Series Train/Test split (first 70% train, last 30% test)
+    # Time-Series Train/Test split (first 70% train, last 30% test). The scaler is
+    # fit on the training rows only so no test statistics leak into training.
     split_idx = int(len(df_X) * 0.70)
-    X_train, X_test = X_scaled[:split_idx], X_scaled[split_idx:]
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(df_X.iloc[:split_idx])
+    X_test = scaler.transform(df_X.iloc[split_idx:])
     y_train, y_test = y[:split_idx], y[split_idx:]
 
     print(f"Train Set: {len(y_train)} samples (y=1: {y_train.sum()}) | Test Set: {len(y_test)} samples (y=1: {y_test.sum()})")

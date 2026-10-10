@@ -3,17 +3,19 @@
   "repo_path":              "workspace/black",
   "output_dir":             "benchmark_runs",
   "model_name":             "sentence-transformers/all-MiniLM-L6-v2",
-  "num_commits":            10,
+  "num_commits":            16,
   "commit_stride":          20,
   "sampling_mode":          "adjacent",
   "query_mode":             "curated",
   "curated_queries_path":   "src/benchmarking/data/curated_queries_black_sanitized_5x.json",
   "strategies":             "changed_only,fixed_hop,predictive_ml,full_reindex",
   "hop_k":                  2,
-  "ml_threshold":           0.5,
+  "ml_threshold":           null,
   "n_seeds":                1,
-  "model_path":             "results/results_all-MiniLM-L6-v2_contextual_commits10_stride20_cleanFalse_20261008_203709/drift_predictor.pkl",
+  "context_chunking":       true,
+  "model_path":             "results/results_all-MiniLM-L6-v2_contextual_commits18_stride30_cleanFalse_20261010_075247/drift_predictor.pkl",
   "predictions_path":       null,
   "benchmark_version":      "1.0",
-  "seed":                   13
+  "seed":                   13,
+  "ref":                    "3702ba224ecffbcec30af640c149f231d90aebdb"
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Main orchestration script for predictive semantic cache invalidation experiment."""
 
-import ast
+
 import os
 import sys
 import logging
@@ -28,6 +28,12 @@ from embedder.ground_truth import (
     load_hybrid_ground_truth_queries,
 )
 from extractor.feature_extractor import FeatureExtractor
+from extractor.semantic_modification import (  # noqa: F401
+    compute_semantic_modified_entities,
+    compute_source_changed_entities,
+    normalize_source,
+)
+from embedder.context_builder import build_contextual_source, extract_signature
 from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
 from evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
                        BaselineCFixedHop, BaselineDPageRankPropagation,
@@ -48,141 +54,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-_CANONICALIZE_EXEMPT_NAMES = {"self", "cls"}
-
-
-class _LocalNameCollector(ast.NodeVisitor):
-    """Collects local bindings (assignment targets and function parameters)
-    in first-appearance order, so they can be alpha-renamed to canonical
-    placeholders before comparing two versions of an entity's source.
-
-    Deliberately does NOT touch call targets, attribute access, imports, or
-    string/docstring literals — only names that are actually bound as local
-    variables or parameters within this entity's own source. This is a
-    single flattened scope per entity (entities extracted by this pipeline
-    are individual functions/methods/classes, not deeply nested closures),
-    which is a reasonable approximation but does not do full per-scope
-    resolution for nested function definitions.
-    """
-
-    def __init__(self):
-        """Initialize local variable name collector."""
-        self.order: list = []
-        self._seen: set = set()
-
-    def _register(self, name: str) -> None:
-        """Register a local variable or argument name if not exempt or previously seen.
-
-        Args:
-            name: Variable or parameter name string.
-        """
-        if name in _CANONICALIZE_EXEMPT_NAMES or name in self._seen:
-            return
-        self._seen.add(name)
-        self.order.append(name)
-
-    def visit_Name(self, node):
-        """Visit AST Name node and register stored variable names.
-
-        Args:
-            node: AST Name node.
-        """
-        if isinstance(node.ctx, ast.Store):
-            self._register(node.id)
-        self.generic_visit(node)
-
-    def visit_arg(self, node):
-        """Visit AST function argument node and register parameter names.
-
-        Args:
-            node: AST arg node.
-        """
-        self._register(node.arg)
-        self.generic_visit(node)
-
-
-class _LocalNameRenamer(ast.NodeTransformer):
-    """Renames local-binding Name/arg nodes per a precomputed mapping,
-    leaving call targets, attributes, imports, and literals untouched."""
-
-    def __init__(self, mapping: dict):
-        """Initialize AST local name renamer with placeholder mapping.
-
-        Args:
-            mapping: Dictionary mapping original names to canonical placeholders.
-        """
-        self.mapping = mapping
-
-    def visit_Name(self, node):
-        """Transform AST Name node using canonical placeholder mapping.
-
-        Args:
-            node: AST Name node.
-
-        Returns:
-            Transformed AST Name node.
-        """
-        if node.id in self.mapping:
-            node.id = self.mapping[node.id]
-        return node
-
-    def visit_arg(self, node):
-        """Transform AST argument node using canonical placeholder mapping.
-
-        Args:
-            node: AST arg node.
-
-        Returns:
-            Transformed AST arg node.
-        """
-        if node.arg in self.mapping:
-            node.arg = self.mapping[node.arg]
-        return node
-
-
-def _canonicalize_local_names(tree):
-    """Alpha-rename local variable/parameter names to _v0, _v1, ... in
-    order of first appearance, so a pure rename diff canonicalizes
-    identically on both sides.
-
-    Args:
-        tree: Parsed AST module node.
-
-    Returns:
-        Canonicalized AST module node.
-    """
-    collector = _LocalNameCollector()
-    collector.visit(tree)
-    mapping = {name: f"_v{i}" for i, name in enumerate(collector.order)}
-    return _LocalNameRenamer(mapping).visit(tree)
-
-
-def normalize_source(code: str) -> str:
-    """AST-canonicalize source code string to normalize cosmetic diffs and identifier renames.
-
-    Args:
-        code: Source code string to normalize.
-
-    Returns:
-        Canonicalized string representation for AST comparison.
-    """
-    import re
-    try:
-        tree = ast.parse(code)
-        tree = _canonicalize_local_names(tree)
-        return ast.dump(tree, annotate_fields=False)
-    except Exception:
-        # Language-agnostic fallback: strip comments and collapse whitespaces
-        # Strip block comments /* ... */
-        code_clean = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
-        # Strip C-style line comments // ...
-        code_clean = re.sub(r'//.*', '', code_clean)
-        # Strip Python/Shell-style line comments # ...
-        code_clean = re.sub(r'#.*', '', code_clean)
-        # Collapse whitespaces
-        return " ".join(code_clean.split())
-
-
 class Experiment:
     """Main experiment orchestrator."""
 
@@ -201,7 +72,11 @@ class Experiment:
                  label_source: str = "cosine_threshold",
                  ground_truth_top_k: int = 10,
                  ground_truth_queries_path: Optional[str] = None,
-                 compare_models: bool = False):
+                 compare_models: bool = False,
+                 max_queries_per_entity: int = 5,
+                 ref: str = "HEAD",
+                 ground_truth_rule: str = "significant",
+                 ground_truth_min_queries: int = 5):
         """
         Initialize experiment.
 
@@ -223,7 +98,7 @@ class Experiment:
                 "cosine_threshold" (default, preserves existing behavior:
                 raw cosine drift binarized by `threshold`/`threshold_mode`)
                 or "leave_one_out" (Y_i from the leave-one-out rank-
-                displacement + Wilcoxon significance ground truth in
+                displacement + exact sign-test significance ground truth in
                 src/embedder/ground_truth.py — see
                 docs/ground_truth_method_comparison.md). Both label
                 sources use the exact same features and training loop, so
@@ -260,6 +135,16 @@ class Experiment:
         self.ground_truth_top_k = ground_truth_top_k
         self.ground_truth_queries_path = ground_truth_queries_path
         self.compare_models = compare_models
+        self.max_queries_per_entity = max_queries_per_entity
+        # Label rule for leave_one_out/hybrid: "significant" (displacement + sign
+        # test, needs >= 5 queries) or "any_displacement" (any target query fell
+        # out of the top-K).
+        self.ground_truth_rule = ground_truth_rule
+        self.ground_truth_min_queries = ground_truth_min_queries
+        # Git ref the sampled commit window ends at (pinned so runs are reproducible
+        # and independent of wherever HEAD was left).
+        self.ref = ref
+        self._original_head: Optional[str] = None
         self.joern_session = None
 
         # Lazily populated on first use by _get_ground_truth_queries() — the
@@ -361,7 +246,8 @@ class Experiment:
         logger.info("=" * 80)
 
         raw_commit_count = self.num_commits * self.commit_stride
-        self.commits = self.git_helper.get_commit_history(count=raw_commit_count)
+        self.commits = self.git_helper.get_commit_history(count=raw_commit_count, ref=self.ref)
+        logger.info(f"Commit window ends at ref {self.ref!r}")
 
         if len(self.commits) < self.commit_stride + 1:
             logger.error(
@@ -387,108 +273,20 @@ class Experiment:
         return True
 
     def _extract_signature(self, entity: Entity) -> str:
-        """
-        Extract the signature lines from an entity's source code.
-        """
-        lines = entity.source_code.splitlines()
-        def_idx = -1
-        for idx, line in enumerate(lines):
-            stripped = line.strip()
-            if stripped.startswith("def ") or stripped.startswith("async def ") or stripped.startswith("class "):
-                def_idx = idx
-                break
-
-        if def_idx == -1:
-            # Fallback to name-only signature if def/class keyword is not found
-            name = entity.entity_id.split("::")[-1]
-            return f"def {name}()"
-
-        # Extract signature lines from def_idx until we find the ending colon ':'
-        sig_lines = []
-        found_colon = False
-        for idx in range(def_idx, len(lines)):
-            line = lines[idx]
-            sig_lines.append(line)
-            # Strip trailing comments and whitespace to check for end of signature
-            clean_line = line.split('#')[0].rstrip()
-            if clean_line.endswith(':'):
-                found_colon = True
-                break
-
-        if found_colon:
-            return "\n".join(sig_lines)
-        else:
-            return lines[def_idx]
+        """Extract the signature lines from an entity's source code."""
+        return extract_signature(entity)
 
     def _get_contextual_source(self, entity: Entity) -> str:
         """
         Get call-graph aware contextual source code for an entity.
-        Appends direct dependencies as valid Python stubs.
+        Delegates to the shared builder also used by the benchmark index
+        (src/embedder/context_builder.py) so both pipelines embed identical text.
         """
-        source = entity.source_code
         if not self.context_chunking:
-            return source
-
-        # Get direct dependencies (max_hops=1)
-        # Note: get_dependencies returns a set of entity IDs.
-        deps = self.repo_parser.get_dependencies(entity.entity_id, max_hops=1)
-        # Filter out self
-        deps = {d for d in deps if d != entity.entity_id}
-
-        if not deps:
-            return source
-
-        import hashlib
-        import textwrap
-
-        is_large_context = False
-        if hasattr(self, 'embedding_manager') and self.embedding_manager and self.embedding_manager.model:
-            is_large_context = getattr(self.embedding_manager.model, 'max_seq_length', 512) >= 8192
-
-        stubs = []
-        for dep_id in sorted(deps):
-            dep_entity = self.repo_parser.get_entity(dep_id)
-            if not dep_entity:
-                continue
-
-            # Extract signature
-            sig = self._extract_signature(dep_entity)
-            sig_dedented = textwrap.dedent(sig).strip()
-            if not sig_dedented.endswith(':'):
-                sig_dedented += ':'
-
-            if is_large_context:
-                # Large context window (8k+): include full docstrings & signatures without hashing
-                doc = (getattr(dep_entity, 'docstring', '') or '').replace('"""', r'\"\"\"')
-                if doc:
-                    doc_indented = textwrap.indent(doc, '    ')
-                    doc_block = f'    """\n{doc_indented}\n    """\n'
-                else:
-                    doc_block = ''
-                stub = f"{sig_dedented}\n{doc_block}    pass"
-            else:
-                # Small context window (<8k): use semantic stub containing first line of docstring/body
-                dep_doc = (getattr(dep_entity, 'docstring', '') or '').strip()
-                if dep_doc:
-                    first_line = dep_doc.split('\n')[0].strip()
-                else:
-                    # Get the first non-declaration line of source code
-                    lines = dep_entity.source_code.split('\n')
-                    body_lines = [l.strip() for l in lines if l.strip() and not l.strip().startswith('def ') and not l.strip().startswith('class ') and not l.strip().startswith('@')]
-                    first_line = body_lines[0] if body_lines else 'pass'
-                
-                # Truncate first line to avoid overly long line stubs
-                if len(first_line) > 120:
-                    first_line = first_line[:117] + '...'
-                stub = f"{sig_dedented}\n    # Context: {first_line}\n    pass"
-
-            stubs.append(stub)
-
-        if stubs:
-            context_block = "\n\n# Call Graph Context\n" + "\n\n".join(stubs)
-            return source + context_block
-
-        return source
+            return entity.source_code
+        return build_contextual_source(
+            entity, self.repo_parser, large_context=self.embedding_manager.is_large_context()
+        )
 
     def process_commit(self, commit_hash: str) -> None:
         """
@@ -530,6 +328,7 @@ class Experiment:
                 self._ground_truth_queries = load_hybrid_ground_truth_queries(
                     path=self.ground_truth_queries_path,
                     repo_parser=self.repo_parser,
+                    max_queries_per_entity=self.max_queries_per_entity,
                 )
             else:
                 self._ground_truth_queries = load_ground_truth_queries(self.ground_truth_queries_path)
@@ -576,7 +375,11 @@ class Experiment:
             query_embeddings=query_embeddings,
             top_k=self.ground_truth_top_k,
         )
-        gt_labels = binarize_ground_truth(loo_results)
+        gt_labels = binarize_ground_truth(
+            loo_results,
+            min_nonzero_queries=self.ground_truth_min_queries,
+            rule=self.ground_truth_rule,
+        )
         return {entity_id: float(label.label) for entity_id, label in gt_labels.items() if label.is_covered}
 
     def compute_drifts_and_features(self, commit_a: str, commit_b: str) -> Tuple[Dict[str, float], pd.DataFrame]:
@@ -603,46 +406,28 @@ class Experiment:
         # Compute drifts
         drifts = self.embedding_manager.compute_all_drifts(embeddings_a, embeddings_b)
 
-        # Compute Graph Transition Descriptor (GTD) with actual drifts
-        parser_a = self.parsers_history.get(commit_a)
-        parser_b = self.repo_parser
-        gtd = GraphTransitionDescriptor()
-        gtd.compute(parser_a=parser_a, parser_b=parser_b, drifts=drifts)
-        self.gtd_history[(commit_a, commit_b)] = gtd
-
         # Get modified entities
         modified_files = self.git_helper.get_modified_files(commit_a, commit_b)
         logger.debug(f"Modified files: {modified_files[:5] if len(modified_files) > 5 else modified_files}")
 
-        # Map files to entities
-        modified_entities = set()
-        for entity_id in drifts.keys():
-            entity = self.repo_parser.get_entity(entity_id)
-            if entity and entity.file_path in modified_files:
-                modified_entities.add(entity_id)
+        # Semantically modified entities (AST-normalized, cosmetic changes filtered).
+        # Shared with the benchmark's ModelRunner so is_modified means the same
+        # thing at train and inference time.
+        file_level_count = sum(
+            1 for e in self.repo_parser.get_all_entities() if e.file_path in set(modified_files)
+        )
+        modified_entities = compute_semantic_modified_entities(
+            self.parsers_history.get(commit_a), self.repo_parser, modified_files
+        )
+        logger.info(f"Filtered cosmetic changes: {file_level_count} -> {len(modified_entities)}")
 
-        # Also add entities from modified files
-        for entity in self.repo_parser.get_all_entities():
-            if entity.file_path in modified_files:
-                modified_entities.add(entity.entity_id)
-        # Apply AST cosmetic filter to modified_entities
-        semantic_modified_entities = set()
-        parser_prev = self.parsers_history.get(commit_a)
-        for entity_id in modified_entities:
-            entity_prev = parser_prev.entities.get(entity_id) if parser_prev else None
-            entity_curr = self.repo_parser.entities.get(entity_id)
-            if not entity_prev or not entity_curr:
-                semantic_modified_entities.add(entity_id)
-                continue
-            code_prev = entity_prev.source_code
-            code_curr = entity_curr.source_code
-            if normalize_source(code_prev) != normalize_source(code_curr):
-                semantic_modified_entities.add(entity_id)
-        
-        logger.info(f"Filtered cosmetic changes: {len(modified_entities)} -> {len(semantic_modified_entities)}")
-        modified_entities = semantic_modified_entities
-
-        logger.debug(f"Modified entities count: {len(modified_entities)}")
+        # Graph Transition Descriptor. "Modified" = code changed (known before
+        # re-embedding), NOT embedding drift — drift-derived features would not be
+        # available when the trained model is used to decide what to re-embed.
+        gtd = GraphTransitionDescriptor()
+        gtd.compute(parser_a=self.parsers_history.get(commit_a), parser_b=self.repo_parser,
+                    modified_entities=modified_entities)
+        self.gtd_history[(commit_a, commit_b)] = gtd
 
         # Extract features (only for entities in current graph)
         entity_ids = [eid for eid in drifts.keys() if eid in self.repo_parser.get_graph()]
@@ -650,9 +435,12 @@ class Experiment:
             logger.warning("No entities found in current graph")
             return {}, pd.DataFrame()
 
-        # Update feature extractor with current graph
-        self.feature_extractor = FeatureExtractor(self.repo_parser)
-        
+        # Update feature extractor with current graph. git_helper/commits are
+        # passed so the diff-stat features are populated, exactly as at inference.
+        self.feature_extractor = FeatureExtractor(
+            self.repo_parser, git_helper=self.git_helper, commit_a=commit_a, commit_b=commit_b
+        )
+
         features_df = self.feature_extractor.extract_features_batch(
             entity_ids, commit_a, commit_b, modified_entities,
             self.modification_history, self.previous_drifts, self.git_helper,
@@ -827,10 +615,6 @@ class Experiment:
         # are entity_id -> float, so everything below is label-source-agnostic.
         label_history = self.ground_truth_history if self.label_source in ("leave_one_out", "hybrid") else self.drifts_history
 
-        # Combine features and labels from training commits
-        all_features = []
-        all_labels = {}
-
         if len(self.train_commits) < 2:
             logger.error(
                 "Not enough sampled commits to train: "
@@ -839,21 +623,10 @@ class Experiment:
             )
             return False
 
-        for i in range(1, len(self.train_commits)):
-            commit_a = self.train_commits[i-1]
-            commit_b = self.train_commits[i]
-
-            key = (commit_a, commit_b)
-            if key in self.features_history and key in label_history and label_history[key]:
-                features_df = self.features_history[key].copy()
-                entity_labels = label_history[key]
-
-                pair_prefix = f"{commit_a[:8]}_{commit_b[:8]}"
-                features_df.index = [f"{pair_prefix}::{eid}" for eid in features_df.index]
-                labels_mapped = {f"{pair_prefix}::{eid}": v for eid, v in entity_labels.items()}
-
-                all_features.append(features_df)
-                all_labels.update(labels_mapped)
+        # Train on every commit pair inside the training commits; evaluate on the
+        # pairs that end in a test commit. One chronological split, no re-split.
+        all_features, all_labels = self._collect_pairs(self._train_pairs(), label_history)
+        test_features, test_labels = self._collect_pairs(self._test_pairs(), label_history)
 
         if not all_features:
             logger.error(
@@ -904,23 +677,34 @@ class Experiment:
                     f"keeping configured threshold {self.threshold:.4f} instead of a degenerate dynamic one"
                 )
 
-        # Prepare data
+        # Prepare data (prepare_data also records the feature column order)
         try:
-            X, y = self.predictor.prepare_data(combined_features, all_labels)
+            X_train, y_train = self.predictor.prepare_data(combined_features, all_labels)
         except ValueError as e:
             logger.error(f"Failed to prepare data: {e}")
             return False
 
-        # Split data
-        X_train, X_test, y_train, y_test = train_test_split_temporal(
-            combined_features, all_labels, train_ratio=self.train_ratio
-        )
-
-        # Train model
+        # Train model on all training pairs
         train_metrics = self.predictor.train(X_train, y_train)
 
-        # Evaluate on test set
-        test_metrics = self.predictor.evaluate(X_test, y_test)
+        # Pick the stale/fresh probability cut-off from out-of-fold predictions,
+        # grouped by commit pair (row ids are "<pair>::<entity_id>").
+        pair_groups = [row_id.split("::")[0] for row_id in self.predictor.last_common_ids]
+        self.predictor.fit_decision_threshold(X_train, y_train, pair_groups)
+
+        # Evaluate on the held-out test pairs
+        test_metrics = {}
+        X_test = y_test = None
+        if test_features:
+            test_df = pd.concat(test_features, ignore_index=False)
+            test_df = test_df[~test_df.index.duplicated(keep='first')]
+            try:
+                X_test, y_test = self.predictor.prepare_data(test_df, test_labels)
+                test_metrics = self.predictor.evaluate(X_test, y_test)
+            except ValueError as e:
+                logger.warning(f"Could not evaluate on test pairs: {e}")
+        else:
+            logger.warning("No labelled test commit pairs — skipping held-out evaluation.")
 
         # Save model artifact bundle
         model_path = self.results_dir / "drift_predictor.pkl"
@@ -930,7 +714,7 @@ class Experiment:
         logger.info(f"Test metrics: {test_metrics}")
 
         # If --compare-models is enabled, train & evaluate all candidate model architectures
-        if getattr(self, "compare_models", False):
+        if getattr(self, "compare_models", False) and X_test is not None:
             logger.info("=" * 80)
             logger.info("RUNNING MULTI-MODEL COMPARISON")
             logger.info("=" * 80)
@@ -952,6 +736,33 @@ class Experiment:
 
         return True
 
+    def _train_pairs(self) -> List[Tuple[str, str]]:
+        """Consecutive sampled-commit pairs entirely inside the training commits."""
+        return [(self.train_commits[i - 1], self.train_commits[i]) for i in range(1, len(self.train_commits))]
+
+    def _test_pairs(self) -> List[Tuple[str, str]]:
+        """Consecutive sampled-commit pairs ending in a test commit (incl. the train->test boundary pair)."""
+        test_set = set(self.test_commits)
+        return [
+            (self.sampled_commits[i - 1], self.sampled_commits[i])
+            for i in range(1, len(self.sampled_commits))
+            if self.sampled_commits[i] in test_set
+        ]
+
+    def _collect_pairs(self, pairs, label_history) -> Tuple[List[pd.DataFrame], Dict[str, float]]:
+        """Features (index prefixed by pair) and labels for the given commit pairs."""
+        frames: List[pd.DataFrame] = []
+        labels: Dict[str, float] = {}
+        for commit_a, commit_b in pairs:
+            key = (commit_a, commit_b)
+            if key in self.features_history and key in label_history and label_history[key]:
+                features_df = self.features_history[key].copy()
+                pair_prefix = f"{commit_a[:8]}_{commit_b[:8]}"
+                features_df.index = [f"{pair_prefix}::{eid}" for eid in features_df.index]
+                frames.append(features_df)
+                labels.update({f"{pair_prefix}::{eid}": v for eid, v in label_history[key].items()})
+        return frames, labels
+
     def evaluate_strategies(self) -> Dict:
         """
         Evaluate all cache invalidation strategies on test commits.
@@ -970,29 +781,22 @@ class Experiment:
         self.predictions_export = {}
 
         # Same label-source switch as train_model() — both dicts are
-        # entity_id -> float, so everything below is label-source-agnostic
-        # for the parts that only need `drifts` as a plain mapping. Note:
-        # the legacy internal strategy comparison further below
-        # (self.evaluator.evaluate_all_strategies and the diagnostic
-        # strategy_re_embeddings block) still decides using `self.threshold`
-        # unconditionally, which is only correct for cosine_threshold — for
-        # leave_one_out the model's actual decision boundary is
-        # self.predictor.threshold (0.5). That legacy path is NOT what
-        # Phase 6 validates through (see docs/ground_truth_method_comparison.md
-        # and Plans/ground_truth_fix_implementation_plan.md — validation goes
-        # through the independent src/benchmarking/ harness instead, via
-        # predictions.json exported below), so it's left as a known,
-        # explicitly-flagged limitation rather than reworked here.
+        # entity_id -> float. Strategy decisions use the model's own decision
+        # threshold: 0.5 on predicted probabilities for classification, the drift
+        # threshold for regression.
         label_history = self.ground_truth_history if self.label_source in ("leave_one_out", "hybrid") else self.drifts_history
 
-        # Process each test commit pair from the sampled commit sequence.
-        for i, commit_b in enumerate(self.test_commits):
-            if i == 0:
-                continue  # Skip first test commit (no previous commit to compare)
+        decision_threshold = (
+            self.predictor.decision_threshold if self.predictor.task_type == "classification" else self.threshold
+        )
+        test_pairs = self._test_pairs()
 
-            commit_a = self.test_commits[i - 1]
+        # Process each test commit pair (including the train->test boundary pair).
+        for i, (commit_a, commit_b) in enumerate(test_pairs, start=1):
+            parser_b = self.parsers_history.get(commit_b, self.repo_parser)
+            parser_a = self.parsers_history.get(commit_a)
 
-            logger.info(f"\nEvaluating commit pair {i}/{len(self.test_commits)-1}: "
+            logger.info(f"\nEvaluating commit pair {i}/{len(test_pairs)}: "
                        f"{commit_a[:8]} -> {commit_b[:8]}")
 
             # Get labels and features (label_history: see label-source note above)
@@ -1040,16 +844,12 @@ class Experiment:
             # Get ground truth embeddings (at commit_b)
             ground_truth_embeddings = self.embeddings_history.get(commit_b, {})
 
-            # Get modified entities
+            # Entities whose own source changed (same definition as the benchmark's changed_only)
             modified_files = self.git_helper.get_modified_files(commit_a, commit_b)
-            modified_entities = set()
-            for entity_id in drifts.keys():
-                entity = self.repo_parser.get_entity(entity_id)
-                if entity and entity.file_path in modified_files:
-                    modified_entities.add(entity_id)
+            modified_entities = compute_source_changed_entities(parser_a, parser_b, modified_files)
 
-            # Generate queries from entity docstrings/first lines
-            queries = self._generate_queries(drifts=drifts)
+            # Evaluation queries, chosen independently of the labels
+            queries = self._generate_queries(parser_b, seed_key=commit_b)
 
             # Reset embedding manager's cache to commit_a's embeddings for accurate simulation
             self.embedding_manager.embeddings = self.embeddings_history[commit_a].copy()
@@ -1064,7 +864,7 @@ class Experiment:
                 predicted_drifts={eid: d for eid, d in zip(aligned_ids, y_pred)},
                 modified_entities=modified_entities,
                 queries=queries,
-                threshold=self.threshold,
+                threshold=decision_threshold,
                 k_values=[5, 10],
                 fixed_hop_values=[1, 2]
             )
@@ -1082,31 +882,31 @@ class Experiment:
                                        PredictiveStrategy, WeightedBFSDecayStrategy)
                 strategy_re_embeddings = {
                     "changed_only": list(BaselineAChangedOnly().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold
                     )),
                     "full_reindex": list(BaselineBFullReindex().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold
                     )),
                     "fixed_hop_k1": list(BaselineCFixedHop(k=1).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
                     )),
                     "fixed_hop_k2": list(BaselineCFixedHop(k=2).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
                     )),
                     "predictive_ml": list(PredictiveStrategy().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold
                     )),
                     "pagerank_propagation": list(BaselineDPageRankPropagation(top_fraction=0.3).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
                     )),
                     "weighted_bfs_decay": list(WeightedBFSDecayStrategy(threshold=0.05).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, self.threshold, repo_parser=self.repo_parser
+                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
                     ))
                 }
 
                 parser_prev = self.parsers_history.get(commit_a)
                 prev_entities = set(parser_prev.get_graph().nodes()) if (parser_prev and parser_prev.get_graph() is not None) else set()
-                curr_entities = set(self.repo_parser.get_graph().nodes()) if self.repo_parser.get_graph() is not None else set()
+                curr_entities = set(parser_b.get_graph().nodes())
                 added_entities = list(curr_entities - prev_entities)
                 removed_entities = list(prev_entities - curr_entities)
 
@@ -1153,7 +953,7 @@ class Experiment:
 
             # Track drift by distance
             for entity_id, drift in drifts.items():
-                distance = self._get_distance_to_modified(entity_id, modified_entities)
+                distance = self._get_distance_to_modified(entity_id, modified_entities, parser_b)
                 if distance is not None:
                     if distance not in drift_by_distance:
                         drift_by_distance[distance] = []
@@ -1215,58 +1015,54 @@ class Experiment:
                 return first_line
         return None
 
-    def _generate_queries(self, drifts: Dict[str, float] = None, num_queries: int = 20) -> Dict[str, np.ndarray]:
+    def _generate_queries(self, repo_parser, seed_key: str = "", num_queries: int = 20) -> Dict[str, np.ndarray]:
         """
-        Generate search queries from entity docstrings and descriptions.
-        Selects a balanced mix of high-drift and low-drift entities to evaluate boundary cases.
+        Build the evaluation query set for one test commit pair.
 
-        Args:
-            drifts: Dictionary of ground-truth cosine drifts
-            num_queries: Number of queries to generate
+        Queries are chosen independently of the labels (selecting by true drift
+        would bias the evaluation toward the entities the labels already flag):
+          1. Preferred: the independent ground-truth query set (curated/paraphrased),
+             restricted to targets that exist at this commit, sampled with a fixed seed.
+          2. Fallback: docstring-summary queries for a seeded random sample of
+             entities. Entities without a docstring are skipped — no query is ever
+             built from the entity's name or file name.
 
         Returns:
             Dictionary mapping query_id to query embedding
         """
-        queries = {}
-        entities = self.repo_parser.get_all_entities()
+        import zlib
+        rng = np.random.default_rng(zlib.crc32(seed_key.encode("utf-8")))
+        texts: Dict[str, str] = {}
 
-        if drifts and len(drifts) >= num_queries:
-            # Sort entities by their actual ground-truth drift
-            sorted_by_drift = sorted(drifts.items(), key=lambda x: x[1], reverse=True)
-            
-            # Select 75% most drifted and 25% least drifted nodes (e.g. 15 and 5)
-            n_drifted = int(num_queries * 0.75)
-            n_fresh = num_queries - n_drifted
-            
-            drifted_ids = [eid for eid, _ in sorted_by_drift[:n_drifted]]
-            fresh_ids = [eid for eid, _ in sorted_by_drift[-n_fresh:]]
-            
-            selected_ids = drifted_ids + fresh_ids
-            selected_entities = [self.repo_parser.get_entity(eid) for eid in selected_ids]
-            selected_entities = [e for e in selected_entities if e is not None]
+        try:
+            curated, _ = self._get_ground_truth_queries()
+        except Exception as exc:
+            logger.warning(f"Could not load ground-truth queries for evaluation: {exc}")
+            curated = []
+        present = [q for q in curated if repo_parser.get_entity(q.target_entity_id) is not None]
+        if present:
+            picks = rng.choice(len(present), size=min(num_queries, len(present)), replace=False)
+            for idx in sorted(picks):
+                texts[f"query_{len(texts)}"] = present[idx].query_text
         else:
-            selected_entities = entities[:num_queries]
+            entities = sorted(repo_parser.get_all_entities(), key=lambda e: e.entity_id)
+            for idx in rng.permutation(len(entities)):
+                doc_summary = self._extract_docstring_summary(entities[idx].source_code)
+                if doc_summary:
+                    texts[f"query_{len(texts)}"] = (
+                        f"Which function implements the following functionality: {doc_summary}?"
+                    )
+                if len(texts) >= num_queries:
+                    break
 
-        # Generate template queries from selected entities
-        for i, entity in enumerate(selected_entities):
-            doc_summary = self._extract_docstring_summary(entity.source_code)
-            file_name = entity.file_path.split('/')[-1]
-            func_name = entity.entity_id.split('::')[-1]
-            if doc_summary:
-                query_text = f"Which function implements the following functionality: {doc_summary}?"
-            else:
-                query_text = f"How is the function {func_name} in {file_name} implemented and what is its purpose?"
-
-            # Generate embedding
-            query_embedding = self.embedding_manager.generate_embedding(
-                f"query_{i}", query_text
-            )
-            queries[f"query_{i}"] = query_embedding
-
-        return queries
+        return {
+            qid: self.embedding_manager.generate_embedding(qid, text)
+            for qid, text in texts.items()
+        }
 
     def _get_distance_to_modified(self, entity_id: str,
-                                   modified_entities: Set[str]) -> Optional[int]:
+                                   modified_entities: Set[str],
+                                   repo_parser=None) -> Optional[int]:
         """
         Get distance from entity to nearest modified entity.
 
@@ -1280,7 +1076,7 @@ class Experiment:
         if entity_id in modified_entities:
             return 0
 
-        return self.repo_parser.get_nearest_modified_distance(entity_id, modified_entities)
+        return (repo_parser or self.repo_parser).get_nearest_modified_distance(entity_id, modified_entities)
 
     def generate_visualizations(self, results: Dict) -> None:
         """
@@ -1361,6 +1157,7 @@ class Experiment:
             # Setup
             if not self.setup():
                 return False
+            self._original_head = self.git_helper.get_checkout_ref()
 
             # Harvest commits
             if not self.harvest_commits():
@@ -1395,6 +1192,13 @@ class Experiment:
         except Exception as e:
             logger.error(f"Experiment failed with error: {e}", exc_info=True)
             return False
+
+        finally:
+            # build_dataset checks out each sampled commit; put the repository back
+            # where it was so later runs (and the benchmark) are unaffected.
+            if self._original_head and self.git_helper:
+                if self.git_helper.checkout_commit(self._original_head):
+                    logger.info(f"Restored repository checkout to {self._original_head}")
 
     def _save_commit_diagnostic(self, commit_a: str, commit_b: str, type_label: str,
                                  drifts: Dict[str, float], features_df: pd.DataFrame,
@@ -1474,6 +1278,16 @@ class Experiment:
             json.dump(serializable_results, f, indent=2)
 
         logger.info(f"Results saved to {output_path}")
+
+
+def _explicit_cli_dests(parser: argparse.ArgumentParser, argv: Optional[List[str]] = None) -> Set[str]:
+    """Destinations the user actually passed on the command line (even if equal to the default)."""
+    import copy
+    probe = copy.deepcopy(parser)
+    for action in probe._actions:
+        action.default = argparse.SUPPRESS
+    explicit, _ = probe.parse_known_args(argv)
+    return set(vars(explicit))
 
 
 def main():
@@ -1589,6 +1403,29 @@ def main():
         help="Device for the embedding model: auto (CUDA if available, else CPU), cpu, or cuda"
     )
     parser.add_argument(
+        "--max-queries-per-entity",
+        type=int,
+        default=5,
+        help="Max synthetic queries per uncovered entity for label_source=hybrid",
+    )
+    parser.add_argument(
+        "--ground-truth-rule",
+        choices=["significant", "any_displacement"],
+        default="significant",
+        help="Label rule for leave_one_out/hybrid: displacement + sign test, or any target query displaced",
+    )
+    parser.add_argument(
+        "--ground-truth-min-queries",
+        type=int,
+        default=5,
+        help="Min target queries for an entity to be labelled (5 needed for the sign test)",
+    )
+    parser.add_argument(
+        "--ref",
+        default="HEAD",
+        help="Git ref (branch, tag, commit or expression like main~200) the sampled window ends at",
+    )
+    parser.add_argument(
         "--compare-models",
         action="store_true",
         help="Train and compare multiple ML model architectures (Random Forest, Gradient Boosting, HistGB, Extra Trees, Logistic Regression, MLP)"
@@ -1654,8 +1491,12 @@ def main():
                 raw_content = f.read()
                 clean_content = strip_json_comments(raw_content)
                 json_config = json.loads(clean_content)
+                explicit = _explicit_cli_dests(parser)
                 for key, value in json_config.items():
-                    if hasattr(args, key) and getattr(args, key) == parser.get_default(key):
+                    if not hasattr(args, key):
+                        logger.warning(f"Ignoring unknown key {key!r} in {config_path}")
+                        continue
+                    if key not in explicit:  # CLI flags always win over the JSON file
                         setattr(args, key, value)
 
     # Determine final parser mode
@@ -1680,7 +1521,11 @@ def main():
         label_source=args.label_source,
         ground_truth_top_k=args.ground_truth_top_k,
         ground_truth_queries_path=args.ground_truth_queries_path,
-        compare_models=getattr(args, "compare_models", False)
+        compare_models=getattr(args, "compare_models", False),
+        max_queries_per_entity=args.max_queries_per_entity,
+        ref=args.ref,
+        ground_truth_rule=args.ground_truth_rule,
+        ground_truth_min_queries=args.ground_truth_min_queries,
     )
 
     # Run experiment

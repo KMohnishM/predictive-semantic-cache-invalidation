@@ -30,7 +30,7 @@ needed to see how the pipeline behaves here).
 
 Includes the same `label_source` switch as `run_experiment.py`: `"cosine_threshold"`
 (the original raw-cosine-drift label) or `"leave_one_out"` (the rank-displacement +
-Wilcoxon ground truth from `src/embedder/ground_truth.py` — see
+exact sign-test ground truth from `src/embedder/ground_truth.py` — see
 `docs/ground_truth_method_comparison.md`), plus the AST-canonicalization fix so a
 pure rename doesn't count as a semantic change.
 
@@ -95,6 +95,8 @@ CONFIG = {
     "label_source":              "hybrid",  # Hybrid Leave-One-Out (Curated + Synthetic)
     "max_queries_per_entity":    10,        # 10 queries per entity scaling
     "ground_truth_top_k":        10,        # Top-K window for Leave-One-Out scoring
+    "ground_truth_rule":         "any_displacement",  # or "significant" (displacement + sign test)
+    "ground_truth_min_queries":  1,         # 5 needed for the "significant" rule
     "ground_truth_queries_path": "src/benchmarking/data/curated_queries_self.json",
 }
 assert CONFIG["label_source"] in ("cosine_threshold", "leave_one_out", "hybrid"), \
@@ -176,6 +178,8 @@ from parser.tree_sitter_repo_parser import TreeSitterRepoParser, Entity
 from embedder.embedding_manager import EmbeddingManager
 from extractor.feature_extractor import FeatureExtractor
 from extractor.gtd import GraphTransitionDescriptor
+from extractor.semantic_modification import compute_semantic_modified_entities
+from embedder.context_builder import build_contextual_source
 from extractor.rsd import RepositoryStateDescriptor
 import predictor.predictor as predictor_module
 importlib.reload(predictor_module)
@@ -334,51 +338,18 @@ and batch-generate embeddings for every entity (optionally splicing in
 call-graph context per `context_chunking`).""")
 
 code(r"""
-def extract_signature(entity: Entity) -> str:
-    # Grab just the def/class header line(s) from an entity's source.
-    lines = entity.source_code.splitlines()
-    def_idx = next((i for i, l in enumerate(lines)
-                     if l.strip().startswith(("def ", "async def ", "class "))), -1)
-    if def_idx == -1:
-        return f"def {entity.entity_id.split('::')[-1]}()"
-    sig_lines = []
-    for i in range(def_idx, len(lines)):
-        sig_lines.append(lines[i])
-        if lines[i].split('#')[0].rstrip().endswith(':'):
-            return "\n".join(sig_lines)
-    return lines[def_idx]
-
-
 def contextual_source(entity: Entity, repo_parser: TreeSitterRepoParser) -> str:
     # Entity source + one-hop dependency stubs, when context_chunking is on.
-    source = entity.source_code
+    # Shared with run_experiment.py and the benchmark index (src/embedder/context_builder.py).
     if not CONFIG["context_chunking"]:
-        return source
-
-    deps = {d for d in repo_parser.get_dependencies(entity.entity_id, max_hops=1)
-            if d != entity.entity_id}
-    if not deps:
-        return source
-
-    stubs = []
-    for dep_id in sorted(deps):
-        dep = repo_parser.get_entity(dep_id)
-        if not dep:
-            continue
-        sig = extract_signature(dep).strip()
-        if not sig.endswith(':'):
-            sig += ':'
-        body_lines = [l.strip() for l in dep.source_code.split('\n')
-                      if l.strip() and not l.strip().startswith(('def ', 'class ', '@'))]
-        first_line = (body_lines[0] if body_lines else 'pass')[:120]
-        stubs.append(f"{sig}\n    # Context: {first_line}\n    pass")
-
-    return source + "\n\n# Call Graph Context\n" + "\n\n".join(stubs) if stubs else source
+        return entity.source_code
+    return build_contextual_source(entity, repo_parser, large_context=embedding_manager.is_large_context())
 
 
 parsers_history: Dict[str, TreeSitterRepoParser] = {}
 embeddings_history: Dict[str, Dict[str, np.ndarray]] = {}
 commit_stats = []
+original_ref = git_helper.get_checkout_ref()  # restored after the loop
 
 for i, commit in enumerate(sampled_commits):
     print(f"[{i+1}/{len(sampled_commits)}] {commit[:10]}", end="  ")
@@ -409,6 +380,10 @@ for i, commit in enumerate(sampled_commits):
     print(f"entities={len(entities)}  embeddings={len(embeddings)}")
     commit_stats.append({"commit": commit[:10], "n_entities": len(entities), "n_embeddings": len(embeddings)})
 
+# Put the repository back where it was (later runs / the benchmark read from it).
+git_helper.checkout_commit(original_ref)
+print(f"Restored checkout to {original_ref}")
+
 pd.DataFrame(commit_stats)
 """)
 
@@ -423,73 +398,10 @@ comments, and now identifier renames are excluded; call targets, attributes,
 and docstrings still count, since a docstring is exactly what a retrieval
 embedding represents), and the full feature matrix fed to the predictor. When
 `label_source="leave_one_out"`, this stage also computes the leave-one-out
-rank-displacement + Wilcoxon ground-truth label per entity.""")
+rank-displacement + exact sign-test ground-truth label per entity.""")
 
 code(r"""
-import ast, re as _re
-
-_CANONICALIZE_EXEMPT_NAMES = {"self", "cls"}
-
-
-class _LocalNameCollector(ast.NodeVisitor):
-    # Collects local bindings (assignment targets, function parameters) in
-    # first-appearance order, so they can be alpha-renamed to canonical
-    # placeholders before comparing two versions of an entity's source.
-    # Deliberately does NOT touch call targets, attributes, imports, or
-    # string/docstring literals.
-    def __init__(self):
-        self.order: List[str] = []
-        self._seen: Set[str] = set()
-
-    def _register(self, name: str) -> None:
-        if name in _CANONICALIZE_EXEMPT_NAMES or name in self._seen:
-            return
-        self._seen.add(name)
-        self.order.append(name)
-
-    def visit_Name(self, node):
-        if isinstance(node.ctx, ast.Store):
-            self._register(node.id)
-        self.generic_visit(node)
-
-    def visit_arg(self, node):
-        self._register(node.arg)
-        self.generic_visit(node)
-
-
-class _LocalNameRenamer(ast.NodeTransformer):
-    def __init__(self, mapping: Dict[str, str]):
-        self.mapping = mapping
-
-    def visit_Name(self, node):
-        if node.id in self.mapping:
-            node.id = self.mapping[node.id]
-        return node
-
-    def visit_arg(self, node):
-        if node.arg in self.mapping:
-            node.arg = self.mapping[node.arg]
-        return node
-
-
-def _canonicalize_local_names(tree):
-    collector = _LocalNameCollector()
-    collector.visit(tree)
-    mapping = {name: f"_v{i}" for i, name in enumerate(collector.order)}
-    return _LocalNameRenamer(mapping).visit(tree)
-
-
-def normalize_source(code_str: str) -> str:
-    # AST-canonicalize source (alpha-rename locals) so cosmetic-only diffs
-    # AND pure renames don't count as changes.
-    try:
-        tree = ast.parse(code_str)
-        tree = _canonicalize_local_names(tree)
-        return ast.dump(tree, annotate_fields=False)
-    except Exception:
-        cleaned = _re.sub(r'#.*', '', code_str)
-        return " ".join(cleaned.split())
-
+import re as _re
 
 modification_history: Dict[str, List[str]] = {}
 previous_drifts: Dict[str, float] = {}
@@ -520,44 +432,39 @@ for i in range(1, len(sampled_commits)):
                     queries=ground_truth_queries, query_embeddings=ground_truth_query_embeddings,
                     top_k=CONFIG["ground_truth_top_k"],
                 )
-                gt_labels = binarize_ground_truth(loo_results)
+                gt_labels = binarize_ground_truth(
+                    loo_results,
+                    min_nonzero_queries=CONFIG["ground_truth_min_queries"],
+                    rule=CONFIG["ground_truth_rule"],
+                )
+                # Uncovered entities (< min queries) are excluded, as in run_experiment.py
                 ground_truth_history[(commit_a, commit_b)] = {
-                    eid: float(label.label) for eid, label in gt_labels.items()
+                    eid: float(label.label) for eid, label in gt_labels.items() if label.is_covered
                 }
             else:
                 ground_truth_history[(commit_a, commit_b)] = {}
 
-    with timed("3_drift_features", "gtd"):
-        gtd = GraphTransitionDescriptor()
-        gtd.compute(parser_a=parsers_history.get(commit_a), parser_b=repo_parser_b, drifts=drifts)
-        gtd_history[(commit_a, commit_b)] = gtd
-
     with timed("3_drift_features", "modified_entities"):
         modified_files = git_helper.get_modified_files(commit_a, commit_b)
-        candidate_modified = {
-            eid for eid in drifts
-            if (e := repo_parser_b.get_entity(eid)) and e.file_path in modified_files
-        }
-        for e in repo_parser_b.get_all_entities():
-            if e.file_path in modified_files:
-                candidate_modified.add(e.entity_id)
+        # Shared AST-normalized definition (same as run_experiment.py and the benchmark)
+        modified_entities = compute_semantic_modified_entities(
+            parsers_history.get(commit_a), repo_parser_b, modified_files
+        )
 
-        parser_prev = parsers_history.get(commit_a)
-        modified_entities = set()
-        for eid in candidate_modified:
-            prev_e = parser_prev.entities.get(eid) if parser_prev else None
-            curr_e = repo_parser_b.entities.get(eid)
-            if not prev_e or not curr_e:
-                modified_entities.add(eid)
-            elif normalize_source(prev_e.source_code) != normalize_source(curr_e.source_code):
-                modified_entities.add(eid)
+    with timed("3_drift_features", "gtd"):
+        # "Modified" = code changed, not embedding drift (drift is unknown before re-embedding)
+        gtd = GraphTransitionDescriptor()
+        gtd.compute(parser_a=parsers_history.get(commit_a), parser_b=repo_parser_b,
+                    modified_entities=modified_entities)
+        gtd_history[(commit_a, commit_b)] = gtd
 
     entity_ids = [eid for eid in drifts if eid in repo_parser_b.get_graph()]
     if not entity_ids:
         continue
 
     with timed("3_drift_features", "extract_features"):
-        feature_extractor = FeatureExtractor(repo_parser_b)
+        feature_extractor = FeatureExtractor(repo_parser_b, git_helper=git_helper,
+                                             commit_a=commit_a, commit_b=commit_b)
         features_df = feature_extractor.extract_features_batch(
             entity_ids, commit_a, commit_b, modified_entities,
             modification_history, previous_drifts, git_helper, gtd=gtd,

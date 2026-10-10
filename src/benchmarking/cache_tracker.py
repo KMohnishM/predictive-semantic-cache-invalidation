@@ -1,4 +1,4 @@
-﻿"""Stateful cache tracker and drift evaluation interfaces for Pipeline B."""
+"""Stateful cache tracker and drift evaluation interfaces for Pipeline B."""
 
 from __future__ import annotations
 
@@ -87,6 +87,20 @@ class StatefulCacheTracker:
     def get_all_anchors(self) -> Dict[str, str]:
         """Return a copy of all active entity anchors."""
         return dict(self._anchors)
+
+    def register_new_entities(self, entity_ids: Iterable[str], commit: str) -> List[str]:
+        """
+        Start tracking entities seen for the first time, anchored at ``commit``
+        (the commit whose version of them was just embedded). Already-tracked
+        entities are left untouched. Returns the newly registered IDs.
+        """
+        new_ids = [eid for eid in entity_ids if eid not in self._anchors]
+        for eid in new_ids:
+            self._anchors[eid] = commit
+            self._update_counts[eid] = 1
+        if new_ids:
+            self._history.append({"event": "register", "commit": commit, "registered_count": len(new_ids)})
+        return new_ids
 
     def mark_updated(self, entity_ids: Iterable[str], current_commit: str) -> None:
         """

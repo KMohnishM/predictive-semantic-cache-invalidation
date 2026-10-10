@@ -1,9 +1,9 @@
 {
-  "repo_url": "test_repo_project1",
+  "repo_url": "https://github.com/psf/black.git",
   "model_name": "sentence-transformers/all-MiniLM-L6-v2",
-  "parser_mode": "tree_sitter",
-  "num_commits": 10,
-  "commit_stride": 20,
+  "parser_mode": "ast",
+  "num_commits": 18,
+  "commit_stride": 30,
   "train_ratio": 0.7,
   "threshold": 0.05,
   "threshold_mode": "fixed",
@@ -12,5 +12,8 @@
   "device": "auto",
   "label_source": "hybrid",
   "max_queries_per_entity": 10,
-  "ground_truth_queries_path": "src/benchmarking/data/curated_queries_perfect_sc.json"
+  "ground_truth_queries_path": "src/benchmarking/data/curated_queries_black_sanitized_5x.json",
+  "ref": "3702ba224ecffbcec30af640c149f231d90aebdb~300",
+  "ground_truth_rule": "any_displacement",
+  "ground_truth_min_queries": 1
 }

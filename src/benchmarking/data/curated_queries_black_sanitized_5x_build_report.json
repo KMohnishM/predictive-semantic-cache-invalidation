@@ -1,0 +1,17 @@
+{
+  "source_repo": "C:\\Users\\admin\\Desktop\\project1\\predictive-semantic-cache-invalidation\\workspace\\black",
+  "ref": "HEAD",
+  "commit": "3702ba224ecffbcec30af640c149f231d90aebdb",
+  "paraphrase_model": "humarin/chatgpt_paraphraser_on_T5_base",
+  "seed": 13,
+  "candidates_per_entity": 24,
+  "queries_per_entity": 5,
+  "entities_total": 684,
+  "entities_covered": 173,
+  "queries": 865,
+  "dropped_entities": {
+    "no_docstring": 290,
+    "too_few_clean_queries": 221
+  },
+  "texts_dropped_as_shared": 7
+}

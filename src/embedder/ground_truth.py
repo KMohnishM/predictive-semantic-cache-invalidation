@@ -8,8 +8,17 @@ change what gets retrieved for a realistic query workload Q.
 Includes Stage 2 PhD-level remediation:
     1. Exact Binomial Sign Test (binomtest) replacing Wilcoxon signed-rank test.
     2. Complete removal of the `(significant or underpowered)` bypass bug.
-    3. Strict Coverage Exclusion: entities with < 3 queries are marked `is_covered=False`
-       and excluded from training Y_train rather than assigning fallback labels.
+    3. Strict Coverage Exclusion: entities with < DEFAULT_MIN_QUERIES (5) target
+       queries are marked `is_covered=False` and excluded from training Y_train
+       rather than assigning fallback labels. 5 is the smallest query count at
+       which the one-sided sign test can reach p < 0.05 (0.5**5 = 0.03125).
+    5. Label rule (``rule`` argument):
+       - "significant" (default): Y_i = 1 iff (a) at least one target query is
+         displaced out of the top-K AND (b) the exact sign test over non-zero
+         nDCG deltas gives p < alpha. Needs >= 5 target queries per entity.
+       - "any_displacement": Y_i = 1 iff at least one target query is displaced
+         out of the top-K. No significance test; a stale entity that knocks even
+         one of its queries out of the top-K is positive.
     4. Decoupled target labels Y_strict in {0, 1} from input features X.
 """
 
@@ -18,7 +27,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from scipy.stats import binomtest
@@ -121,9 +130,6 @@ def compute_leave_one_out_scores(
         rank_stale_of_i = higher_incl_self - self_would_count_itself + 1
         rank_fresh_of_i = rank_fresh_all[:, i]
 
-        displaced_mask = (rank_fresh_of_i <= top_k) & (rank_stale_of_i > top_k)
-        displaced_query_count = int(displaced_mask.sum())
-
         is_self_target = target_idx == i
         m_target = int(is_self_target.sum())
 
@@ -224,7 +230,10 @@ def load_hybrid_ground_truth_queries(
 # ---------------------------------------------------------------------------
 
 DEFAULT_ALPHA = 0.05
-DEFAULT_MIN_QUERIES = 5  # Statistical requirement: min 5 target queries per entity for coverage
+# Minimum target queries per entity for coverage. 5 is the smallest count at
+# which the exact one-sided sign test can reach p < 0.05 (0.5**5 = 0.03125).
+DEFAULT_MIN_QUERIES = 5
+LABEL_RULES = ("significant", "any_displacement")
 
 
 @dataclass
@@ -273,13 +282,18 @@ def compute_strict_ground_truth(
     loo_results: Dict[str, LeaveOneOutResult],
     alpha: float = DEFAULT_ALPHA,
     min_queries: int = DEFAULT_MIN_QUERIES,
+    rule: str = "significant",
 ) -> Dict[str, StrictGroundTruthLabel]:
-    """Compute strict, mathematically sound binary ground-truth labels.
+    """Compute binary ground-truth labels.
 
-    Removes the `underpowered` bypass bug completely.
-    Entities with fewer than min_queries evaluated target queries are marked `is_covered=False`
-    and excluded from Y_train rather than guessing fallback labels.
+    Entities with fewer than min_queries evaluated target queries are marked
+    `is_covered=False` and excluded from Y_train rather than guessing fallback labels.
+    ``rule`` selects the label rule (see module docstring): "significant" or
+    "any_displacement".
     """
+    if rule not in LABEL_RULES:
+        raise ValueError(f"Unknown ground-truth rule {rule!r}; expected one of {LABEL_RULES}")
+    min_queries = max(1, int(min_queries))
     labels: Dict[str, StrictGroundTruthLabel] = {}
     positive_count = 0
     uncovered_count = 0
@@ -302,8 +316,13 @@ def compute_strict_ground_truth(
 
         p_val, pos_count = compute_exact_binomial_sign_test(res.ndcg_deltas)
 
-        # STRICT LABEL RULE: Top-K target rank displacement AND positive nDCG delta
-        is_drifted = (res.displaced_query_count >= 1) and (pos_count >= 1)
+        if rule == "any_displacement":
+            # At least one of the entity's target queries fell out of the top-K.
+            is_drifted = res.displaced_query_count >= 1
+        else:
+            # Top-K target rank displacement AND a significant exact sign test
+            # (H1: P(delta > 0) > 0.5) at level alpha.
+            is_drifted = (res.displaced_query_count >= 1) and (p_val < alpha)
         label_val = 1 if is_drifted else 0
         positive_count += label_val
 
@@ -321,7 +340,7 @@ def compute_strict_ground_truth(
     total = len(labels)
     logger.info(
         f"compute_strict_ground_truth: {positive_count}/{total} entities labeled Y_i=1 "
-        f"(alpha={alpha}, min_queries={min_queries}, uncovered={uncovered_count})."
+        f"(rule={rule}, alpha={alpha}, min_queries={min_queries}, uncovered={uncovered_count})."
     )
 
     return labels
@@ -331,6 +350,9 @@ def binarize_ground_truth(
     loo_results: Dict[str, LeaveOneOutResult],
     alpha: float = DEFAULT_ALPHA,
     min_nonzero_queries: int = DEFAULT_MIN_QUERIES,
+    rule: str = "significant",
 ) -> Dict[str, StrictGroundTruthLabel]:
     """Backward-compatible entry point calling compute_strict_ground_truth."""
-    return compute_strict_ground_truth(loo_results, alpha=alpha, min_queries=min_nonzero_queries)
+    return compute_strict_ground_truth(
+        loo_results, alpha=alpha, min_queries=min_nonzero_queries, rule=rule
+    )
