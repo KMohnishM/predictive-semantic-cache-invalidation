@@ -38,24 +38,20 @@ def extract_signature(entity: Any) -> str:
     return lines[def_idx]
 
 
-def build_contextual_source(entity: Any, repo_parser: Any, large_context: bool = False) -> str:
-    """Return entity source plus one-hop callee stubs (call-graph context).
+def build_callee_stubs(entity_id: str, repo_parser: Any, large_context: bool = False) -> dict:
+    """Return {callee_id: stub text} for the one-hop callees embedded as context.
 
     Args:
-        entity: Entity with ``entity_id`` and ``source_code``.
-        repo_parser: TreeSitterRepoParser for the same commit as ``entity``
-            (provides ``get_dependencies`` and ``get_entity``).
+        entity_id: Entity whose call-graph context is built.
+        repo_parser: TreeSitterRepoParser for the commit (provides
+            ``get_dependencies`` and ``get_entity``).
         large_context: True for 8k+ token models — stubs carry full docstrings
             instead of a single context line.
     """
-    source = entity.source_code
+    deps = repo_parser.get_dependencies(entity_id, max_hops=1)
+    deps = {d for d in deps if d != entity_id}
 
-    deps = repo_parser.get_dependencies(entity.entity_id, max_hops=1)
-    deps = {d for d in deps if d != entity.entity_id}
-    if not deps:
-        return source
-
-    stubs = []
+    stubs = {}
     for dep_id in sorted(deps):
         dep_entity = repo_parser.get_entity(dep_id)
         if not dep_entity:
@@ -93,8 +89,23 @@ def build_contextual_source(entity: Any, repo_parser: Any, large_context: bool =
                 first_line = first_line[:117] + '...'
             stub = f"{sig_dedented}\n    # Context: {first_line}\n    pass"
 
-        stubs.append(stub)
+        stubs[dep_id] = stub
 
+    return stubs
+
+
+def build_contextual_source(entity: Any, repo_parser: Any, large_context: bool = False) -> str:
+    """Return entity source plus one-hop callee stubs (call-graph context).
+
+    Args:
+        entity: Entity with ``entity_id`` and ``source_code``.
+        repo_parser: TreeSitterRepoParser for the same commit as ``entity``
+            (provides ``get_dependencies`` and ``get_entity``).
+        large_context: True for 8k+ token models — stubs carry full docstrings
+            instead of a single context line.
+    """
+    source = entity.source_code
+    stubs = build_callee_stubs(entity.entity_id, repo_parser, large_context=large_context)
     if stubs:
-        return source + "\n\n# Call Graph Context\n" + "\n\n".join(stubs)
+        return source + "\n\n# Call Graph Context\n" + "\n\n".join(stubs.values())
     return source

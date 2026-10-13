@@ -57,7 +57,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--model-name", default="sentence-transformers/all-MiniLM-L6-v2")
     parser.add_argument("--clean-mode", action="store_true")
+    parser.add_argument(
+        "--device",
+        default="auto",
+        help='Embedding device: "auto" (CUDA if available, else CPU), "cpu", "cuda", or e.g. "cuda:0"',
+    )
     parser.add_argument("--top-k-values", default="1,5,10")
+    parser.add_argument(
+        "--primary-k",
+        type=int,
+        default=5,
+        help="Headline k for staleness cost (loss/retention vs full re-index), Pareto frontier "
+             "and saturation check (default: 5)",
+    )
     parser.add_argument("--max-queries-per-entity", type=int, default=2)
     # Phase 2.4: predictive_ml and fixed_hop in default strategies
     parser.add_argument(
@@ -105,7 +117,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--model-path",
         default=None,
-        help="Path to trained DriftPredictor .pkl model artifact for dynamic inference",
+        help='Path to trained DriftPredictor .pkl model artifact for dynamic inference, '
+             'or "latest" for the newest results/*/drift_predictor.pkl',
     )
     # Phase 2.3: hop depth for fixed_hop
     parser.add_argument(
@@ -208,7 +221,9 @@ def build_config(args: argparse.Namespace) -> BenchmarkConfig:
         curated_queries_path=args.curated_queries_path,
         model_name=args.model_name,
         clean_mode=args.clean_mode,
+        device=getattr(args, "device", "auto"),
         top_k_values=parse_top_k_values(args.top_k_values),
+        primary_k=int(getattr(args, "primary_k", 5)),
         max_queries_per_entity=args.max_queries_per_entity,
         strategies=parse_strategies(raw_strategies),
         compare_embeddings=compare_embeddings,

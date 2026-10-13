@@ -288,18 +288,38 @@ assert not (CONFIG["label_source"] == "leave_one_out" and predictor.task_type !=
 # target_entity_id), never from generate_queries() below, which selects
 # entities by the model's own drift score and builds text from the target's
 # own docstring — see src/embedder/ground_truth.py's module docstring.
+#
+# In hybrid mode the synthetic supplement depends on which entities exist, so it
+# is rebuilt per commit pair in Stage 3 (from commit_b's snapshot); query vectors
+# are cached by text so each distinct query is embedded only once.
+query_text_embeddings: Dict[str, np.ndarray] = {}
+
+
+def ground_truth_queries_for(snapshot_parser):
+    # Curated queries (+ hybrid synthetic supplement for this snapshot) and their embeddings.
+    if CONFIG["label_source"] == "hybrid":
+        queries = load_hybrid_ground_truth_queries(
+            CONFIG["ground_truth_queries_path"], repo_parser=snapshot_parser,
+            max_queries_per_entity=CONFIG["max_queries_per_entity"],
+        )
+    else:
+        queries = ground_truth_queries
+    for q in queries:
+        if q.query_text not in query_text_embeddings:
+            query_text_embeddings[q.query_text] = embedding_manager.generate_embedding(
+                f"gt_query::{q.query_text}", q.query_text
+            )
+    return queries, {q.query_id: query_text_embeddings[q.query_text] for q in queries}
+
+
 with timed("0_setup", "load_ground_truth_queries"):
     if CONFIG["label_source"] in ("leave_one_out", "hybrid"):
-        ground_truth_queries = load_hybrid_ground_truth_queries(CONFIG["ground_truth_queries_path"], repo_parser=repo_parser) if CONFIG["label_source"] == "hybrid" else load_ground_truth_queries(CONFIG["ground_truth_queries_path"])
-        ground_truth_query_embeddings = {
-            q.query_id: embedding_manager.generate_embedding(q.query_id, q.query_text)
-            for q in ground_truth_queries
-        }
+        ground_truth_queries = load_ground_truth_queries(CONFIG["ground_truth_queries_path"])
         print(f"Loaded {len(ground_truth_queries)} curated ground-truth queries.")
-        if not ground_truth_queries:
+        if not ground_truth_queries and CONFIG["label_source"] == "leave_one_out":
             print("WARNING: curated query set is empty — leave_one_out will produce no labels at all.")
     else:
-        ground_truth_queries, ground_truth_query_embeddings = [], {}
+        ground_truth_queries = []
 
 print(f"Repo ready at: {repo_path}")
 print(f"Results will be saved under: {results_dir}")
@@ -426,10 +446,11 @@ for i in range(1, len(sampled_commits)):
 
     if CONFIG["label_source"] in ("leave_one_out", "hybrid"):
         with timed("3_drift_features", "leave_one_out_ground_truth"):
-            if ground_truth_queries:
+            pair_queries, pair_query_embeddings = ground_truth_queries_for(repo_parser_b)
+            if pair_queries:
                 loo_results = compute_leave_one_out_scores(
                     embeddings_before=emb_a, embeddings_after=emb_b,
-                    queries=ground_truth_queries, query_embeddings=ground_truth_query_embeddings,
+                    queries=pair_queries, query_embeddings=pair_query_embeddings,
                     top_k=CONFIG["ground_truth_top_k"],
                 )
                 gt_labels = binarize_ground_truth(
@@ -574,6 +595,20 @@ with timed("4_train", "evaluate_holdout"):
 
 with timed("4_train", "save_model"):
     model_path = results_dir / "drift_predictor.pkl"
+    # Provenance, so the benchmark can refuse to evaluate on commits trained on.
+    predictor.training_metadata = {
+        "repo_url": CONFIG["repo_url"],
+        "ref": CONFIG.get("ref", "HEAD"),
+        "model_name": CONFIG["model_name"],
+        "context_chunking": CONFIG["context_chunking"],
+        "clean_mode": CONFIG["clean_mode"],
+        "label_source": CONFIG["label_source"],
+        "ground_truth_rule": CONFIG["ground_truth_rule"],
+        "sampled_commits": list(sampled_commits),
+        "train_commits": list(train_commits),
+        "test_commits": list(test_commits),
+        "trained_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
     predictor.save(str(model_path))
 
 print(f"Trained on {len(combined_features)} entities ({len(X_train)} train / {len(X_test)} test rows)")

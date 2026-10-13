@@ -37,6 +37,9 @@ class ModelRunner:
         # Probability cut-off chosen at training time (DriftPredictor.fit_decision_threshold)
         self.decision_threshold: float = 0.5
         self.version: str = "1.0"
+        # Provenance written by run_experiment.py (training commits, embedding setup);
+        # empty for artifacts saved before version 2.2.
+        self.training_metadata: Dict[str, Any] = {}
         self.is_loaded: bool = False
         self._parser_cache: Dict[str, Any] = {}
 
@@ -60,6 +63,7 @@ class ModelRunner:
             self.threshold = float(loaded_data.get("threshold", 0.5))
             self.decision_threshold = float(loaded_data.get("decision_threshold", 0.5))
             self.version = str(loaded_data.get("version", "1.0"))
+            self.training_metadata = loaded_data.get("training_metadata") or {}
         elif hasattr(loaded_data, "model") and hasattr(loaded_data, "scaler"):
             self.model = getattr(loaded_data, "model")
             self.scaler = getattr(loaded_data, "scaler")
@@ -68,6 +72,7 @@ class ModelRunner:
             self.model_type = getattr(loaded_data, "model_type", "unknown")
             self.threshold = float(getattr(loaded_data, "threshold", 0.5))
             self.decision_threshold = float(getattr(loaded_data, "decision_threshold", 0.5))
+            self.training_metadata = getattr(loaded_data, "training_metadata", None) or {}
             self.version = "1.0"
         else:
             raise ValueError(f"Unrecognized model bundle structure in: {path}")
@@ -81,6 +86,13 @@ class ModelRunner:
             f"from {path.name} (version: {self.version}, features: {len(self.feature_names or [])}, "
             f"decision threshold: {self.decision_threshold:.4f})"
         )
+        if self.training_metadata:
+            meta = self.training_metadata
+            logger.info(
+                f"  Trained {meta.get('trained_at', '?')} on {meta.get('repo_url', '?')} "
+                f"(ref={meta.get('ref', '?')}, {len(meta.get('train_commits', []))} train commits, "
+                f"model={meta.get('model_name', '?')}, context_chunking={meta.get('context_chunking', '?')})"
+            )
 
     def _get_parser_at(self, commit: str, git_helper: Any, parser_provider: Optional[Any]) -> Any:
         """Return a TreeSitterRepoParser for ``commit`` (provider first, then a cached snapshot build)."""
@@ -175,6 +187,8 @@ class ModelRunner:
                 git_helper=git_helper,
                 commit_a=anchor_commit,
                 commit_b=current_commit,
+                parser_a=anchor_parser,
+                large_context=bool(self.training_metadata.get("large_context", False)),
             )
 
             # Batch feature extraction for this anchor group

@@ -55,7 +55,7 @@ class DriftPredictor:
 
 
     def __init__(self, model_type: str = "random_forest", task_type: str = "regression",
-                 threshold: float = 0.02):
+                 threshold: float = 0.02, target_recall: Optional[float] = None):
         """
         Initialize drift predictor.
 
@@ -63,6 +63,10 @@ class DriftPredictor:
             model_type: Type of model ("random_forest", "gradient_boosting", "hist_gradient_boosting", "extra_trees", "linear"/"logistic_regression", "mlp")
             task_type: "regression" or "classification"
             threshold: Threshold for classification (drift >= threshold -> 1)
+            target_recall: If set, fit_decision_threshold() picks the highest
+                cut-off whose out-of-fold recall reaches this value (missing a
+                stale entity costs more than an extra re-embed) instead of the
+                F1-optimal one.
         """
         if model_type == "linear" and task_type == "classification":
             model_type = "logistic_regression"
@@ -72,10 +76,14 @@ class DriftPredictor:
         # Probability cut-off for calling an entity stale (classification). Chosen
         # by fit_decision_threshold(); 0.5 until then.
         self.decision_threshold = 0.5
+        self.target_recall = target_recall
         self.model = None
         self.scaler = StandardScaler()
         self.feature_names = None
         self.is_trained = False
+        # Provenance saved with the artifact (repo, ref, training commits, embedding
+        # setup) so the benchmark can refuse to evaluate on commits it trained on.
+        self.training_metadata: Dict = {}
 
     def _create_model(self):
         """
@@ -273,7 +281,9 @@ class DriftPredictor:
     def fit_decision_threshold(self, X: np.ndarray, y: np.ndarray, groups: List[str],
                                n_splits: int = 5) -> float:
         """
-        Choose the probability cut-off that maximises F1 on out-of-fold predictions.
+        Choose the probability cut-off on out-of-fold predictions: the one that
+        maximises F1, or, with ``target_recall`` set, the highest one whose
+        recall reaches ``target_recall``.
 
         Rows are grouped (by commit pair) so every row is scored by a model that
         never saw its pair. With rare positives a fixed 0.5 cut-off is almost
@@ -308,10 +318,17 @@ class DriftPredictor:
             return self.decision_threshold
         precisions, recalls, thresholds = precision_recall_curve(y[scored], oof[scored])
         f1 = 2 * precisions[:-1] * recalls[:-1] / np.clip(precisions[:-1] + recalls[:-1], 1e-12, None)
-        best = int(np.argmax(f1))
+        if self.target_recall is not None:
+            # recalls[:-1] is non-increasing in the threshold, so the last index
+            # still meeting the target is the highest qualifying cut-off.
+            meets = np.flatnonzero(recalls[:-1] >= self.target_recall)
+            best = int(meets[-1]) if len(meets) else 0
+        else:
+            best = int(np.argmax(f1))
         self.decision_threshold = float(thresholds[best])
         logger.info(
             f"Decision threshold set to {self.decision_threshold:.4f} from out-of-fold predictions "
+            f"({'target recall ' + str(self.target_recall) if self.target_recall is not None else 'max F1'}; "
             f"(F1={f1[best]:.3f}, precision={precisions[best]:.3f}, recall={recalls[best]:.3f}, "
             f"{int(scored.sum())} rows, {int(y[scored].sum())} positives, {n_groups} pairs)"
         )
@@ -471,7 +488,8 @@ class DriftPredictor:
             'task_type': self.task_type,
             'threshold': self.threshold,
             'decision_threshold': self.decision_threshold,
-            'version': "2.1",
+            'training_metadata': self.training_metadata,
+            'version': "2.2",
         }
 
         joblib.dump(model_data, filepath)
@@ -497,6 +515,7 @@ class DriftPredictor:
         self.task_type = model_data['task_type']
         self.threshold = model_data['threshold']
         self.decision_threshold = float(model_data.get('decision_threshold', 0.5))
+        self.training_metadata = model_data.get('training_metadata') or {}
         self.is_trained = True
 
         logger.info(f"Model loaded from {filepath} (version: {model_data.get('version', '1.0')})")

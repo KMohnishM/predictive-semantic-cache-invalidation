@@ -57,6 +57,7 @@ from .reporting import (
     write_summary_report,
 )
 from .serialization import persist_run
+from .staleness_metrics import compute_staleness_metrics
 from .visualizer import generate_benchmark_charts
 from .strategy_runner import decide_updated_entities
 from .repository_snapshot import build_repository_snapshot
@@ -84,6 +85,59 @@ def _build_run_id(config: BenchmarkConfig, commit_before: str, commit_after: str
         Formatted run ID string.
     """
     return f"benchmark_v{config.benchmark_version}_seed{config.seed}_{commit_before[:8]}_{commit_after[:8]}"
+
+
+def _resolve_model_path(model_path: str) -> Path:
+    """Resolve ``model_path``; "latest" picks the newest results/*/drift_predictor.pkl."""
+    if model_path != "latest":
+        return Path(model_path)
+    candidates = [
+        pkl
+        for root in dict.fromkeys((Path.cwd() / "results", project_root / "results"))
+        if root.is_dir()
+        for pkl in root.glob("*/drift_predictor.pkl")
+    ]
+    if not candidates:
+        raise FileNotFoundError(
+            "model_path='latest' but no results/*/drift_predictor.pkl exists. "
+            "Train one with run_experiment.py first."
+        )
+    newest = max(candidates, key=lambda p: p.stat().st_mtime)
+    logger.info(f"model_path='latest' resolved to {newest}")
+    return newest
+
+
+def _check_training_overlap(model_runner: ModelRunner, config: BenchmarkConfig, commit_pairs) -> None:
+    """Fail if any benchmark commit was a training commit of the loaded model, and
+    warn when the model was trained with a different embedding setup."""
+    meta = model_runner.training_metadata
+    if not meta:
+        logger.warning(
+            "Model artifact has no training metadata (saved before version 2.2): cannot check "
+            "that the benchmark window is disjoint from the training commits."
+        )
+        return
+
+    benchmark_commits = {c for pair in commit_pairs for c in (pair.commit_before, pair.commit_after)}
+    overlap = benchmark_commits & set(meta.get("train_commits", []))
+    if overlap:
+        raise ValueError(
+            f"{len(overlap)} benchmark commit(s) were used to train the model "
+            f"(e.g. {sorted(overlap)[0][:8]}); results would be inflated by training leakage. "
+            f"Move the benchmark window (ref / history_offset) or retrain on an earlier window "
+            f"(model trained with ref={meta.get('ref')!r})."
+        )
+
+    for key, expected in (
+        ("model_name", config.model_name),
+        ("context_chunking", config.context_chunking),
+        ("clean_mode", config.clean_mode),
+    ):
+        if key in meta and meta[key] != expected:
+            logger.warning(
+                f"Model was trained with {key}={meta[key]!r} but the benchmark uses {expected!r}; "
+                f"its predictions may not transfer."
+            )
 
 
 def _target_ranks_and_scores(
@@ -191,14 +245,16 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
     logger.info("==================================================================")
 
     git_helper = GitHelper(config.repo_path)
-    embedding_manager = EmbeddingManager(model_name=config.model_name, clean_mode=config.clean_mode)
+    embedding_manager = EmbeddingManager(
+        model_name=config.model_name, clean_mode=config.clean_mode, device=config.device
+    )
 
     # Load dynamic .pkl model artifact if provided (Phase 3.2: full switch to .pkl).
     # A configured-but-missing model is a hard error: silently falling back would
     # report changed_only numbers under the predictive_ml name.
     model_runner: Optional[ModelRunner] = None
     if getattr(config, "model_path", None):
-        model_file = Path(config.model_path)
+        model_file = _resolve_model_path(config.model_path)
         if not model_file.exists():
             raise FileNotFoundError(
                 f"model_path {model_file} does not exist. Train a DriftPredictor with "
@@ -247,6 +303,8 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         raise RuntimeError("No commit pairs available for benchmarking")
 
     logger.info(f"Sampled {len(commit_pairs)} commit pair(s) for benchmarking.")
+    if model_runner is not None:
+        _check_training_overlap(model_runner, config, commit_pairs)
 
     all_results: List[PerQueryResult] = []
     all_embedding_comparisons: List[StrategyEmbeddingComparisonResult] = []
@@ -464,6 +522,16 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                 _target_ranks_and_scores(query_matrix, candidate_snapshot, target_ids)
                 if dataset_rows else (np.array([], dtype=int), np.array([]))
             )
+            # Is the target itself stale in this strategy's index (its vector differs
+            # from the full re-index, possibly since an earlier commit pair)?
+            stale_by_target: Dict[str, bool] = {}
+            for target_id in set(target_ids):
+                fresh_vec = baseline_snapshot.entity_embeddings.get(target_id)
+                cached_vec = candidate_snapshot.entity_embeddings.get(target_id)
+                stale_by_target[target_id] = (
+                    fresh_vec is None or cached_vec is None
+                    or not np.allclose(fresh_vec, cached_vec, atol=1e-6)
+                )
             for query_idx, query_row in enumerate(dataset_rows):
                 target_id = query_row.query.target_entity_id
                 baseline_rank = int(baseline_ranks[query_idx])
@@ -509,6 +577,7 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                         rank_agreement=(selective_rank == baseline_rank),
                         relative_freshness_pass=(top_k_hit_s if top_k_hit_b else True),
                         ndcg_ratio=(s_ndcg / b_ndcg if b_ndcg > 0 else 1.0),
+                        target_stale=stale_by_target[target_id],
                     )
                 )
 
@@ -613,7 +682,25 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
             "unchanged_queries":   unchanged_queries_strat,
             "total_queries":       strat_queries,
             "ndcg_k":              ndcg_k,
+            # Staleness cost vs. the full re-index — the quality metric strategies
+            # should be compared on (see staleness_metrics.py).
+            "staleness": compute_staleness_metrics(
+                strategy_results, config.top_k_values, config.primary_k
+            ),
         }
+
+    logger.info("\nStaleness cost vs. full re-index (lost = full re-index hit the strategy missed; "
+                "stale gains are not credited):")
+    for strategy_name, stats in strategy_summaries.items():
+        st = stats["staleness"]
+        per_k = "  ".join(
+            f"lost@{k}={e['lost']}/{e['reference_hits']} ({e['loss_rate']:.2%}) gained@{k}={e['gained']}"
+            for k, e in st["at_k"].items()
+        )
+        logger.info(
+            f"  {strategy_name:14s} cost={stats['candidate_update_fraction']:.3f}  {per_k}  "
+            f"stale-target queries={st['stale_target']['n_queries']}"
+        )
 
     # Phase 1.4: run saturation guard after strategy_summaries are built
     is_saturated = check_and_warn_saturation(strategy_summaries)

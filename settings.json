@@ -12,7 +12,7 @@
   "device": "auto",
   "label_source": "hybrid",
   "max_queries_per_entity": 10,
-  "ground_truth_queries_path": "src/benchmarking/data/curated_queries_black_sanitized_5x.json",
+  "ground_truth_queries_path": "src/benchmarking/data/curated_queries_black_change_focused.json",
   "ref": "3702ba224ecffbcec30af640c149f231d90aebdb~300",
   "ground_truth_rule": "any_displacement",
   "ground_truth_min_queries": 1

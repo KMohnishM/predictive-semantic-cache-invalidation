@@ -102,7 +102,12 @@ class BenchmarkConfig:
     curated_queries_path: Optional[str] = "src/benchmarking/data/curated_queries.json"
     model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     clean_mode: bool = False
+    # Embedding device: "auto" (CUDA if available, else CPU), "cpu", "cuda", "cuda:0", ...
+    device: str = "auto"
     top_k_values: List[int] = field(default_factory=lambda: [1, 5, 10])
+    # Headline k for the staleness-cost metrics (retention / loss rate), the Pareto
+    # frontier and the saturation check. 5 ~ the snippets a RAG prompt typically uses.
+    primary_k: int = 5
     output_format: str = "jsonl"
     max_queries_per_entity: int = 2
     # Embed entities with one-hop call-graph context (shared with Pipeline A's
@@ -220,6 +225,9 @@ class PerQueryResult:
     rank_agreement: bool = False
     relative_freshness_pass: bool = False
     ndcg_ratio: float = 1.0
+    # True when the target's vector in this strategy's index differs from the full
+    # re-index (the target itself is stale, possibly since an earlier commit pair).
+    target_stale: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert PerQueryResult to dictionary."""

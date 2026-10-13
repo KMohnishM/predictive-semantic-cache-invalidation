@@ -6,10 +6,11 @@ Called automatically at the end of each benchmark run alongside summary_report.m
 
 Charts produced:
   1. strategy_comparison.png   — grouped bar chart: freshness, cache pres., update cost per strategy
-  2. pareto_frontier.png       — scatter plot of update cost vs freshness rate with Pareto frontier
+  2. pareto_frontier.png       — scatter plot of update cost vs quality (retention@k) with Pareto frontier
   3. cosine_similarity.png     — bar chart: mean / min / P95 cosine similarity per strategy
   4. metrics_heatmap.png       — heatmap of all key metrics across strategies
   5. radar_chart.png           — radar / spider chart overlaying all strategies
+  6. staleness_cost.png        — lost / stale-gained top-k hits vs full re-index, per k and strategy
 """
 
 from __future__ import annotations
@@ -17,6 +18,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from .reporting import quality_label, quality_score
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +123,7 @@ def _plot_pareto_frontier(
     import numpy as np
 
     costs    = [strategy_summaries[s].get("candidate_update_fraction", 0.0) for s in strategies]
-    freshness= [strategy_summaries[s].get("freshness_success_rate", 0.0)    for s in strategies]
+    freshness= [quality_score(strategy_summaries[s])                        for s in strategies]
 
     for s, cost, fresh in zip(strategies, costs, freshness):
         is_pareto = s in pareto_strategies
@@ -145,7 +148,7 @@ def _plot_pareto_frontier(
     # Draw Pareto frontier line
     pareto_points = sorted(
         [(strategy_summaries[s].get("candidate_update_fraction", 0.0),
-          strategy_summaries[s].get("freshness_success_rate", 0.0))
+          quality_score(strategy_summaries[s]))
          for s in pareto_strategies],
         key=lambda p: p[0],
     )
@@ -156,7 +159,7 @@ def _plot_pareto_frontier(
         ax.legend(fontsize=8.5)
 
     ax.set_xlabel("Update Cost (fraction re-embedded)  ← Lower is better", fontsize=9)
-    ax.set_ylabel("Freshness Rate  ↑ Higher is better", fontsize=9)
+    ax.set_ylabel(f"{quality_label(strategy_summaries)}  ↑ Higher is better", fontsize=9)
     ax.set_title("Cost vs. Quality Pareto Frontier", fontsize=11, fontweight="bold")
     ax.set_xlim(-0.05, 1.1)
     ax.set_ylim(-0.05, 1.1)
@@ -165,7 +168,7 @@ def _plot_pareto_frontier(
     ax.set_axisbelow(True)
 
     # Ideal point annotation
-    ax.annotate("Ideal →\n(low cost, high freshness)",
+    ax.annotate("Ideal →\n(low cost, high quality)",
                 xy=(0, 1), xytext=(0.05, 0.88),
                 fontsize=7.5, color="darkgreen",
                 arrowprops=dict(arrowstyle="->", color="darkgreen", lw=1))
@@ -312,6 +315,45 @@ def _plot_radar(ax, strategies: List[str], strategy_summaries: Dict[str, Dict]) 
 # Public entry point
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Chart 6: Staleness cost vs full re-index
+# ---------------------------------------------------------------------------
+
+def _plot_staleness_cost(ax, strategies: List[str], strategy_summaries: Dict[str, Dict]) -> bool:
+    """Loss rate (solid, up) and stale-gain rate (hatched, down) per k for each strategy.
+    Returns False when the summaries carry no staleness metrics."""
+    import numpy as np
+
+    with_data = [s for s in strategies if strategy_summaries[s].get("staleness")]
+    if not with_data:
+        return False
+    k_values = list(strategy_summaries[with_data[0]]["staleness"]["at_k"].keys())
+    x = np.arange(len(k_values))
+    width = 0.8 / len(with_data)
+
+    for idx, s in enumerate(with_data):
+        at_k = strategy_summaries[s]["staleness"]["at_k"]
+        loss = [at_k[k]["loss_rate"] * 100 for k in k_values]
+        gain = [at_k[k]["gain_rate"] * 100 for k in k_values]
+        pos = x - 0.4 + width * (idx + 0.5)
+        ax.bar(pos, loss, width * 0.9, color=_colour(s), label=f"{s} lost", edgecolor="white")
+        ax.bar(pos, [-g for g in gain], width * 0.9, color=_colour(s), alpha=0.35,
+               hatch="//", edgecolor=_colour(s), label=f"{s} stale gains")
+        for xi, val in zip(pos, loss):
+            ax.text(xi, val, f"{val:.1f}", ha="center", va="bottom", fontsize=7)
+
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"top-{k}" for k in k_values], fontsize=9)
+    ax.set_ylabel("up: % of full re-index hits lost\ndown: % of its misses stale-gained", fontsize=9)
+    ax.set_title("Staleness Cost vs. Full Re-index (lower is better; gains not credited)",
+                 fontsize=11, fontweight="bold")
+    ax.legend(fontsize=7, ncol=2)
+    ax.yaxis.grid(True, alpha=0.35)
+    ax.set_axisbelow(True)
+    return True
+
+
 def generate_benchmark_charts(
     output_dir: str,
     strategy_summaries: Dict[str, Dict],
@@ -417,5 +459,18 @@ def generate_benchmark_charts(
     except Exception as e:
         logger.warning(f"radar_chart.png failed: {e}")
 
-    logger.info(f"Benchmark visualizer: {len(written)}/5 charts written to {out}")
+    # Chart 6: Staleness cost
+    try:
+        fig, ax = plt.subplots(figsize=(10, 5.5))
+        if _plot_staleness_cost(ax, strategies, real_summaries):
+            fig.tight_layout()
+            p = out / "staleness_cost.png"
+            fig.savefig(p, dpi=150, bbox_inches="tight")
+            written.append(p)
+            logger.info(f"Chart saved: {p.name}")
+        plt.close(fig)
+    except Exception as e:
+        logger.warning(f"staleness_cost.png failed: {e}")
+
+    logger.info(f"Benchmark visualizer: {len(written)} charts written to {out}")
     return written
