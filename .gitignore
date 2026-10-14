@@ -11,8 +11,6 @@ env/
 
 # Project-specific caches and datasets
 workspace/
-benchmark_runs/
-results/
 *.log
 .gemini/
 .agents/

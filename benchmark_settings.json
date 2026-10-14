@@ -1,10 +1,10 @@
 {
-  "repo_url":               "https://github.com/psf/black.git",
+  "repo_url":               "https://github.com/psf/black",
   "repo_path":              "workspace/black",
   "output_dir":             "benchmark_runs",
   "model_name":             "sentence-transformers/all-MiniLM-L6-v2",
   "device":                 "auto",
-  "num_commits":            16,
+  "num_commits":            20,
   "commit_stride":          20,
   "sampling_mode":          "adjacent",
   "query_mode":             "curated",
