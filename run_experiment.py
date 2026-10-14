@@ -204,6 +204,7 @@ class Experiment:
         self.drifts_history = {}  # (commit_a, commit_b) -> drifts dict
         self.ground_truth_history = {}  # (commit_a, commit_b) -> {entity_id: Y_i in {0.0, 1.0}}, binary label sources only
         self.sources_history = {}  # commit_hash -> {entity_id: embedded text}
+        self.entity_counts = {}  # commit_hash -> number of embedded entities
         self.features_history = {}  # (commit_a, commit_b) -> features DataFrame
         self.modification_history = {}  # entity_id -> list of commit hashes
         self.previous_drifts = {}  # entity_id -> last drift value
@@ -525,6 +526,13 @@ class Experiment:
             )
             return False
 
+        # Chronological split point. Only the commits of the evaluation pairs
+        # (the last training commit onwards) need their parser and embeddings
+        # after the dataset is built; the rest are released as the loop
+        # advances, so memory is bounded by the test window, not every sample.
+        split_idx = max(1, int(len(self.sampled_commits) * self.train_ratio))
+        keep_for_eval = set(self.sampled_commits[split_idx - 1:])
+
         for i, commit in enumerate(self.sampled_commits):
             logger.info(f"\nProcessing sampled commit {i+1}/{len(self.sampled_commits)} ({commit[:8]})...")
             
@@ -546,10 +554,15 @@ class Experiment:
             if entity_sources:
                 embeddings = self.embedding_manager.generate_embeddings_batch(entity_sources)
                 self.embeddings_history[commit] = embeddings
+                # The manager's own per-entity cache is only read during
+                # evaluation (which resets it), and would otherwise keep every
+                # commit's embedding matrix alive.
+                self.embedding_manager.embeddings.clear()
                 logger.info(f"  Parsed {len(entities)} entities, generated {len(embeddings)} embeddings")
             else:
                 logger.warning(f"  No entities found in commit {commit[:8]}")
                 self.embeddings_history[commit] = {}
+            self.entity_counts[commit] = len(self.embeddings_history[commit])
 
             # Compare only sampled neighbors; skip all intermediate commits entirely.
             if i > 0:
@@ -615,6 +628,9 @@ class Experiment:
                 total_commits=len(self.sampled_commits)
             )
 
+            if i > 0:
+                self._release_commit(self.sampled_commits[i - 1], keep_for_eval)
+
             # Small delay
             time.sleep(0.1)
 
@@ -628,7 +644,6 @@ class Experiment:
         self.rsd.build_all_rsds()
 
         # Chronological split of sampled commits
-        split_idx = max(1, int(len(self.sampled_commits) * self.train_ratio))
         self.train_commits = self.sampled_commits[:split_idx]
         self.test_commits  = self.sampled_commits[split_idx:]
 
@@ -636,6 +651,13 @@ class Experiment:
         logger.info("\nRSD Summary:\n" + self.rsd.summary_table())
 
         return True
+
+    def _release_commit(self, commit: str, keep_for_eval: Set[str]) -> None:
+        """Free per-commit data once both pairs that use ``commit`` are built."""
+        self.sources_history.pop(commit, None)  # only needed for this pair's labels
+        if commit not in keep_for_eval:
+            self.parsers_history.pop(commit, None)
+            self.embeddings_history.pop(commit, None)
 
     def train_model(self) -> bool:
         """
@@ -1353,7 +1375,7 @@ class Experiment:
                         "split": "train" if (a, b) in train_pairs else "test",
                         "labels": {eid: int(v) for eid, v in sorted(labels.items())},
                         "modified_entities": sorted(self.modified_entities_history.get((a, b), set())),
-                        "entities_total": len(self.embeddings_history.get(b, {})),
+                        "entities_total": self.entity_counts.get(b, 0),
                     }
                     for (a, b), labels in self.ground_truth_history.items()
                 ], f, indent=2)
