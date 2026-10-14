@@ -21,38 +21,38 @@ def sample_commit_pairs(
     num_commits: int,
     sampling_mode: str = "adjacent",
     commit_stride: int = 1,
+    history_offset: int = 0,
+    ref: str = "HEAD",
 ) -> List[CommitPair]:
     """Sample commit pair transitions chronologically from repository history.
 
     Args:
         git_helper: GitHelper instance attached to the repository.
-        num_commits: Number of commits or pairs to sample.
-        sampling_mode: Sampling strategy ('adjacent' or 'stride').
-        commit_stride: Stride multiplier when sampling in stride mode.
+        num_commits: Number of commits to sample ("adjacent"); pairs = num_commits - 1.
+            In "stride" mode, the number of stride-sized steps to fetch.
+        sampling_mode: 'adjacent' — consecutive pairs of the commits sampled every
+            ``commit_stride`` commits (stride 1 = truly adjacent commits);
+            'stride' — legacy alias kept for old configs, same chain of pairs.
+        commit_stride: Step between sampled commits.
+        history_offset: Skip this many of the most recent commits, so the sampled
+            window ends ``history_offset`` commits before HEAD (used to give each
+            multi-seed run its own disjoint window).
+        ref: Git ref the window ends at (default HEAD).
 
     Returns:
-        List of sampled CommitPair instances.
+        List of sampled CommitPair instances (oldest first).
     """
-    # Auto-adjust count to fetch enough raw commits for stride pairs
-    raw_count = num_commits * commit_stride if sampling_mode == "stride" else num_commits
-    commits = git_helper.get_commit_history(count=raw_count)
+    commit_stride = max(1, int(commit_stride))
+    if sampling_mode == "stride":
+        span = num_commits * commit_stride
+    else:
+        span = (num_commits - 1) * commit_stride + 1
+    history = git_helper.get_commit_history(count=span + history_offset, ref=ref)
+    commits = history[:len(history) - history_offset] if history_offset else history
+    commits = commits[-span:]
     if len(commits) < 2:
         return []
 
-    pairs: List[CommitPair] = []
-    if sampling_mode == "adjacent":
-        for index in range(len(commits) - 1):
-            pairs.append(CommitPair(commits[index], commits[index + 1], index))
-    elif sampling_mode == "stride":
-        pair_index = 0
-        for index in range(0, len(commits) - 1, commit_stride):
-            target_index = min(index + commit_stride, len(commits) - 1)
-            if index == target_index:
-                continue
-            pairs.append(CommitPair(commits[index], commits[target_index], pair_index))
-            pair_index += 1
-    else:
-        for index in range(len(commits) - 1):
-            pairs.append(CommitPair(commits[index], commits[index + 1], index))
-
-    return pairs
+    # Sample every commit_stride-th commit ending at the newest one in the window.
+    sampled = commits[::-1][::commit_stride][::-1]
+    return [CommitPair(sampled[i], sampled[i + 1], i) for i in range(len(sampled) - 1)]

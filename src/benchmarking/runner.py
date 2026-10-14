@@ -7,7 +7,7 @@ import logging
 from dataclasses import replace
 from pathlib import Path
 import sys
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -21,31 +21,48 @@ if str(project_root) not in sys.path:
 
 try:
     from embedder.embedding_manager import EmbeddingManager
+    from extractor.semantic_modification import (
+        compute_semantic_modified_entities,
+        compute_source_changed_entities,
+    )
     from parser.git_helper import GitHelper
 except ImportError:
     try:
         from src.embedder.embedding_manager import EmbeddingManager
+        from src.extractor.semantic_modification import (
+            compute_semantic_modified_entities,
+            compute_source_changed_entities,
+        )
         from src.parser.git_helper import GitHelper
     except ImportError:
         from ..embedder.embedding_manager import EmbeddingManager
+        from ..extractor.semantic_modification import (
+            compute_semantic_modified_entities,
+            compute_source_changed_entities,
+        )
         from ..parser.git_helper import GitHelper
 
 from .commit_sampler import sample_commit_pairs
 from .config import load_config
 from .dataset_builder import build_dataset
 from .embedding_comparator import compare_index_snapshots
-from .index_builder import build_index_snapshot, build_selective_snapshot, retrieve_top_k
-from .metrics import compute_rank, mean_reciprocal_rank, ndcg_at_k, rank_delta, recall_at_k, score_delta
+from .index_builder import build_entity_texts, build_index_snapshot, build_selective_snapshot
+from .metrics import rank_delta, score_delta
 from .query_sources import build_queries
 from .reporting import (
     aggregate_multi_run_results,
     check_and_warn_saturation,
+    wilson_ci,
     write_aggregated_report,
     write_summary_report,
 )
 from .serialization import persist_run
+from .staleness_metrics import compute_staleness_metrics
+from .visualizer import generate_benchmark_charts
 from .strategy_runner import decide_updated_entities
 from .repository_snapshot import build_repository_snapshot
+from .cache_tracker import StatefulCacheTracker
+from .model_runner import ModelRunner
 from .types import (
     BenchmarkConfig,
     BenchmarkSummary,
@@ -70,6 +87,84 @@ def _build_run_id(config: BenchmarkConfig, commit_before: str, commit_after: str
     return f"benchmark_v{config.benchmark_version}_seed{config.seed}_{commit_before[:8]}_{commit_after[:8]}"
 
 
+def _resolve_model_path(model_path: str) -> Path:
+    """Resolve ``model_path``; "latest" picks the newest results/*/drift_predictor.pkl."""
+    if model_path != "latest":
+        return Path(model_path)
+    candidates = [
+        pkl
+        for root in dict.fromkeys((Path.cwd() / "results", project_root / "results"))
+        if root.is_dir()
+        for pkl in root.glob("*/drift_predictor.pkl")
+    ]
+    if not candidates:
+        raise FileNotFoundError(
+            "model_path='latest' but no results/*/drift_predictor.pkl exists. "
+            "Train one with run_experiment.py first."
+        )
+    newest = max(candidates, key=lambda p: p.stat().st_mtime)
+    logger.info(f"model_path='latest' resolved to {newest}")
+    return newest
+
+
+def _check_training_overlap(model_runner: ModelRunner, config: BenchmarkConfig, commit_pairs) -> None:
+    """Fail if any benchmark commit was a training commit of the loaded model, and
+    warn when the model was trained with a different embedding setup."""
+    meta = model_runner.training_metadata
+    if not meta:
+        logger.warning(
+            "Model artifact has no training metadata (saved before version 2.2): cannot check "
+            "that the benchmark window is disjoint from the training commits."
+        )
+        return
+
+    benchmark_commits = {c for pair in commit_pairs for c in (pair.commit_before, pair.commit_after)}
+    overlap = benchmark_commits & set(meta.get("train_commits", []))
+    if overlap:
+        raise ValueError(
+            f"{len(overlap)} benchmark commit(s) were used to train the model "
+            f"(e.g. {sorted(overlap)[0][:8]}); results would be inflated by training leakage. "
+            f"Move the benchmark window (ref / history_offset) or retrain on an earlier window "
+            f"(model trained with ref={meta.get('ref')!r})."
+        )
+
+    for key, expected in (
+        ("model_name", config.model_name),
+        ("context_chunking", config.context_chunking),
+        ("clean_mode", config.clean_mode),
+    ):
+        if key in meta and meta[key] != expected:
+            logger.warning(
+                f"Model was trained with {key}={meta[key]!r} but the benchmark uses {expected!r}; "
+                f"its predictions may not transfer."
+            )
+
+
+def _target_ranks_and_scores(
+    query_matrix: np.ndarray,
+    snapshot,
+    target_ids: List[str],
+) -> tuple:
+    """Exact 1-indexed rank (over the FULL index) and score of each query's target.
+
+    rank = 1 + number of entities scoring strictly higher than the target.
+    A target missing from the index gets rank len(index) + 1 and score 0.0.
+    """
+    entity_ids = list(snapshot.entity_embeddings.keys())
+    index_of = {eid: i for i, eid in enumerate(entity_ids)}
+    matrix = np.asarray([snapshot.entity_embeddings[eid] for eid in entity_ids], dtype=float)
+    scores = query_matrix @ matrix.T                      # (n_queries, n_entities)
+    ranks = np.full(len(target_ids), len(entity_ids) + 1, dtype=int)
+    target_scores = np.zeros(len(target_ids), dtype=float)
+    for row, target in enumerate(target_ids):
+        col = index_of.get(target)
+        if col is None:
+            continue
+        target_scores[row] = scores[row, col]
+        ranks[row] = 1 + int(np.sum(scores[row] > scores[row, col]))
+    return ranks, target_scores
+
+
 # ---------------------------------------------------------------------------
 # Phase 3.3: multi-seed entry point
 # ---------------------------------------------------------------------------
@@ -78,8 +173,10 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
     """
     Entry point for the benchmark pipeline.
 
-    Phase 3.3: when config.n_seeds > 1, runs the benchmark n_seeds times with
-    different seeds and writes an aggregated report with mean ± std metrics.
+    When config.n_seeds > 1, runs the benchmark n_seeds times on DISJOINT commit
+    windows (run i ends i * window_span commits further back in history) and
+    writes an aggregated report with mean ± std across windows. The pipeline is
+    deterministic, so repeating it on the same window would add no information.
     When n_seeds == 1 (default), delegates directly to _run_single_benchmark().
     """
     if config.n_seeds <= 1:
@@ -89,11 +186,16 @@ def run_benchmark(config: BenchmarkConfig) -> Path:
     all_run_strategy_summaries: List[Dict] = []
     output_dirs: List[Path] = []
 
+    window_span = max(1, (config.num_commits - 1) * max(1, config.commit_stride))
     for seed_idx in range(config.n_seeds):
-        seed_val = seed_idx * 17 + config.seed   # deterministic, non-overlapping seeds
-        seeded_config = replace(config, seed=seed_val, n_seeds=1)
+        seed_val = seed_idx * 17 + config.seed   # labels the run; windows differ via offset
+        offset = config.history_offset + seed_idx * window_span
+        seeded_config = replace(config, seed=seed_val, n_seeds=1, history_offset=offset)
         logger.info(f"\n{'='*60}")
-        logger.info(f"Multi-seed run {seed_idx + 1}/{config.n_seeds}  (seed={seed_val})")
+        logger.info(
+            f"Multi-window run {seed_idx + 1}/{config.n_seeds}  "
+            f"(seed={seed_val}, window ends {offset} commits before HEAD)"
+        )
         logger.info(f"{'='*60}")
 
         out_dir = _run_single_benchmark(seeded_config)
@@ -143,14 +245,31 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
     logger.info("==================================================================")
 
     git_helper = GitHelper(config.repo_path)
-    embedding_manager = EmbeddingManager(model_name=config.model_name, clean_mode=config.clean_mode)
+    embedding_manager = EmbeddingManager(
+        model_name=config.model_name, clean_mode=config.clean_mode, device=config.device
+    )
 
-    # Load ML predictions if provided (Phase 2.1/3.2: float score support)
+    # Load dynamic .pkl model artifact if provided (Phase 3.2: full switch to .pkl).
+    # A configured-but-missing model is a hard error: silently falling back would
+    # report changed_only numbers under the predictive_ml name.
+    model_runner: Optional[ModelRunner] = None
+    if getattr(config, "model_path", None):
+        model_file = _resolve_model_path(config.model_path)
+        if not model_file.exists():
+            raise FileNotFoundError(
+                f"model_path {model_file} does not exist. Train a DriftPredictor with "
+                f"run_experiment.py (it writes results/<run>/drift_predictor.pkl) and point "
+                f"model_path at it, or remove predictive_ml from strategies."
+            )
+        logger.info(f"Loading dynamic .pkl model artifact from {model_file}...")
+        model_runner = ModelRunner(str(model_file))
+
+    # Load ML predictions if provided (legacy fallback)
     ml_predictions: Optional[Dict] = None
-    if config.predictions_path:
+    if getattr(config, "predictions_path", None) and not model_runner:
         pred_path = Path(config.predictions_path)
         if pred_path.exists():
-            logger.info(f"Loading ML predictions from {pred_path}")
+            logger.info(f"Loading legacy ML predictions from {pred_path}")
             with pred_path.open("r", encoding="utf-8") as f:
                 ml_predictions = json.load(f)
             # Log score distribution for sanity-checking
@@ -163,7 +282,13 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                         f"mean={sum(scores)/len(scores):.4f}"
                     )
         else:
-            logger.warning(f"Predictions path {pred_path} does not exist — predictive_ml will fall back to changed_only.")
+            raise FileNotFoundError(f"predictions_path {pred_path} does not exist.")
+
+    if "predictive_ml" in config.strategies and model_runner is None and ml_predictions is None:
+        raise ValueError(
+            "Strategy 'predictive_ml' requested but no model is configured. Set model_path "
+            "(see benchmark_settings.json) or remove predictive_ml from strategies."
+        )
 
     logger.info(f"Sampling commit pairs (num_commits={config.num_commits}, mode='{config.sampling_mode}')...")
     commit_pairs = sample_commit_pairs(
@@ -171,16 +296,43 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         num_commits=config.num_commits,
         sampling_mode=config.sampling_mode,
         commit_stride=config.commit_stride,
+        history_offset=config.history_offset,
+        ref=config.ref,
     )
     if not commit_pairs:
         raise RuntimeError("No commit pairs available for benchmarking")
 
     logger.info(f"Sampled {len(commit_pairs)} commit pair(s) for benchmarking.")
+    if model_runner is not None:
+        _check_training_overlap(model_runner, config, commit_pairs)
 
     all_results: List[PerQueryResult] = []
     all_embedding_comparisons: List[StrategyEmbeddingComparisonResult] = []
     all_queries = []
     run_id = _build_run_id(config, commit_pairs[0].commit_before, commit_pairs[0].commit_after)
+
+    # Initialize per-strategy stateful cache trackers and active cached vector snapshots
+    cache_trackers: Dict[str, StatefulCacheTracker] = {
+        s: StatefulCacheTracker(strategy_name=s) for s in config.strategies
+    }
+    cached_index_snapshots: Dict[str, Any] = {}
+    # Re-embedding cost summed over ALL commit pairs (not just the first).
+    updated_totals: Dict[str, int] = {s: 0 for s in config.strategies}
+    entity_totals: Dict[str, int] = {s: 0 for s in config.strategies}
+    ndcg_k = 10 if 10 in config.top_k_values else max(config.top_k_values)
+    hit_k = max(config.top_k_values)
+
+    # Raw TreeSitterRepoParser per commit, so ModelRunner can diff an entity's
+    # anchor commit against the current one exactly as training does.
+    parsers_by_commit: Dict[str, Any] = {}
+    # Running feature state for predictive_ml, mirroring run_experiment.py:
+    # entity -> commits where it was semantically modified, and entity -> last
+    # observed embedding drift (known only for entities that were re-embedded).
+    ml_modification_history: Dict[str, List[str]] = {}
+    ml_previous_drifts: Dict[str, float] = {}
+
+    def _raw_parser(snapshot) -> Any:
+        return getattr(snapshot.parser, "_parser", snapshot.parser)
 
     for pair_idx, commit_pair in enumerate(commit_pairs, start=1):
         logger.info(
@@ -189,7 +341,6 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         )
 
         logger.info(f"Parsing repository snapshot at commit_before (mode={config.parser_mode})...")
-        # Phase 1.2: build_repository_snapshot now returns snapshot with .graph and .parser populated
         before_snapshot = build_repository_snapshot(
             git_helper,
             commit_pair.commit_before,
@@ -203,19 +354,33 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         )
         logger.info(f"  Extracted {len(after_snapshot.entities)} entities at commit {commit_pair.commit_after[:8]}.")
 
+        parsers_by_commit[commit_pair.commit_before] = _raw_parser(before_snapshot)
+        parsers_by_commit[commit_pair.commit_after] = _raw_parser(after_snapshot)
+
         modified_files = set(git_helper.get_modified_files(commit_pair.commit_before, commit_pair.commit_after))
+        # Entities whose OWN source changed (what changed_only re-embeds).
+        source_changed_ids = sorted(compute_source_changed_entities(
+            parsers_by_commit[commit_pair.commit_before],
+            parsers_by_commit[commit_pair.commit_after],
+            modified_files,
+        ))
+        # Entities whose EMBEDDED TEXT changed (own source or call-graph context):
+        # these are the targets whose fresh vector differs, i.e. "changed" queries.
+        texts_before = build_entity_texts(before_snapshot, embedding_manager, contextual=config.context_chunking)
+        texts_after = build_entity_texts(after_snapshot, embedding_manager, contextual=config.context_chunking)
+        prepare = embedding_manager._prepare_text
         changed_entity_ids = [
-            entity_id for entity_id, entity in after_snapshot.entities.items()
-            if entity.file_path in modified_files
+            eid for eid, text in texts_after.items()
+            if eid not in texts_before or prepare(texts_before[eid]) != prepare(text)
         ]
         all_entity_ids = list(after_snapshot.entities.keys())
+        file_level = sum(1 for e in after_snapshot.entities.values() if e.file_path in modified_files)
         logger.info(
-            f"  Modified files: {len(modified_files)}, "
-            f"Modified entities: {len(changed_entity_ids)}"
+            f"  Modified files: {len(modified_files)}, entities in modified files: {file_level}, "
+            f"source-changed: {len(source_changed_ids)}, embedded-text-changed: {len(changed_entity_ids)}"
         )
 
         logger.info("Generating evaluation queries...")
-        # Phase 1.2: pass after_snapshot.graph for caller-perspective synthetic queries
         queries = build_queries(
             snapshot=after_snapshot,
             commit_pair=commit_pair,
@@ -223,32 +388,72 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
             curated_queries_path=config.curated_queries_path,
             max_queries_per_entity=config.max_queries_per_entity,
             modified_entity_ids=set(changed_entity_ids),
-            repo_graph=after_snapshot.graph,  # Phase 1.2
+            repo_graph=after_snapshot.graph,
         )
+        n_generated = len(queries)
+        queries = [q for q in queries if q.target_entity_id in after_snapshot.entities]
+        if len(queries) < n_generated:
+            logger.info(
+                f"  Dropped {n_generated - len(queries)} query case(s) whose target entity "
+                f"does not exist at {commit_pair.commit_after[:8]}."
+            )
         all_queries.extend(queries)
         logger.info(f"  Generated {len(queries)} query case(s).")
         dataset_rows = build_dataset(commit_pair, queries)
+        unique_texts = sorted({row.query.query_text for row in dataset_rows})
+        text_vectors = (
+            embedding_manager.generate_embeddings_batch({f"query::{t}": t for t in unique_texts})
+            if unique_texts else {}
+        )
+        query_matrix = np.asarray(
+            [text_vectors[f"query::{row.query.query_text}"] for row in dataset_rows], dtype=float
+        ).reshape(len(dataset_rows), -1)
+        target_ids = [row.query.target_entity_id for row in dataset_rows]
+        baseline_ranks, baseline_scores = np.array([], dtype=int), np.array([])
 
         logger.info("Generating Baseline index embeddings for commit_after (Full Re-index)...")
-        baseline_snapshot = build_index_snapshot(after_snapshot, embedding_manager)
+        baseline_snapshot = build_index_snapshot(
+            after_snapshot, embedding_manager, contextual=config.context_chunking
+        )
 
-        logger.info("Generating Cached index embeddings for commit_before...")
-        before_index_snapshot = build_index_snapshot(before_snapshot, embedding_manager)
+        if dataset_rows:
+            baseline_ranks, baseline_scores = _target_ranks_and_scores(query_matrix, baseline_snapshot, target_ids)
+
+        # On the very first pair, initialize stateful trackers and cached vector indices with before_snapshot
+        if pair_idx == 1:
+            initial_before_index = build_index_snapshot(
+                before_snapshot, embedding_manager, contextual=config.context_chunking
+            )
+            for s in config.strategies:
+                cache_trackers[s].initialize(before_snapshot.entities.keys(), commit_pair.commit_before)
+                cached_index_snapshots[s] = initial_before_index
 
         for strategy_name in config.strategies:
             logger.info(f"\nEvaluating Candidate Strategy: '{strategy_name}'...")
-            # Phase 2.2: pass repo_parser (from snapshot.parser) and strategy_params
+            tracker = cache_trackers[strategy_name]
+            prev_cached_index = cached_index_snapshots.get(strategy_name)
+
+            # Underlying repo_parser instance for dependency resolution and code metrics
+            raw_parser = _raw_parser(after_snapshot)
+
             strategy_decision = decide_updated_entities(
                 strategy_name,
-                changed_entity_ids,
+                source_changed_ids,
                 len(after_snapshot.entities),
                 all_entity_ids=all_entity_ids,
                 ml_predictions=ml_predictions,
-                repo_parser=after_snapshot.parser,          # Phase 2.2
-                strategy_params={                            # Phase 2.2/2.3
-                    "hop_k":        config.hop_k,
+                repo_parser=raw_parser,
+                strategy_params={
+                    "hop_k": config.hop_k,
                     "ml_threshold": config.ml_threshold,
                 },
+                cache_tracker=tracker,
+                model_runner=model_runner,
+                git_helper=git_helper,
+                current_commit=commit_pair.commit_after,
+                parser_provider=parsers_by_commit.get,
+                modification_history=ml_modification_history,
+                previous_drifts=ml_previous_drifts,
             )
             logger.info(
                 f"  Strategy '{strategy_name}' re-embeds "
@@ -256,21 +461,50 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                 f"entities ({strategy_decision.updated_fraction:.2%})."
             )
 
+            # Build selective candidate snapshot combining baseline with statefully cached vectors
             candidate_snapshot = build_selective_snapshot(
                 baseline_snapshot,
-                before_index_snapshot,
+                prev_cached_index if prev_cached_index is not None else baseline_snapshot,
                 strategy_decision.updated_entity_ids,
             )
 
+            if strategy_name == "predictive_ml" and prev_cached_index is not None:
+                # Drift is observable only for entities we actually re-embedded.
+                for eid in strategy_decision.updated_entity_ids:
+                    old_vec = prev_cached_index.entity_embeddings.get(eid)
+                    new_vec = baseline_snapshot.entity_embeddings.get(eid)
+                    if old_vec is not None and new_vec is not None:
+                        ml_previous_drifts[eid] = float(1.0 - np.dot(old_vec, new_vec))
+
+            # Entities absent from the cache were embedded fresh at commit_after:
+            # start tracking them so later edits to them are detected.
+            prev_ids = prev_cached_index.entity_embeddings if prev_cached_index is not None else {}
+            tracker.register_new_entities(
+                [eid for eid in candidate_snapshot.entity_embeddings if eid not in prev_ids],
+                commit_pair.commit_after,
+            )
+
+            updated_totals[strategy_name] += len(strategy_decision.updated_entity_ids)
+            entity_totals[strategy_name] += len(after_snapshot.entities)
+
+            # Advance stateful anchor pointers and update cached vector index for this strategy
+            tracker.mark_updated(strategy_decision.updated_entity_ids, commit_pair.commit_after)
+            cached_index_snapshots[strategy_name] = candidate_snapshot
+
             if config.compare_embeddings:
                 logger.info(f"  Computing direct vector embedding similarity for '{strategy_name}'...")
+                before_ids = (
+                    set(prev_cached_index.entity_embeddings.keys())
+                    if prev_cached_index is not None
+                    else set(before_snapshot.entities.keys())
+                )
                 comp_result = compare_index_snapshots(
                     baseline_snapshot=baseline_snapshot,
                     candidate_snapshot=candidate_snapshot,
                     modified_files=modified_files,
                     strategy_name=strategy_name,
                     store_raw_vectors=config.store_raw_vectors,
-                    before_entity_ids=set(before_snapshot.entities.keys()),
+                    before_entity_ids=before_ids,
                     updated_entity_ids=strategy_decision.updated_entity_ids,
                 )
                 all_embedding_comparisons.append(comp_result)
@@ -284,32 +518,32 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                 f"  Running retrieval queries ({len(dataset_rows)} cases) "
                 f"against Baseline and '{strategy_name}' Candidate indices..."
             )
-            for query_idx, query_row in enumerate(dataset_rows, start=1):
-                if query_idx % 10 == 0 or query_idx == len(dataset_rows):
-                    logger.info(f"    Retrieval progress: {query_idx}/{len(dataset_rows)} queries processed.")
-
-                baseline_result = retrieve_top_k(
-                    query_row.query.query_text, baseline_snapshot, embedding_manager,
-                    top_k=max(config.top_k_values)
+            selective_ranks, selective_scores = (
+                _target_ranks_and_scores(query_matrix, candidate_snapshot, target_ids)
+                if dataset_rows else (np.array([], dtype=int), np.array([]))
+            )
+            # Is the target itself stale in this strategy's index (its vector differs
+            # from the full re-index, possibly since an earlier commit pair)?
+            stale_by_target: Dict[str, bool] = {}
+            for target_id in set(target_ids):
+                fresh_vec = baseline_snapshot.entity_embeddings.get(target_id)
+                cached_vec = candidate_snapshot.entity_embeddings.get(target_id)
+                stale_by_target[target_id] = (
+                    fresh_vec is None or cached_vec is None
+                    or not np.allclose(fresh_vec, cached_vec, atol=1e-6)
                 )
-                selective_result = retrieve_top_k(
-                    query_row.query.query_text, candidate_snapshot, embedding_manager,
-                    top_k=max(config.top_k_values)
-                )
-
+            for query_idx, query_row in enumerate(dataset_rows):
                 target_id = query_row.query.target_entity_id
-                baseline_rank = compute_rank(baseline_result.ranked_entity_ids, target_id)
-                selective_rank = compute_rank(selective_result.ranked_entity_ids, target_id)
-                baseline_score = (
-                    baseline_result.ranked_scores[baseline_rank - 1]
-                    if baseline_rank - 1 < len(baseline_result.ranked_scores) else 0.0
-                )
-                selective_score = (
-                    selective_result.ranked_scores[selective_rank - 1]
-                    if selective_rank - 1 < len(selective_result.ranked_scores) else 0.0
-                )
+                baseline_rank = int(baseline_ranks[query_idx])
+                selective_rank = int(selective_ranks[query_idx])
+                baseline_score = float(baseline_scores[query_idx])
+                selective_score = float(selective_scores[query_idx])
 
-                top_k = max(config.top_k_values)
+                top_k_hit_b = baseline_rank <= hit_k
+                top_k_hit_s = selective_rank <= hit_k
+                b_ndcg = 1.0 / np.log2(baseline_rank + 1) if baseline_rank <= ndcg_k else 0.0
+                s_ndcg = 1.0 / np.log2(selective_rank + 1) if selective_rank <= ndcg_k else 0.0
+
                 all_results.append(
                     PerQueryResult(
                         run_id=run_id,
@@ -326,22 +560,35 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
                         selective_rank=selective_rank,
                         baseline_score=baseline_score,
                         selective_score=selective_score,
-                        top_k_hit_baseline=recall_at_k(baseline_result.ranked_entity_ids, target_id, top_k) > 0,
-                        top_k_hit_selective=recall_at_k(selective_result.ranked_entity_ids, target_id, top_k) > 0,
+                        top_k_hit_baseline=top_k_hit_b,
+                        top_k_hit_selective=top_k_hit_s,
                         freshness_pass=(
                             query_row.query.expected_behavior == "latest_snapshot"
-                            and target_id in selective_result.ranked_entity_ids[:top_k]
+                            and top_k_hit_s
                         ),
                         cache_preservation_pass=(
                             query_row.query.expected_behavior != "latest_snapshot"
-                            and target_id in selective_result.ranked_entity_ids[:top_k]
+                            and top_k_hit_s
                         ),
                         rank_delta=rank_delta(baseline_rank, selective_rank),
                         score_delta=score_delta(baseline_score, selective_score),
                         updated_entity_fraction=strategy_decision.updated_fraction,
                         strategy_name=strategy_decision.strategy_name,
+                        rank_agreement=(selective_rank == baseline_rank),
+                        relative_freshness_pass=(top_k_hit_s if top_k_hit_b else True),
+                        ndcg_ratio=(s_ndcg / b_ndcg if b_ndcg > 0 else 1.0),
+                        target_stale=stale_by_target[target_id],
                     )
                 )
+
+        # Update the running modification history after this pair's predictions,
+        # matching training (history used for a pair excludes that pair itself).
+        for eid in compute_semantic_modified_entities(
+            parsers_by_commit[commit_pair.commit_before],
+            parsers_by_commit[commit_pair.commit_after],
+            modified_files,
+        ):
+            ml_modification_history.setdefault(eid, []).append(commit_pair.commit_after)
 
     logger.info("\nAggregating benchmark results across all commit pairs and strategies...")
 
@@ -357,18 +604,37 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
     strategy_summaries: Dict = {}
     for strategy_name, strategy_results in results_by_strategy.items():
         strat_queries = len(strategy_results)
+        changed_queries_strat = sum(1 for r in strategy_results if r.expected_behavior == "latest_snapshot")
+        unchanged_queries_strat = strat_queries - changed_queries_strat
+
         n_freshness_successes = sum(1 for r in strategy_results if r.freshness_pass)
         n_cache_successes     = sum(1 for r in strategy_results if r.cache_preservation_pass)
-        strat_freshness_success = n_freshness_successes / strat_queries if strat_queries else 0.0
-        strat_cache_success     = n_cache_successes     / strat_queries if strat_queries else 0.0
-        # Phase 3.1: benchmark_passed REMOVED — Wilson CIs computed in reporting.py instead
+
+        strat_freshness_success = (
+            n_freshness_successes / changed_queries_strat if changed_queries_strat > 0 else 0.0
+        )
+        strat_cache_success = (
+            n_cache_successes / unchanged_queries_strat if unchanged_queries_strat > 0 else 0.0
+        )
+
+        # Baseline Agreement Metrics
+        baseline_hits = sum(1 for r in strategy_results if r.top_k_hit_baseline)
+        relative_freshness_successes = sum(
+            1 for r in strategy_results if r.top_k_hit_baseline and r.top_k_hit_selective
+        )
+        relative_freshness_rate = (
+            relative_freshness_successes / baseline_hits if baseline_hits > 0 else 1.0
+        )
+
+        rank_agreements = sum(1 for r in strategy_results if r.rank_agreement)
+        rank_agreement_rate = rank_agreements / strat_queries if strat_queries > 0 else 1.0
 
         strat_baseline_mrr = float(
             sum(1.0 / r.baseline_rank for r in strategy_results) / strat_queries
         ) if strat_queries else 0.0
         strat_baseline_ndcg = float(
             sum(
-                1.0 / np.log2(r.baseline_rank + 1) if r.baseline_rank <= 10 else 0.0
+                1.0 / np.log2(r.baseline_rank + 1) if r.baseline_rank <= ndcg_k else 0.0
                 for r in strategy_results
             ) / strat_queries
         ) if strat_queries else 0.0
@@ -378,23 +644,21 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
         ) if strat_queries else 0.0
         strat_selective_ndcg = float(
             sum(
-                1.0 / np.log2(r.selective_rank + 1) if r.selective_rank <= 10 else 0.0
+                1.0 / np.log2(r.selective_rank + 1) if r.selective_rank <= ndcg_k else 0.0
                 for r in strategy_results
             ) / strat_queries
         ) if strat_queries else 0.0
 
-        # Get update fraction from embedding comparisons (if available)
-        strat_update_fraction = 0.0
-        if all_embedding_comparisons:
-            for comp in all_embedding_comparisons:
-                if comp.strategy_name == strategy_name:
-                    strat_update_fraction = comp.updated_fraction
-                    break
-        else:
-            # Fall back to fraction from any result row for this strategy
-            for r in strategy_results:
-                strat_update_fraction = r.updated_entity_fraction
-                break
+        mrr_ratio = strat_selective_mrr / strat_baseline_mrr if strat_baseline_mrr > 0 else 1.0
+        ndcg_ratio = strat_selective_ndcg / strat_baseline_ndcg if strat_baseline_ndcg > 0 else 1.0
+
+        # Re-embedding cost over ALL commit pairs: total re-embedded / total entities.
+        strat_update_fraction = (
+            updated_totals.get(strategy_name, 0) / entity_totals[strategy_name]
+            if entity_totals.get(strategy_name) else 0.0
+        )
+        fresh_ci = wilson_ci(n_freshness_successes, changed_queries_strat)
+        cache_ci = wilson_ci(n_cache_successes, unchanged_queries_strat)
 
         strategy_summaries[strategy_name] = {
             "baseline_metrics":  {"mrr": strat_baseline_mrr,  "ndcg_at_10": strat_baseline_ndcg},
@@ -405,13 +669,38 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
             },
             "freshness_success_rate":          strat_freshness_success,
             "cache_preservation_success_rate": strat_cache_success,
+            "relative_freshness_rate":         relative_freshness_rate,
+            "rank_agreement_rate":             rank_agreement_rate,
+            "mrr_ratio":                       mrr_ratio,
+            "ndcg_ratio":                      ndcg_ratio,
             "candidate_update_fraction":       strat_update_fraction,
-            # Phase 3.1: raw counts stored so reporting.py can compute Wilson CIs
+            "freshness_ci_95":                 list(fresh_ci),
+            "cache_preservation_ci_95":        list(cache_ci),
             "freshness_successes": n_freshness_successes,
             "cache_successes":     n_cache_successes,
+            "changed_queries":     changed_queries_strat,
+            "unchanged_queries":   unchanged_queries_strat,
             "total_queries":       strat_queries,
-            # benchmark_passed REMOVED (was: strat_freshness_success >= 0.5 and strat_cache_success >= 0.5)
+            "ndcg_k":              ndcg_k,
+            # Staleness cost vs. the full re-index — the quality metric strategies
+            # should be compared on (see staleness_metrics.py).
+            "staleness": compute_staleness_metrics(
+                strategy_results, config.top_k_values, config.primary_k
+            ),
         }
+
+    logger.info("\nStaleness cost vs. full re-index (lost = full re-index hit the strategy missed; "
+                "stale gains are not credited):")
+    for strategy_name, stats in strategy_summaries.items():
+        st = stats["staleness"]
+        per_k = "  ".join(
+            f"lost@{k}={e['lost']}/{e['reference_hits']} ({e['loss_rate']:.2%}) gained@{k}={e['gained']}"
+            for k, e in st["at_k"].items()
+        )
+        logger.info(
+            f"  {strategy_name:14s} cost={stats['candidate_update_fraction']:.3f}  {per_k}  "
+            f"stale-target queries={st['stale_target']['n_queries']}"
+        )
 
     # Phase 1.4: run saturation guard after strategy_summaries are built
     is_saturated = check_and_warn_saturation(strategy_summaries)
@@ -470,6 +759,20 @@ def _run_single_benchmark(config: BenchmarkConfig) -> Path:
     )
     write_summary_report(str(output_dir), summary, embedding_comparisons=all_embedding_comparisons)
     logger.info(f"Benchmark run complete. Report saved to: {output_dir / 'summary_report.md'}")
+
+    # Auto-generate visual charts alongside the markdown report
+    from .reporting import compute_pareto_frontier
+    real_summaries = {k: v for k, v in strategy_summaries.items() if not k.startswith("__")}
+    pareto = compute_pareto_frontier(real_summaries) if len(real_summaries) >= 2 else []
+    chart_paths = generate_benchmark_charts(
+        str(output_dir),
+        strategy_summaries=strategy_summaries,
+        embedding_comparisons=all_embedding_comparisons if all_embedding_comparisons else None,
+        pareto_strategies=pareto,
+    )
+    if chart_paths:
+        logger.info(f"Charts generated: {', '.join(p.name for p in chart_paths)}")
+
     return output_dir
 
 

@@ -155,8 +155,15 @@ class TreeSitterRepoParser:
 
         walk(node, 0)
 
+        # Count declared parameters only (named children), not the parentheses /
+        # commas, and not a leading self/cls receiver.
+        param_count = 0
         params_node = node.child_by_field_name('parameters')
-        param_count = len(params_node.children) if params_node else 0.0
+        if params_node:
+            params = [c for c in params_node.named_children if c.type != 'comment']
+            if params and params[0].type == 'identifier' and params[0].text in (b'self', b'cls'):
+                params = params[1:]
+            param_count = len(params)
 
         return {
             'cyclomatic_complexity': float(1 + branch_count),
@@ -383,46 +390,59 @@ class TreeSitterRepoParser:
         """Extract caller -> callee dependency edges using Tree-sitter AST nodes."""
         edges = []
 
-        def _scan_calls_and_definitions(node, current_entity_id: Optional[str] = None):
-            """Scan AST nodes recursively to record call graph edges between entities."""
-            nonlocal edges
-            active_id = current_entity_id
+        def _scan_calls_and_definitions(node, current_entity_id: Optional[str] = None,
+                                        current_class: Optional[str] = None,
+                                        in_function: bool = False):
+            """Scan AST nodes recursively to record call graph edges between entities.
 
-            if node.type in ('function_definition', 'class_definition'):
+            Mirrors the entity extraction in _parse_file: classes and functions are
+            entities only outside function bodies, and methods are keyed by their
+            enclosing class, so calls are credited to the right entity even when
+            several classes in a file define a method with the same name.
+            Calls inside nested functions are credited to the enclosing entity.
+            """
+            active_id = current_entity_id
+            child_class = current_class
+            child_in_function = in_function
+
+            if not in_function and node.type in ('function_definition', 'class_definition'):
                 name_node = node.child_by_field_name('name')
                 name = name_node.text.decode('utf-8', errors='ignore') if name_node else ""
-                
-                if node.type == 'function_definition':
-                    matching_ids = [
-                        eid for eid in local_entities.keys()
-                        if eid.startswith(file_path) and eid.endswith(f"::{name}")
-                    ]
-                    if matching_ids:
-                        active_id = matching_ids[0]
-                elif node.type == 'class_definition':
-                    active_id = f"{file_path}::{name}"
+
+                if node.type == 'class_definition':
+                    class_id = self._get_entity_id(file_path, None, name)
+                    if class_id in local_entities:
+                        active_id = class_id
+                    child_class = name
+                else:
+                    func_id = self._get_entity_id(file_path, current_class, name)
+                    if func_id in local_entities:
+                        active_id = func_id
+                    child_in_function = True
 
             elif node.type == 'call' and active_id:
                 func_node = node.child_by_field_name('function')
                 if func_node:
                     call_text = func_node.text.decode('utf-8', errors='ignore')
                     call_name = call_text.split('.')[-1]
-                    
+
                     # Parse current_class from active_id
-                    current_class = None
+                    caller_class = None
                     parts = active_id.split("::")
                     if len(parts) == 3:
-                        current_class = parts[1]
+                        caller_class = parts[1]
 
                     callee_id = self._resolve_call_target(
                         call_name, local_entities, symbol_table,
-                        file_path=file_path, current_class=current_class
+                        file_path=file_path, current_class=caller_class
                     )
                     if callee_id and callee_id in local_entities and callee_id != active_id:
                         edges.append((active_id, callee_id))
 
             for child in node.children:
-                _scan_calls_and_definitions(child, current_entity_id=active_id)
+                _scan_calls_and_definitions(child, current_entity_id=active_id,
+                                            current_class=child_class,
+                                            in_function=child_in_function)
 
         _scan_calls_and_definitions(root_node, current_entity_id=None)
         return edges
@@ -578,8 +598,9 @@ class TreeSitterRepoParser:
         reverse_graph = self._reverse_graph_cache
         if max_hops is None:
             return nx.descendants(reverse_graph, entity_id)
-        else:
-            return set(nx.dfs_preorder_nodes(reverse_graph, entity_id, depth_limit=max_hops))
+        # Breadth-first with a distance cutoff: every node within max_hops is
+        # found (depth-limited DFS can miss nodes first reached via a longer path).
+        return set(nx.single_source_shortest_path_length(reverse_graph, entity_id, cutoff=max_hops))
 
     def get_dependencies(self, entity_id: str, max_hops: Optional[int] = None) -> Set[str]:
         """Get all dependency entity IDs upstream."""
@@ -588,8 +609,7 @@ class TreeSitterRepoParser:
 
         if max_hops is None:
             return nx.descendants(self.graph, entity_id)
-        else:
-            return set(nx.dfs_preorder_nodes(self.graph, entity_id, depth_limit=max_hops))
+        return set(nx.single_source_shortest_path_length(self.graph, entity_id, cutoff=max_hops))
 
     def get_shortest_path_distance(self, source: str, target: str) -> Optional[int]:
         """Get shortest path distance between two entities."""

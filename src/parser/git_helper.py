@@ -63,10 +63,23 @@ class GitHelper:
         repo_path = Path(path).resolve()
 
         if repo_path.exists():
-            logger.info(f"Repository already exists at {repo_path}, updating from {repo_url}...")
+            logger.info(f"Repository already exists at {repo_path}, fetching from {repo_url}...")
             try:
                 subprocess.run(["git", "fetch", "origin"], cwd=repo_path, check=False, capture_output=True, text=True)
-                subprocess.run(["git", "pull"], cwd=repo_path, check=False, capture_output=True, text=True)
+                branch = subprocess.run(
+                    ["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_path,
+                    check=False, capture_output=True, text=True,
+                ).stdout.strip()
+                if branch and branch != "HEAD":
+                    pull = subprocess.run(["git", "pull", "--ff-only"], cwd=repo_path,
+                                          check=False, capture_output=True, text=True)
+                    if pull.returncode != 0:
+                        logger.warning(f"git pull failed in {repo_path}: {pull.stderr.strip()}")
+                else:
+                    logger.warning(
+                        f"{repo_path} is on a detached HEAD; fetched but not pulled. "
+                        f"Pin the analysed window with --ref instead of relying on HEAD."
+                    )
             except Exception as e:
                 logger.warning(f"Could not update existing repo at {repo_path}: {e}")
             return True
@@ -87,23 +100,24 @@ class GitHelper:
             logger.error(f"Failed to clone repository: {e.stderr}")
             return False
 
-    def get_commit_history(self, count: int = 50) -> List[str]:
+    def get_commit_history(self, count: int = 50, ref: Optional[str] = None) -> List[str]:
         """
         Get list of recent commit hashes.
 
         Args:
             count: Number of commits to retrieve
+            ref: Ref the history ends at (branch, tag, commit, ``main~200``).
+                Defaults to HEAD.
 
         Returns:
             List of commit hashes (oldest first)
         """
-        logger.info(f"Retrieving last {count} commits")
+        logger.info(f"Retrieving last {count} commits up to {ref or 'HEAD'}")
         # Get commits in reverse chronological order, then reverse to get oldest first
-        output = self._run_git_command([
-            "log",
-            "--format=%H",
-            f"-{count}"
-        ])
+        command = ["log", "--format=%H", f"-{count}"]
+        if ref:
+            command.append(ref)
+        output = self._run_git_command(command)
         commits = [c.strip() for c in output.split("\n") if c.strip()] if output else []
         commits.reverse()  # Oldest first
         logger.info(f"Retrieved {len(commits)} commits")
@@ -168,6 +182,11 @@ class GitHelper:
         except Exception:
             # File might not exist at this commit
             return None
+
+    def get_checkout_ref(self) -> str:
+        """Current branch name, or the commit hash when HEAD is detached."""
+        branch = self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"])
+        return branch if branch and branch != "HEAD" else self.get_current_commit()
 
     def get_current_commit(self) -> str:
         """

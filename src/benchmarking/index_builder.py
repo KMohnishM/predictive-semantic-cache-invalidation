@@ -8,11 +8,14 @@ from typing import Dict, List, Optional
 import numpy as np
 
 try:
+    from embedder.context_builder import build_contextual_source
     from embedder.embedding_manager import EmbeddingManager
 except ImportError:
     try:
+        from src.embedder.context_builder import build_contextual_source
         from src.embedder.embedding_manager import EmbeddingManager
     except ImportError:
+        from ..embedder.context_builder import build_contextual_source
         from ..embedder.embedding_manager import EmbeddingManager
 
 from .types import IndexSnapshot, RepositorySnapshot
@@ -25,20 +28,47 @@ class RetrievalResult:
     ranked_scores: List[float]
 
 
-def build_index_snapshot(snapshot: RepositorySnapshot, embedding_manager: EmbeddingManager) -> IndexSnapshot:
-    """Generate vector embeddings for all entities in a repository snapshot.
+def build_entity_texts(
+    snapshot: RepositorySnapshot,
+    embedding_manager: EmbeddingManager,
+    contextual: bool = True,
+) -> Dict[str, str]:
+    """Return entity_id -> the exact text that gets embedded for this snapshot.
 
-    Args:
-        snapshot: RepositorySnapshot containing parsed entities.
-        embedding_manager: EmbeddingManager instance.
-
-    Returns:
-        IndexSnapshot containing serialized float vector embeddings and metadata.
+    When contextual=True, each entity's text is built by the shared
+    build_contextual_source() (src/embedder/context_builder.py) — the exact
+    representation Pipeline A trains on — so benchmark vectors and training
+    labels come from the same embedding text.
     """
+    repo_parser = getattr(snapshot.parser, "_parser", snapshot.parser)
+    if contextual and repo_parser is None:
+        raise ValueError(
+            f"Contextual indexing requires snapshot.parser for commit {snapshot.commit_hash[:8]}"
+        )
+    large_context = embedding_manager.is_large_context() if contextual else False
+
+    texts: Dict[str, str] = {}
+    for entity_id, entity in snapshot.entities.items():
+        if contextual:
+            parser_entity = repo_parser.get_entity(entity_id) or entity
+            texts[entity_id] = build_contextual_source(
+                parser_entity, repo_parser, large_context=large_context
+            )
+        else:
+            texts[entity_id] = entity.source_code
+    return texts
+
+
+def build_index_snapshot(
+    snapshot: RepositorySnapshot,
+    embedding_manager: EmbeddingManager,
+    contextual: bool = True,
+) -> IndexSnapshot:
+    """Generate vector embeddings for all entities in a repository snapshot."""
     if not snapshot.entities:
         return IndexSnapshot(commit_hash=snapshot.commit_hash, entity_embeddings={}, entity_metadata={})
 
-    entities_dict = {entity_id: entity.source_code for entity_id, entity in snapshot.entities.items()}
+    entities_dict = build_entity_texts(snapshot, embedding_manager, contextual=contextual)
     raw_embeddings = embedding_manager.generate_embeddings_batch(entities_dict)
 
     entity_embeddings: Dict[str, List[float]] = {

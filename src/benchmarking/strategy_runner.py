@@ -4,11 +4,66 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from .types import StrategyDecision
 
 logger = logging.getLogger(__name__)
+
+
+def _get_stateful_changed_entities(
+    all_entity_ids: List[str],
+    cache_tracker: Any,
+    git_helper: Any,
+    current_commit: str,
+    repo_parser: Any,
+    parser_provider: Optional[Any] = None,
+) -> List[str]:
+    """
+    Identify entities whose own source changed between their cache anchor commit
+    and current_commit (or that are new). Groups entities by anchor to minimize
+    git calls. Entities that merely share a file with an edit are not changed.
+    """
+    if not cache_tracker or not git_helper or not current_commit or not all_entity_ids:
+        return []
+
+    try:
+        from extractor.semantic_modification import compute_source_changed_entities
+    except ImportError:
+        from src.extractor.semantic_modification import compute_source_changed_entities
+
+    anchors = cache_tracker.get_all_anchors()
+    anchor_groups: Dict[str, List[str]] = {}
+    for eid in all_entity_ids:
+        anchor = anchors.get(eid, "")
+        anchor_groups.setdefault(anchor, []).append(eid)
+
+    changed: Set[str] = set()
+    for anchor, group_eids in anchor_groups.items():
+        if not anchor or anchor == current_commit:
+            continue
+        try:
+            modified_files = set(git_helper.get_modified_files(anchor, current_commit))
+        except Exception as exc:
+            logger.warning(f"Failed to get modified files {anchor[:8]} -> {current_commit[:8]}: {exc}")
+            modified_files = set()
+
+        anchor_parser = parser_provider(anchor) if parser_provider is not None else None
+        if anchor_parser is None:
+            logger.warning(
+                f"No parser for anchor {anchor[:8]}; falling back to file-level change detection."
+            )
+            for eid in group_eids:
+                ent = getattr(repo_parser, "get_entity", lambda _: None)(eid)
+                if ent and ent.file_path in modified_files:
+                    changed.add(eid)
+            continue
+
+        changed.update(compute_source_changed_entities(
+            anchor_parser, repo_parser, modified_files, entity_ids=group_eids
+        ))
+
+    return list(changed)
 
 
 def decide_updated_entities(
@@ -17,54 +72,70 @@ def decide_updated_entities(
     total_entities: int,
     all_entity_ids: Optional[List[str]] = None,
     ml_predictions: Optional[Dict[str, Any]] = None,
-    repo_parser=None,                                     # Phase 2.1: for fixed_hop propagation
-    strategy_params: Optional[Dict[str, Any]] = None,    # Phase 2.1: hop_k, ml_threshold
+    repo_parser: Optional[Any] = None,
+    strategy_params: Optional[Dict[str, Any]] = None,
+    cache_tracker: Optional[Any] = None,
+    model_runner: Optional[Any] = None,
+    git_helper: Optional[Any] = None,
+    current_commit: Optional[str] = None,
+    intermediate_commits: Optional[List[str]] = None,
+    parser_provider: Optional[Any] = None,
+    modification_history: Optional[Dict[str, List[str]]] = None,
+    previous_drifts: Optional[Dict[str, float]] = None,
 ) -> StrategyDecision:
     """
     Decide which entities to re-embed for a given invalidation strategy.
+    Supports stateful anchor comparisons (C_cached -> C_current) and dynamic .pkl model inference.
 
     Args:
-        strategy_name:       One of: full_reindex, changed_only, fixed_hop, predictive_ml
-        changed_entity_ids:  Entities in files touched by the git diff
-        total_entities:      Total entity count in the after-commit snapshot
-        all_entity_ids:      All entity IDs in the snapshot (needed by full_reindex, predictive_ml)
-        ml_predictions:      Dict mapping entity_id -> float score OR bool.
-                             Float scores (from Pipeline A export_predictions()) are
-                             thresholded by strategy_params["ml_threshold"].
-                             Bool values (legacy) are used directly.
-        repo_parser:         Parser with get_dependents(entity_id, max_hops=k).
-                             Populated from snapshot.parser (Phase 1.2).
-                             Required for fixed_hop; logs warning and falls back if absent.
-        strategy_params:     Per-strategy config dict. Supported keys:
-                               "hop_k" (int, default 2)   — hop depth for fixed_hop
-                               "ml_threshold" (float, default 0.5) — cutoff for predictive_ml
-
-    Phase 2.1 fixes:
-        - fixed_hop: was stub identical to changed_only; now does real k-hop propagation
-          via repo_parser.get_dependents(eid, max_hops=hop_k)
-        - predictive_ml: was bool-only; now supports float scores from Pipeline A;
-          both branches handled via isinstance check
+        strategy_name:       full_reindex, changed_only, fixed_hop, or predictive_ml
+        changed_entity_ids:  Entities whose own source changed in this commit step
+        total_entities:      Total entity count in the current snapshot
+        all_entity_ids:      All entity IDs in the snapshot
+        ml_predictions:      Legacy dict of precomputed predictions (fallback)
+        repo_parser:         TreeSitterRepoParser instance
+        strategy_params:     Config dict containing hop_k, ml_threshold
+        cache_tracker:       StatefulCacheTracker instance tracking per-entity anchors
+        model_runner:        ModelRunner instance holding loaded .pkl artifact
+        git_helper:          GitHelper instance
+        current_commit:      Hash of the current evaluation commit
+        intermediate_commits: Optional list of commits between anchor and current
+        parser_provider:     Callable commit_hash -> TreeSitterRepoParser (predictive_ml features)
+        modification_history: Running entity -> [commits] history (predictive_ml features)
+        previous_drifts:     Running entity -> last observed drift (predictive_ml features)
     """
     strategy_params = strategy_params or {}
     start_time = time.perf_counter()
 
     if strategy_name == "full_reindex":
-        # Update everything — oracle upper bound for freshness
+        # Full re-index: re-embed all entities
         updated = list(all_entity_ids) if all_entity_ids is not None else list(changed_entity_ids)
 
     elif strategy_name == "changed_only":
-        # Update only entities in files touched by the git diff
-        updated = list(changed_entity_ids)
+        if cache_tracker and git_helper and current_commit and all_entity_ids:
+            updated = _get_stateful_changed_entities(
+                all_entity_ids, cache_tracker, git_helper, current_commit, repo_parser,
+                parser_provider,
+            )
+            logger.info(
+                f"changed_only (stateful): {len(updated)}/{len(all_entity_ids)} entities modified since their anchor"
+            )
+        else:
+            updated = list(changed_entity_ids)
 
     elif strategy_name == "fixed_hop":
-        # Phase 2.1 FIX: Propagate invalidation k hops outward through the call graph.
-        # Start with changed entities; expand to their predecessors (callers) recursively.
-        # Previously this was: updated = list(set(changed_entity_ids))  <- identical to changed_only
         hop_k = int(strategy_params.get("hop_k", 2))
+        if cache_tracker and git_helper and current_commit and all_entity_ids:
+            base_changed = _get_stateful_changed_entities(
+                all_entity_ids, cache_tracker, git_helper, current_commit, repo_parser,
+                parser_provider,
+            )
+        else:
+            base_changed = list(changed_entity_ids)
 
         if repo_parser is not None and hasattr(repo_parser, "get_dependents"):
-            expanded = set(changed_entity_ids)
-            for eid in list(changed_entity_ids):
+            expanded = set(base_changed)
+            for eid in list(base_changed):
                 try:
                     dependents = repo_parser.get_dependents(eid, max_hops=hop_k)
                     expanded.update(dependents)
@@ -72,45 +143,74 @@ def decide_updated_entities(
                     logger.debug(f"fixed_hop: get_dependents({eid!r}) raised: {exc}")
             updated = list(expanded)
             logger.info(
-                f"fixed_hop(k={hop_k}): {len(changed_entity_ids)} changed entity/entities "
+                f"fixed_hop(k={hop_k}, stateful): {len(base_changed)} anchor-changed entity/entities "
                 f"→ {len(updated)} after {hop_k}-hop propagation"
             )
         else:
-            # Fallback: no parser available — behave like changed_only with a warning
-            logger.warning(
-                "fixed_hop: repo_parser not provided or lacks get_dependents(). "
-                "Falling back to changed_only behaviour. "
-                "Pass repo_parser= to enable hop propagation."
-            )
-            updated = list(set(changed_entity_ids))
+            logger.warning("fixed_hop: repo_parser not provided or lacks get_dependents(). Falling back to changed_only.")
+            updated = list(base_changed)
 
     elif strategy_name == "predictive_ml":
-        # Phase 2.1 FIX: Support both float scores (Pipeline A continuous output)
-        # and legacy boolean predictions.
-        if ml_predictions is not None and all_entity_ids is not None:
+        # ml_threshold=None -> use the threshold stored in the model artifact
+        configured = strategy_params.get("ml_threshold")
+        if configured is not None:
+            threshold = float(configured)
+        elif model_runner is not None and getattr(model_runner, "is_loaded", False):
+            threshold = float(model_runner.decision_threshold)
+        else:
+            threshold = 0.5
+
+        if model_runner is not None and getattr(model_runner, "is_loaded", False) and all_entity_ids and cache_tracker:
+            # Dynamic .pkl inference path
+            logger.info(
+                f"predictive_ml (dynamic .pkl): evaluating {len(all_entity_ids)} entities "
+                f"against stateful anchors at commit {current_commit[:8]}..."
+            )
+            raw_scores = model_runner.predict_entities(
+                entity_ids=all_entity_ids,
+                anchor_commits=cache_tracker.get_all_anchors(),
+                current_commit=current_commit,
+                git_helper=git_helper,
+                repo_parser=repo_parser,
+                ml_threshold=threshold,
+                parser_provider=parser_provider,
+                modification_history=modification_history,
+                previous_drifts=previous_drifts,
+            )
+            updated = model_runner.evaluate_invalidation(raw_scores, threshold=threshold)
+            logger.info(
+                f"predictive_ml (dynamic .pkl, threshold={threshold:.3f}): "
+                f"{len(updated)}/{len(all_entity_ids)} entities flagged as stale"
+            )
+
+        elif ml_predictions is not None and all_entity_ids is not None:
+            # Legacy precomputed predictions dictionary path
             sample_val = next(iter(ml_predictions.values()), None)
             if isinstance(sample_val, float):
-                # Continuous score path — apply threshold
-                threshold = float(strategy_params.get("ml_threshold", 0.5))
                 updated = [
                     eid for eid in all_entity_ids
                     if ml_predictions.get(eid, 0.0) >= threshold
                 ]
                 logger.info(
-                    f"predictive_ml (float, threshold={threshold:.3f}): "
+                    f"predictive_ml (legacy float, threshold={threshold:.3f}): "
                     f"{len(updated)}/{len(all_entity_ids)} entities flagged as stale"
                 )
             else:
-                # Legacy boolean path
                 updated = [eid for eid in all_entity_ids if ml_predictions.get(eid, False)]
-                logger.info(f"predictive_ml (bool): {len(updated)} entities flagged as stale")
+                logger.info(f"predictive_ml (legacy bool): {len(updated)} entities flagged as stale")
+
         else:
             logger.warning(
-                "predictive_ml: ml_predictions not provided or all_entity_ids missing. "
-                "Falling back to changed_only. "
-                "Pass --predictions-path to enable ML-based invalidation."
+                "predictive_ml: neither model_runner (.pkl) nor ml_predictions provided. "
+                "Falling back to changed_only."
             )
-            updated = list(changed_entity_ids)
+            if cache_tracker and git_helper and current_commit and all_entity_ids:
+                updated = _get_stateful_changed_entities(
+                    all_entity_ids, cache_tracker, git_helper, current_commit, repo_parser,
+                    parser_provider,
+                )
+            else:
+                updated = list(changed_entity_ids)
 
     else:
         logger.warning(f"Unknown strategy '{strategy_name}' — defaulting to changed_only")

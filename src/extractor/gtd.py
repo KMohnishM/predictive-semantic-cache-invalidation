@@ -84,15 +84,15 @@ def _avg_shortest_path(G: nx.DiGraph) -> float:
 # ---------------------------------------------------------------------------
 
 def _node_diff(graph_a: nx.DiGraph, graph_b: nx.DiGraph,
-               drifts: Dict[str, float]) -> Dict[str, float]:
+               is_modified) -> Dict[str, float]:
     """
-    Classify every node and return aggregate counts + drift statistics.
+    Classify every node and return aggregate counts.
 
     Classification (per node in union of both graphs):
       added     — in G_{t+1} but not G_t
       deleted   — in G_t but not G_{t+1}
-      modified  — drift > 0 (node present in both)
-      unchanged — drift == 0 (node present in both, no drift recorded)
+      modified  — is_modified(node) (node present in both)
+      unchanged — present in both and not modified
     """
     nodes_a: Set[str] = set(graph_a.nodes())
     nodes_b: Set[str] = set(graph_b.nodes())
@@ -103,7 +103,7 @@ def _node_diff(graph_a: nx.DiGraph, graph_b: nx.DiGraph,
     n_total    = max(len(nodes_a | nodes_b), 1)
 
     # Among shared nodes, classify by drift
-    drifted    = [eid for eid in both if drifts.get(eid, 0.0) > 0]
+    drifted    = [eid for eid in both if is_modified(eid)]
     n_modified = len(drifted)
     n_unchanged = len(both) - n_modified
 
@@ -261,7 +261,7 @@ def _semantic_evolution(graph_b: nx.DiGraph,
 def _node_impact_features(node: str,
                            graph_a: nx.DiGraph,
                            graph_b: nx.DiGraph,
-                           drifts: Dict[str, float]) -> Dict[str, float]:
+                           is_modified) -> Dict[str, float]:
     """
     Derive node-level features that describe how a specific entity is
     affected by the graph transition.
@@ -273,7 +273,7 @@ def _node_impact_features(node: str,
         change_class = 1.0    # added
     elif in_a and not in_b:
         change_class = 2.0    # deleted
-    elif in_a and in_b and drifts.get(node, 0.0) > 0:
+    elif in_a and in_b and is_modified(node):
         change_class = 3.0    # modified
     else:
         change_class = 0.0    # unchanged
@@ -318,26 +318,42 @@ class GraphTransitionDescriptor:
     # ------------------------------------------------------------------
 
     def compute(self, parser_a, parser_b,
-                drifts: Dict[str, float]) -> None:
+                drifts: Optional[Dict[str, float]] = None,
+                modified_entities: Optional[Set[str]] = None) -> None:
         """
         Compute the full GTD.
 
         Args:
             parser_a : RepoParser for commit t
             parser_b : RepoParser for commit t+1
-            drifts   : entity_id → cosine drift (only entities in both commits)
+            drifts   : entity_id → cosine drift. Legacy mode: "modified" means
+                       drift > 0 and the sm_* drift statistics are included.
+                       Drift is only known AFTER re-embedding, so a predictor
+                       must not be trained on these features.
+            modified_entities : entities whose code changed between t and t+1.
+                       When given, "modified" is defined by code change and the
+                       drift statistics are omitted — every feature is then
+                       available before deciding what to re-embed (Pipeline A
+                       training and the benchmark both use this mode).
         """
         G_a = parser_a.get_graph() if parser_a else nx.DiGraph()
         G_b = parser_b.get_graph() if parser_b else nx.DiGraph()
         self._graph_a = G_a
         self._graph_b = G_b
 
+        if modified_entities is not None:
+            modified_set = set(modified_entities)
+            is_modified = modified_set.__contains__
+        else:
+            drift_map = drifts or {}
+            is_modified = lambda eid: drift_map.get(eid, 0.0) > 0  # noqa: E731
+
         # Compute all component dicts
-        node_ev   = _node_diff(G_a, G_b, drifts)
+        node_ev   = _node_diff(G_a, G_b, is_modified)
         edge_ev   = _edge_diff(G_a, G_b)
         struct_ev = _structural_evolution(G_a, G_b)
         cent_ev   = _centrality_evolution(G_a, G_b)
-        sem_ev    = _semantic_evolution(G_b, drifts)
+        sem_ev    = _semantic_evolution(G_b, drifts or {}) if modified_entities is None else {}
 
         # Merge into a single global vector
         self.global_vector = {}
@@ -350,12 +366,12 @@ class GraphTransitionDescriptor:
         # Pre-compute per-node features for all entities in either graph
         all_nodes = set(G_a.nodes()) | set(G_b.nodes())
         for node in all_nodes:
-            self._node_features[node] = _node_impact_features(node, G_a, G_b, drifts)
+            self._node_features[node] = _node_impact_features(node, G_a, G_b, is_modified)
 
         logger.info(
             f"[GTD] nodes_added={node_ev['node_added_ratio']:.3f}  "
             f"edge_churn={edge_ev['edge_churn']:.3f}  "
-            f"mean_drift={sem_ev['mean_drift']:.4f}"
+            + (f"mean_drift={sem_ev['mean_drift']:.4f}" if sem_ev else "modified=code-change")
         )
 
     def get_node_features(self, entity_id: str) -> Dict[str, float]:

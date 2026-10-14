@@ -3,14 +3,27 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from dataclasses import replace
 from pathlib import Path
 from typing import Optional
 
 from .types import BenchmarkConfig
 
+logger = logging.getLogger("benchmarking")
+
 
 DEFAULT_REPO_URL = "https://github.com/psf/black.git"
+DEFAULT_CONFIG_FILENAME = "benchmark_settings.json"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+def _default_config_path() -> Optional[Path]:
+    """Locate benchmark_settings.json in the working directory, else the project root."""
+    for candidate in (Path.cwd() / DEFAULT_CONFIG_FILENAME, PROJECT_ROOT / DEFAULT_CONFIG_FILENAME):
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -44,7 +57,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--model-name", default="sentence-transformers/all-MiniLM-L6-v2")
     parser.add_argument("--clean-mode", action="store_true")
+    parser.add_argument(
+        "--device",
+        default="auto",
+        help='Embedding device: "auto" (CUDA if available, else CPU), "cpu", "cuda", or e.g. "cuda:0"',
+    )
     parser.add_argument("--top-k-values", default="1,5,10")
+    parser.add_argument(
+        "--primary-k",
+        type=int,
+        default=5,
+        help="Headline k for staleness cost (loss/retention vs full re-index), Pareto frontier "
+             "and saturation check (default: 5)",
+    )
     parser.add_argument("--max-queries-per-entity", type=int, default=2)
     # Phase 2.4: predictive_ml and fixed_hop in default strategies
     parser.add_argument(
@@ -66,7 +91,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Include raw full float vectors in comparison output",
     )
     parser.add_argument("--no-store-raw-vectors", action="store_false", dest="store_raw_vectors")
-    parser.add_argument("--config", default=None, help="Path to JSON configuration file")
+    parser.add_argument(
+        "--context-chunking",
+        action="store_true",
+        default=True,
+        help="Embed entities with one-hop call-graph context (same text as Pipeline A training)",
+    )
+    parser.add_argument("--no-context-chunking", action="store_false", dest="context_chunking")
+    parser.add_argument(
+        "--config",
+        default=None,
+        help=f"Path to JSON configuration file (default: {DEFAULT_CONFIG_FILENAME} if present)",
+    )
     parser.add_argument(
         "--parser-mode",
         choices=["tree_sitter"],
@@ -76,7 +112,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--predictions-path",
         default=None,
-        help="Path to JSON file containing Pipeline A's ML predictions: {entity_id: float_score}",
+        help="[Deprecated] Path to JSON file containing Pipeline A's ML predictions",
+    )
+    parser.add_argument(
+        "--model-path",
+        default=None,
+        help='Path to trained DriftPredictor .pkl model artifact for dynamic inference, '
+             'or "latest" for the newest results/*/drift_predictor.pkl',
     )
     # Phase 2.3: hop depth for fixed_hop
     parser.add_argument(
@@ -89,15 +131,26 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--ml-threshold",
         type=float,
-        default=0.5,
-        help="Score threshold for binarising continuous ML drift scores (default: 0.5)",
+        default=None,
+        help="Probability threshold for predictive_ml (default: the threshold chosen at training time)",
     )
     # Phase 3.3: multi-seed aggregation
     parser.add_argument(
         "--n-seeds",
         type=int,
         default=1,
-        help="Number of independent benchmark seeds for mean ± CI aggregation (default: 1)",
+        help="Number of runs on disjoint, successively older commit windows, aggregated as mean ± std (default: 1)",
+    )
+    parser.add_argument(
+        "--ref",
+        default="HEAD",
+        help="Git ref (branch, tag or commit) the sampled commit window ends at (default: HEAD)",
+    )
+    parser.add_argument(
+        "--history-offset",
+        type=int,
+        default=0,
+        help="End the sampled commit window this many commits before HEAD (default: 0)",
     )
     return parser
 
@@ -148,9 +201,13 @@ def build_config(args: argparse.Namespace) -> BenchmarkConfig:
     store_raw_vectors = getattr(args, "store_raw_vectors", True)
     parser_mode = getattr(args, "parser_mode", "ast")
     predictions_path = getattr(args, "predictions_path", None)
+    model_path = getattr(args, "model_path", None)
     hop_k = getattr(args, "hop_k", 2)
-    ml_threshold = getattr(args, "ml_threshold", 0.5)
+    ml_threshold = getattr(args, "ml_threshold", None)
     n_seeds = getattr(args, "n_seeds", 1)
+    history_offset = getattr(args, "history_offset", 0)
+    ref = getattr(args, "ref", "HEAD")
+    context_chunking = getattr(args, "context_chunking", True)
     return BenchmarkConfig(
         repo_url=args.repo_url,
         repo_path=repo_path,
@@ -164,17 +221,33 @@ def build_config(args: argparse.Namespace) -> BenchmarkConfig:
         curated_queries_path=args.curated_queries_path,
         model_name=args.model_name,
         clean_mode=args.clean_mode,
+        device=getattr(args, "device", "auto"),
         top_k_values=parse_top_k_values(args.top_k_values),
+        primary_k=int(getattr(args, "primary_k", 5)),
         max_queries_per_entity=args.max_queries_per_entity,
         strategies=parse_strategies(raw_strategies),
         compare_embeddings=compare_embeddings,
         store_raw_vectors=store_raw_vectors,
         parser_mode=parser_mode,
         predictions_path=predictions_path,
+        model_path=model_path,
         hop_k=hop_k,
         ml_threshold=ml_threshold,
         n_seeds=n_seeds,
+        history_offset=history_offset,
+        ref=ref,
+        context_chunking=context_chunking,
     )
+
+
+def _explicit_cli_dests(parser: argparse.ArgumentParser, argv: Optional[list[str]] = None) -> set:
+    """Destinations the user actually passed on the command line (even if equal to the default)."""
+    import copy
+    probe = copy.deepcopy(parser)
+    for action in probe._actions:
+        action.default = argparse.SUPPRESS
+    explicit, _ = probe.parse_known_args(argv)
+    return set(vars(explicit))
 
 
 def load_config(argv: Optional[list[str]] = None) -> BenchmarkConfig:
@@ -189,15 +262,28 @@ def load_config(argv: Optional[list[str]] = None) -> BenchmarkConfig:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    # If JSON config is specified, load and merge it (CLI overrides JSON)
+    # JSON config: explicit --config, else benchmark_settings.json if present.
+    # CLI overrides JSON.
     if args.config:
         config_path = Path(args.config)
-        if config_path.exists():
-            import json
-            with config_path.open("r", encoding="utf-8") as f:
-                json_config = json.load(f)
-                for key, value in json_config.items():
-                    if hasattr(args, key) and getattr(args, key) == parser.get_default(key):
-                        setattr(args, key, value)
+        if not config_path.exists():
+            raise FileNotFoundError(f"--config file not found: {config_path}")
+    else:
+        config_path = _default_config_path()
+
+    if config_path is not None:
+        import json
+        logger.info(f"Loading benchmark configuration from {config_path.resolve()}")
+        with config_path.open("r", encoding="utf-8") as f:
+            json_config = json.load(f)
+        explicit = _explicit_cli_dests(parser, argv)
+        for key, value in json_config.items():
+            if not hasattr(args, key):
+                logger.warning(f"Ignoring unknown key {key!r} in {config_path}")
+                continue
+            if key not in explicit:  # CLI flags always win over the JSON file
+                setattr(args, key, value)
+    else:
+        logger.info(f"No --config given and no {DEFAULT_CONFIG_FILENAME} found; using CLI defaults.")
 
     return build_config(args)

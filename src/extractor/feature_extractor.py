@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 class FeatureExtractor:
     """Extracts features for drift prediction."""
 
-    def __init__(self, repo_parser, git_helper=None, commit_a=None, commit_b=None):
+    def __init__(self, repo_parser, git_helper=None, commit_a=None, commit_b=None,
+                 parser_a=None, large_context: bool = False):
         """
         Initialize feature extractor.
 
@@ -24,8 +25,14 @@ class FeatureExtractor:
             git_helper: GitHelper instance (optional, for caching diff stats)
             commit_a: Earlier commit hash (optional)
             commit_b: Later commit hash (optional)
+            parser_a: Parser for commit_a (optional). Needed for the
+                call-graph-context features; without it they are 0.
+            large_context: Stub format of the embedding model's context text
+                (see embedder.context_builder.build_callee_stubs).
         """
         self.repo_parser = repo_parser
+        self.parser_a = parser_a
+        self.large_context = large_context
         self.graph = repo_parser.get_graph()
         self.undirected_graph = self.graph.to_undirected()
 
@@ -213,17 +220,19 @@ class FeatureExtractor:
     def _get_historical_features(self, entity_id: str,
                                  modification_history: Dict[str, List[str]],
                                  previous_drifts: Dict[str, float]) -> Dict[str, float]:
-        """Extract historical features for an entity."""
+        """Extract historical features for an entity.
+
+        ``previous_drifts`` is accepted for API compatibility but no longer used:
+        an entity's past embedding drift is only observable when it was
+        re-embedded, so training (which sees every entity's drift) and inference
+        (which sees only re-embedded ones) would disagree on it.
+        """
         features = {
             'modification_frequency': 0.0,
-            'previous_drift': 0.0
         }
 
         if entity_id in modification_history:
             features['modification_frequency'] = float(len(modification_history[entity_id]))
-
-        if entity_id in previous_drifts:
-            features['previous_drift'] = float(previous_drifts[entity_id])
 
         return features
 
@@ -270,6 +279,43 @@ class FeatureExtractor:
             "taint_reachability_score": taint_score,
         }
 
+    def _get_context_change_features(self, entity_id: str, modified_entities: Set[str]) -> Dict[str, float]:
+        """Changes to the call-graph context that is embedded with entity_id.
+
+        With context chunking an entity's embedded text includes its one-hop
+        callee stubs, so it goes stale when a callee's stub (signature / first
+        docstring line) changes or a callee is added or removed, even if the
+        entity's own code did not change. A class's source also contains its
+        methods, so a modified method changes the class's text. Raw source
+        edits that the AST-normalized ``modified_entities`` ignores (comments,
+        docstrings, formatting) still change the embedded text.
+        """
+        from embedder.context_builder import build_callee_stubs
+
+        stub_changes = 0.0
+        own_source_changed = 0.0
+        if self.parser_a is not None:
+            entity_a = self.parser_a.get_entity(entity_id)
+            entity_b = self.repo_parser.get_entity(entity_id)
+            if entity_a is not None and entity_b is not None:
+                own_source_changed = float(entity_a.source_code != entity_b.source_code)
+            stubs_b = build_callee_stubs(entity_id, self.repo_parser, self.large_context)
+            stubs_a = (
+                build_callee_stubs(entity_id, self.parser_a, self.large_context)
+                if self.parser_a.get_entity(entity_id) else {}
+            )
+            stub_changes = float(sum(
+                stubs_a.get(dep) != stubs_b.get(dep) for dep in set(stubs_a) | set(stubs_b)
+            ))
+
+        member_prefix = f"{entity_id}::"
+        modified_members = float(sum(eid.startswith(member_prefix) for eid in modified_entities))
+        return {
+            "context_stub_changed_count": stub_changes,
+            "modified_member_count": modified_members,
+            "own_source_changed": own_source_changed,
+        }
+
     def extract_features(self, entity_id: str, commit_a: str, commit_b: str,
                          modified_entities: Set[str],
                          modification_history: Dict[str, List[str]],
@@ -285,6 +331,7 @@ class FeatureExtractor:
         features.update(self._get_historical_features(entity_id, modification_history, previous_drifts))
         features.update(self._get_gtd_features(entity_id, gtd))
         features.update(self._get_code_metrics_features(entity_id, modified_entities))
+        features.update(self._get_context_change_features(entity_id, modified_entities))
         return features
 
     def extract_features_batch(self, entity_ids: List[str], commit_a: str, commit_b: str,
@@ -300,7 +347,7 @@ class FeatureExtractor:
         else:
             from .gtd import GraphTransitionDescriptor
             dummy = GraphTransitionDescriptor()
-            dummy.compute(nx.DiGraph(), nx.DiGraph(), {})
+            dummy.compute(None, None, modified_entities=set())
             global_feats = {k: 0.0 for k in dummy.get_global_features()}
 
         features_list = []
