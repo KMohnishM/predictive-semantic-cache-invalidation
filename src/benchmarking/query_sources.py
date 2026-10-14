@@ -11,10 +11,26 @@ from .types import CommitPair, QueryCase, RepositorySnapshot
 
 
 def _normalize_query(text: str) -> str:
+    """Normalize query text string by collapsing whitespace.
+
+    Args:
+        text: Raw query text.
+
+    Returns:
+        Normalized query string.
+    """
     return " ".join(text.strip().split())
 
 
 def _extract_docstring_summary(source_code: str) -> Optional[str]:
+    """Extract docstring summary first-line from entity source code.
+
+    Args:
+        source_code: Python source code string.
+
+    Returns:
+        First line of docstring summary if found, None otherwise.
+    """
     import re
     match = re.search(r'"""(.*?)"""', source_code, re.DOTALL)
     if not match:
@@ -66,32 +82,33 @@ def build_synthetic_queries(
             else entity_index % 2 == 0
         )
 
+        file_short = Path(entity.file_path).name
+        entity_short = entity.entity_id.split("::")[-1]
         doc_summary = _extract_docstring_summary(entity.source_code)
         templates = []
 
         if doc_summary:
-            # Safe: uses the docstring's own description — no entity name in query
             templates.append(doc_summary)
             templates.append(f"Which function is described as: {doc_summary}?")
-        else:
-            # No docstring: attempt a caller-perspective query via the call graph
-            if repo_graph is not None:
-                try:
-                    callers = list(repo_graph.predecessors(entity.entity_id))
-                    if callers:
-                        # Use only the short method/function name of the first caller
-                        caller_short = callers[0].split("::")[-1]
-                        templates.append(
-                            f"What does {caller_short} rely on for its core operation?"
-                        )
-                except Exception:
-                    pass
+            templates.append(f"How is the following behavior implemented: {doc_summary}?")
+            templates.append(f"What module handles: {doc_summary}?")
+            templates.append(f"Which component in {file_short} handles: {doc_summary}?")
 
-            # If still no templates (no graph, no callers, no docstring):
-            # Skip this entity entirely — an honest absence of queries beats
-            # a name-leaking saturating query.
-            if not templates:
-                continue
+        if repo_graph is not None:
+            try:
+                callers = list(repo_graph.predecessors(entity.entity_id))
+                for caller in callers[:3]:
+                    caller_short = caller.split("::")[-1]
+                    templates.append(f"What does {caller_short} rely on for its core operation?")
+                    templates.append(f"Which function is invoked by {caller_short} to process its logic?")
+
+                callees = list(repo_graph.successors(entity.entity_id))
+                for callee in callees[:3]:
+                    callee_short = callee.split("::")[-1]
+                    templates.append(f"Which function coordinates the execution of {callee_short}?")
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).debug(f"Graph context lookup failed for {entity.entity_id}: {e}")
 
         # Deduplicate templates
         seen: Set[str] = set()

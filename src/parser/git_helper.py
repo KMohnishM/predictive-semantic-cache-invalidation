@@ -63,7 +63,12 @@ class GitHelper:
         repo_path = Path(path).resolve()
 
         if repo_path.exists():
-            logger.info(f"Repository already exists at {repo_path}")
+            logger.info(f"Repository already exists at {repo_path}, updating from {repo_url}...")
+            try:
+                subprocess.run(["git", "fetch", "origin"], cwd=repo_path, check=False, capture_output=True, text=True)
+                subprocess.run(["git", "pull"], cwd=repo_path, check=False, capture_output=True, text=True)
+            except Exception as e:
+                logger.warning(f"Could not update existing repo at {repo_path}: {e}")
             return True
 
         logger.info(f"Cloning repository from {repo_url} to {repo_path}")

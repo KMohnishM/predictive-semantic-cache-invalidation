@@ -10,18 +10,38 @@ from .types import BenchmarkConfig, BenchmarkSummary, CommitPair, PerQueryResult
 
 
 def ensure_output_dir(path: str) -> Path:
+    """Ensure directory exists at specified path string and return resolved Path object.
+
+    Args:
+        path: Path string.
+
+    Returns:
+        Resolved Path object.
+    """
     output_dir = Path(path).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
 
 def write_json(path: Path, payload: object) -> None:
+    """Serialize payload object to JSON file at path.
+
+    Args:
+        path: Path object.
+        payload: JSON-serializable object.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2, sort_keys=True)
 
 
 def write_jsonl(path: Path, rows: Iterable[dict]) -> None:
+    """Serialize dictionary rows to JSON Lines file at path.
+
+    Args:
+        path: Path object.
+        rows: Iterable of dictionary rows.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
@@ -37,6 +57,20 @@ def persist_run(
     summary: BenchmarkSummary,
     embedding_comparisons: Optional[Iterable[StrategyEmbeddingComparisonResult]] = None,
 ) -> Path:
+    """Persist all benchmark run artifacts (config, commit pairs, queries, results, summary) to output directory.
+
+    Args:
+        output_dir: Destination directory path.
+        config: BenchmarkConfig object.
+        commit_pairs: Iterable of CommitPair objects.
+        queries: Iterable of QueryCase objects.
+        results: Iterable of PerQueryResult objects.
+        summary: BenchmarkSummary object.
+        embedding_comparisons: Optional iterable of embedding comparison objects.
+
+    Returns:
+        Resolved output directory Path object.
+    """
     run_dir = ensure_output_dir(output_dir)
     write_json(run_dir / "benchmark_config.json", config.to_dict())
     write_json(run_dir / "commit_pairs.json", [item.to_dict() for item in commit_pairs])

@@ -36,6 +36,15 @@ from .types import RepositoryEntity, RepositorySnapshot
 # ---------------------------------------------------------------------------
 
 def _list_python_files_at_commit(git_helper: GitHelper, commit_hash: str) -> List[str]:
+    """List relative file paths of all Python files present in git repository at a specific commit.
+
+    Args:
+        git_helper: GitHelper instance.
+        commit_hash: Commit hash string.
+
+    Returns:
+        List of relative Python file path strings.
+    """
     output = git_helper._run_git_command(["ls-tree", "-r", "--name-only", commit_hash])
     return [
         line.strip()
@@ -69,6 +78,11 @@ class SnapshotParser:
     """
 
     def __init__(self, repo_parser: TreeSitterRepoParser) -> None:
+        """Initialize SnapshotParser with an underlying TreeSitterRepoParser instance.
+
+        Args:
+            repo_parser: TreeSitterRepoParser instance.
+        """
         self._parser = repo_parser
 
     def get_dependents(self, entity_id: str, max_hops: int = 2) -> List[str]:

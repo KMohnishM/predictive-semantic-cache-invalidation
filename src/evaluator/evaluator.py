@@ -42,6 +42,16 @@ class BaselineAChangedOnly(CacheInvalidationStrategy):
                                predicted_drifts: Dict[str, float],
                                threshold: float = 0.02,
                                **kwargs) -> Set[str]:
+        """Return set containing only directly modified entity IDs.
+
+        Args:
+            modified_entities: Set of directly modified entity IDs.
+            predicted_drifts: Dictionary of entity drift predictions.
+            threshold: Drift threshold parameter.
+
+        Returns:
+            Set of entity IDs to re-embed.
+        """
         return modified_entities.copy()
 
 
@@ -52,6 +62,16 @@ class BaselineBFullReindex(CacheInvalidationStrategy):
                                predicted_drifts: Dict[str, float],
                                threshold: float = 0.02,
                                **kwargs) -> Set[str]:
+        """Return set containing all repository entity IDs for full re-indexing.
+
+        Args:
+            modified_entities: Set of directly modified entity IDs.
+            predicted_drifts: Dictionary of entity drift predictions.
+            threshold: Drift threshold parameter.
+
+        Returns:
+            Set of all entity IDs to re-embed.
+        """
         return set(predicted_drifts.keys())
 
 
@@ -59,8 +79,7 @@ class BaselineCFixedHop(CacheInvalidationStrategy):
     """Baseline C: Re-embed modified nodes + dependents within K hops."""
 
     def __init__(self, k: int = 1):
-        """
-        Initialize fixed-hop strategy.
+        """Initialize fixed-hop strategy.
 
         Args:
             k: Number of hops to propagate
@@ -71,6 +90,16 @@ class BaselineCFixedHop(CacheInvalidationStrategy):
                                predicted_drifts: Dict[str, float],
                                threshold: float = 0.02,
                                **kwargs) -> Set[str]:
+        """Return set of modified entities plus dependent entities within K hops.
+
+        Args:
+            modified_entities: Set of directly modified entity IDs.
+            predicted_drifts: Dictionary of entity drift predictions.
+            threshold: Drift threshold parameter.
+
+        Returns:
+            Set of entity IDs to re-embed.
+        """
         repo_parser = kwargs.get('repo_parser')
         if not repo_parser:
             return modified_entities.copy()
@@ -92,6 +121,16 @@ class PredictiveStrategy(CacheInvalidationStrategy):
                                predicted_drifts: Dict[str, float],
                                threshold: float = 0.02,
                                **kwargs) -> Set[str]:
+        """Return set of entities whose predicted ML drift meets or exceeds threshold.
+
+        Args:
+            modified_entities: Set of directly modified entity IDs.
+            predicted_drifts: Dictionary of entity drift predictions.
+            threshold: ML drift threshold parameter.
+
+        Returns:
+            Set of entity IDs to re-embed.
+        """
         return {
             entity_id for entity_id, drift in predicted_drifts.items()
             if drift >= threshold
@@ -109,7 +148,8 @@ class BaselineDPageRankPropagation(CacheInvalidationStrategy):
     """
 
     def __init__(self, top_fraction: float = 0.3, alpha: float = 0.85):
-        """
+        """Initialize PageRank propagation strategy.
+
         Args:
             top_fraction : Fraction of all entities to re-embed (sorted by PPR score).
             alpha        : Damping factor for PageRank.
@@ -121,6 +161,16 @@ class BaselineDPageRankPropagation(CacheInvalidationStrategy):
                                predicted_drifts: Dict[str, float],
                                threshold: float = 0.02,
                                **kwargs) -> Set[str]:
+        """Return set of modified entities plus top fraction by Personalized PageRank score.
+
+        Args:
+            modified_entities: Set of directly modified entity IDs.
+            predicted_drifts: Dictionary of entity drift predictions.
+            threshold: Drift threshold parameter.
+
+        Returns:
+            Set of entity IDs to re-embed.
+        """
         repo_parser = kwargs.get('repo_parser')
         if not repo_parser:
             return modified_entities.copy()
@@ -165,6 +215,12 @@ class WeightedBFSDecayStrategy(CacheInvalidationStrategy):
     """
 
     def __init__(self, threshold: float = 0.05, max_hops: int = 6):
+        """Initialize weighted BFS decay strategy.
+
+        Args:
+            threshold: Minimum propagated strength threshold.
+            max_hops: Maximum BFS exploration depth.
+        """
         self.threshold = threshold
         self.max_hops = max_hops
 
@@ -172,6 +228,16 @@ class WeightedBFSDecayStrategy(CacheInvalidationStrategy):
                                predicted_drifts: Dict[str, float],
                                threshold: float = 0.02,
                                **kwargs) -> Set[str]:
+        """Return set of entities determined stale by call-graph BFS edge decay propagation.
+
+        Args:
+            modified_entities: Set of directly modified entity IDs.
+            predicted_drifts: Dictionary of entity drift predictions.
+            threshold: Drift threshold parameter.
+
+        Returns:
+            Set of entity IDs to re-embed.
+        """
         repo_parser = kwargs.get('repo_parser')
         if not repo_parser:
             return modified_entities.copy()

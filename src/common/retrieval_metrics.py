@@ -61,10 +61,29 @@ def compute_rank(ranked_ids: List[str], target_id: str) -> int:
 
 
 def recall_at_k(ranked_ids: List[str], target_id: str, k: int) -> float:
+    """Compute binary Recall@K for target_id within ranked_ids.
+
+    Args:
+        ranked_ids: List of ranked entity IDs.
+        target_id: Target entity ID.
+        k: Top-K cutoff rank.
+
+    Returns:
+        1.0 if target_id is present in top-K, 0.0 otherwise.
+    """
     return 1.0 if target_id in ranked_ids[:k] else 0.0
 
 
 def mean_reciprocal_rank(ranked_ids: List[str], target_id: str) -> float:
+    """Compute Mean Reciprocal Rank (MRR) for target_id within ranked_ids.
+
+    Args:
+        ranked_ids: List of ranked entity IDs.
+        target_id: Target entity ID.
+
+    Returns:
+        Reciprocal rank score (1 / rank) or 0.0 if not found.
+    """
     for index, entity_id in enumerate(ranked_ids, start=1):
         if entity_id == target_id:
             return 1.0 / index
@@ -72,6 +91,16 @@ def mean_reciprocal_rank(ranked_ids: List[str], target_id: str) -> float:
 
 
 def ndcg_at_k(ranked_ids: List[str], target_id: str, k: int) -> float:
+    """Compute Normalized Discounted Cumulative Gain at K (nDCG@K) for a single target ID.
+
+    Args:
+        ranked_ids: List of ranked entity IDs.
+        target_id: Target entity ID.
+        k: Cutoff rank K.
+
+    Returns:
+        nDCG@K score in range [0.0, 1.0].
+    """
     top_k = ranked_ids[:k]
     if target_id not in top_k:
         return 0.0
@@ -80,8 +109,26 @@ def ndcg_at_k(ranked_ids: List[str], target_id: str, k: int) -> float:
 
 
 def rank_delta(baseline_rank: int, selective_rank: int) -> int:
+    """Compute rank displacement delta between baseline and selective invalidation.
+
+    Args:
+        baseline_rank: Rank under full re-indexing baseline.
+        selective_rank: Rank under selective invalidation strategy.
+
+    Returns:
+        Integer rank difference (selective_rank - baseline_rank).
+    """
     return selective_rank - baseline_rank
 
 
 def score_delta(baseline_score: float, selective_score: float) -> float:
+    """Compute similarity score delta between baseline and selective invalidation.
+
+    Args:
+        baseline_score: Similarity score under full re-indexing baseline.
+        selective_score: Similarity score under selective invalidation strategy.
+
+    Returns:
+        Float score difference (selective_score - baseline_score).
+    """
     return selective_score - baseline_score

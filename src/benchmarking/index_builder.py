@@ -20,11 +20,21 @@ from .types import IndexSnapshot, RepositorySnapshot
 
 @dataclass(frozen=True)
 class RetrievalResult:
+    """Dataclass storing ranked entity IDs and similarity scores for a query."""
     ranked_entity_ids: List[str]
     ranked_scores: List[float]
 
 
 def build_index_snapshot(snapshot: RepositorySnapshot, embedding_manager: EmbeddingManager) -> IndexSnapshot:
+    """Generate vector embeddings for all entities in a repository snapshot.
+
+    Args:
+        snapshot: RepositorySnapshot containing parsed entities.
+        embedding_manager: EmbeddingManager instance.
+
+    Returns:
+        IndexSnapshot containing serialized float vector embeddings and metadata.
+    """
     if not snapshot.entities:
         return IndexSnapshot(commit_hash=snapshot.commit_hash, entity_embeddings={}, entity_metadata={})
 
@@ -55,6 +65,16 @@ def build_selective_snapshot(
     before_snapshot: IndexSnapshot,
     updated_entity_ids: List[str],
 ) -> IndexSnapshot:
+    """Build a selective index snapshot where only updated entity IDs take new embeddings.
+
+    Args:
+        after_snapshot: IndexSnapshot of the later commit.
+        before_snapshot: IndexSnapshot of the earlier commit.
+        updated_entity_ids: List of entity IDs selected for re-indexing.
+
+    Returns:
+        Selective IndexSnapshot combining updated and cached embeddings.
+    """
     entity_embeddings: Dict[str, List[float]] = {}
     for entity_id, embedding in after_snapshot.entity_embeddings.items():
         if entity_id in updated_entity_ids or entity_id not in before_snapshot.entity_embeddings:
@@ -76,6 +96,18 @@ def retrieve_top_k(
     top_k: int,
     query_embedding: Optional[np.ndarray] = None,
 ) -> RetrievalResult:
+    """Retrieve top-K similar entities for a given query against an index snapshot.
+
+    Args:
+        query_text: Natural language or docstring query string.
+        snapshot: Target IndexSnapshot.
+        embedding_manager: EmbeddingManager instance.
+        top_k: Number of top results to retrieve.
+        query_embedding: Precomputed query embedding vector or None.
+
+    Returns:
+        RetrievalResult containing ranked entity IDs and similarity scores.
+    """
     if query_embedding is None:
         query_embedding = embedding_manager.generate_embedding(f"query::{query_text}", query_text)
     entity_embeddings = {entity_id: np.asarray(values, dtype=float) for entity_id, values in snapshot.entity_embeddings.items()}

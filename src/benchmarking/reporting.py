@@ -216,6 +216,7 @@ def write_aggregated_report(
     ]
 
     def fmt(d: Dict) -> str:
+        """Format mean and standard deviation dictionary into markdown string."""
         return f"{d.get('mean', 0.0):.3f} ± {d.get('std', 0.0):.3f}"
 
     for strategy_name, metrics in aggregated.items():
@@ -242,6 +243,16 @@ def write_summary_report(
     summary: BenchmarkSummary,
     embedding_comparisons: Optional[Iterable[StrategyEmbeddingComparisonResult]] = None,
 ) -> Path:
+    """Write markdown summary report for benchmark execution.
+
+    Args:
+        output_dir: Directory where report will be saved.
+        summary: BenchmarkSummary data object.
+        embedding_comparisons: Optional iterable of embedding comparison results.
+
+    Returns:
+        Path object pointing to summary_report.md.
+    """
     output_path = Path(output_dir).resolve() / "summary_report.md"
     lines = [
         "# Benchmark Summary",

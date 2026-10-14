@@ -15,6 +15,7 @@ import transformers
 import transformers.pytorch_utils as _pt_utils
 if not hasattr(_pt_utils, "find_pruneable_heads_and_indices"):
     def _find_pruneable_heads_and_indices(heads, n_heads, head_size, already_pruned_heads):
+        """Find pruneable attention heads and indices for transformers model compatibility."""
         mask = torch.ones(n_heads, head_size)
         heads = set(heads) - already_pruned_heads
         for head in heads:
@@ -32,6 +33,7 @@ if not hasattr(transformers.PretrainedConfig, "add_cross_attention"):
 
 if not hasattr(transformers.PreTrainedModel, "get_head_mask"):
     def _get_head_mask(self, head_mask, num_hidden_layers, is_attention_chunked=False):
+        """Resolve head mask tensor shape for transformers model attention layers."""
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.unsqueeze(0).unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
@@ -96,6 +98,7 @@ class EmbeddingManager:
         self.embeddings: Dict[str, np.ndarray] = {}
 
     def _load_model(self) -> None:
+        """Lazily load the SentenceTransformer embedding model onto the specified device."""
         if self.model is None:
             logger.info(f"Loading embedding model: {self.model_name} on device={self.device}")
             self.model = SentenceTransformer(self.model_name, trust_remote_code=True, device=self.device)

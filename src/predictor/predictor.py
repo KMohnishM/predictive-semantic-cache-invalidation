@@ -47,7 +47,12 @@ class DriftPredictor:
         "extra_trees",
         "logistic_regression",
         "mlp",
+        "svc",
+        "knn",
+        "decision_tree",
+        "naive_bayes",
     ]
+
 
     def __init__(self, model_type: str = "random_forest", task_type: str = "regression",
                  threshold: float = 0.02):
@@ -158,8 +163,31 @@ class DriftPredictor:
                     max_iter=500,
                     random_state=42
                 )
+            elif self.model_type == "svc":
+                from sklearn.svm import SVC
+                return SVC(
+                    probability=True,
+                    random_state=42,
+                    class_weight='balanced'
+                )
+            elif self.model_type == "knn":
+                from sklearn.neighbors import KNeighborsClassifier
+                return KNeighborsClassifier(
+                    n_neighbors=5
+                )
+            elif self.model_type == "decision_tree":
+                from sklearn.tree import DecisionTreeClassifier
+                return DecisionTreeClassifier(
+                    max_depth=10,
+                    random_state=42,
+                    class_weight='balanced'
+                )
+            elif self.model_type in ("naive_bayes", "gaussian_nb"):
+                from sklearn.naive_bayes import GaussianNB
+                return GaussianNB()
             else:
                 raise ValueError(f"Unknown model type: {self.model_type}")
+
 
     def prepare_data(self, features_df: pd.DataFrame, drifts: Dict[str, float]) -> Tuple[np.ndarray, np.ndarray]:
         """
