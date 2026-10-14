@@ -81,7 +81,8 @@ class Experiment:
                  ref: str = "HEAD",
                  ground_truth_rule: str = "significant",
                  ground_truth_min_queries: int = 5,
-                 target_recall: Optional[float] = None):
+                 target_recall: Optional[float] = None,
+                 predictor_model: str = "random_forest"):
         """
         Initialize experiment.
 
@@ -153,6 +154,7 @@ class Experiment:
         # Recall the predictor's decision threshold must reach out-of-fold
         # (None = F1-optimal threshold).
         self.target_recall = target_recall
+        self.predictor_model = predictor_model
         # Git ref the sampled commit window ends at (pinned so runs are reproducible
         # and independent of wherever HEAD was left).
         self.ref = ref
@@ -243,7 +245,7 @@ class Experiment:
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode,
                                                    device=self.device)
         self.feature_extractor = FeatureExtractor(self.repo_parser)
-        self.predictor = DriftPredictor(model_type="random_forest", task_type="classification",
+        self.predictor = DriftPredictor(model_type=self.predictor_model, task_type="classification",
                                         threshold=self.threshold, target_recall=self.target_recall)
         self.evaluator = Evaluator(self.embedding_manager, self.repo_parser)
         self.visualizer = Visualizer(str(self.results_dir))
@@ -1538,7 +1540,13 @@ def main():
     parser.add_argument(
         "--compare-models",
         action="store_true",
-        help="Train and compare multiple ML model architectures (Random Forest, Gradient Boosting, HistGB, Extra Trees, Logistic Regression, MLP)"
+        help="Train and compare multiple ML model architectures (Random Forest, Gradient Boosting, HistGB, LightGBM, Extra Trees, Logistic Regression, MLP, SVC, KNN, Decision Tree, Naive Bayes)"
+    )
+    parser.add_argument(
+        "--predictor-model",
+        default="random_forest",
+        choices=DriftPredictor.SUPPORTED_MODELS,
+        help="Model architecture for drift prediction (e.g. random_forest, lightgbm, hist_gradient_boosting)"
     )
 
     args = parser.parse_args()
@@ -1637,6 +1645,7 @@ def main():
         ground_truth_rule=args.ground_truth_rule,
         ground_truth_min_queries=args.ground_truth_min_queries,
         target_recall=args.target_recall,
+        predictor_model=getattr(args, "predictor_model", "random_forest"),
     )
 
     # Run experiment
