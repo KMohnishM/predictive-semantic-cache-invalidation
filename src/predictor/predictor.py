@@ -18,6 +18,16 @@ import logging
 import joblib
 import os
 
+try:
+    import lightgbm as lgb
+    from lightgbm import LGBMRegressor, LGBMClassifier
+    LIGHTGBM_AVAILABLE = True
+except ImportError:
+    LIGHTGBM_AVAILABLE = False
+    lgb = None
+    LGBMRegressor = None
+    LGBMClassifier = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,6 +54,7 @@ class DriftPredictor:
         "random_forest",
         "gradient_boosting",
         "hist_gradient_boosting",
+        "lightgbm",
         "extra_trees",
         "logistic_regression",
         "mlp",
@@ -60,7 +71,7 @@ class DriftPredictor:
         Initialize drift predictor.
 
         Args:
-            model_type: Type of model ("random_forest", "gradient_boosting", "hist_gradient_boosting", "extra_trees", "linear"/"logistic_regression", "mlp")
+            model_type: Type of model ("random_forest", "gradient_boosting", "hist_gradient_boosting", "lightgbm", "extra_trees", "linear"/"logistic_regression", "mlp")
             task_type: "regression" or "classification"
             threshold: Threshold for classification (drift >= threshold -> 1)
             target_recall: If set, fit_decision_threshold() picks the highest
@@ -113,6 +124,17 @@ class DriftPredictor:
                 return HistGradientBoostingRegressor(
                     random_state=42
                 )
+            elif self.model_type == "lightgbm":
+                if not LIGHTGBM_AVAILABLE:
+                    raise ImportError("lightgbm is not installed. Please install it using `pip install lightgbm`.")
+                return LGBMRegressor(
+                    n_estimators=100,
+                    max_depth=5,
+                    learning_rate=0.1,
+                    random_state=42,
+                    n_jobs=-1,
+                    verbose=-1
+                )
             elif self.model_type == "extra_trees":
                 return ExtraTreesRegressor(
                     n_estimators=100,
@@ -153,6 +175,18 @@ class DriftPredictor:
                 return HistGradientBoostingClassifier(
                     random_state=42,
                     class_weight='balanced'
+                )
+            elif self.model_type == "lightgbm":
+                if not LIGHTGBM_AVAILABLE:
+                    raise ImportError("lightgbm is not installed. Please install it using `pip install lightgbm`.")
+                return LGBMClassifier(
+                    n_estimators=100,
+                    max_depth=5,
+                    learning_rate=0.1,
+                    random_state=42,
+                    class_weight='balanced',
+                    n_jobs=-1,
+                    verbose=-1
                 )
             elif self.model_type == "extra_trees":
                 return ExtraTreesClassifier(
