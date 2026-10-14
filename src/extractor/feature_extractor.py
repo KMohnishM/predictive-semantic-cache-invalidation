@@ -316,13 +316,19 @@ class FeatureExtractor:
             "own_source_changed": own_source_changed,
         }
 
-    def extract_features(self, entity_id: str, commit_a: str, commit_b: str,
-                         modified_entities: Set[str],
-                         modification_history: Dict[str, List[str]],
-                         previous_drifts: Dict[str, float],
-                         git_helper,
+    def extract_features(self, entity_id: str, commit_a: str = "", commit_b: str = "",
+                         modified_entities: Optional[Set[str]] = None,
+                         modification_history: Optional[Dict[str, List[str]]] = None,
+                         previous_drifts: Optional[Dict[str, float]] = None,
+                         git_helper=None,
                          gtd=None) -> Dict[str, float]:
         """Extract all features for an entity."""
+        if modified_entities is None:
+            modified_entities = set()
+        if modification_history is None:
+            modification_history = {}
+        if previous_drifts is None:
+            previous_drifts = {}
         features = {}
         features.update(self._get_structural_features(entity_id))
         features.update(self._get_evolution_features(entity_id, modified_entities))
@@ -334,13 +340,19 @@ class FeatureExtractor:
         features.update(self._get_context_change_features(entity_id, modified_entities))
         return features
 
-    def extract_features_batch(self, entity_ids: List[str], commit_a: str, commit_b: str,
-                               modified_entities: Set[str],
-                               modification_history: Dict[str, List[str]],
-                               previous_drifts: Dict[str, float],
-                               git_helper,
+    def extract_features_batch(self, entity_ids: List[str], commit_a: str = "", commit_b: str = "",
+                               modified_entities: Optional[Set[str]] = None,
+                               modification_history: Optional[Dict[str, List[str]]] = None,
+                               previous_drifts: Optional[Dict[str, float]] = None,
+                               git_helper=None,
                                gtd=None) -> pd.DataFrame:
         """Extract features for multiple entities."""
+        if modified_entities is None:
+            modified_entities = set()
+        if modification_history is None:
+            modification_history = {}
+        if previous_drifts is None:
+            previous_drifts = {}
         # Retrieve or compute fallback global GTD features
         if gtd is not None and hasattr(gtd, "get_global_features"):
             global_feats = gtd.get_global_features()
