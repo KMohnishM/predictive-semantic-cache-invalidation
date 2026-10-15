@@ -17,3 +17,6 @@ workspace/
 scratch/
 Helper_plans/
 test_repo_project1/
+
+# Cached built datasets (run_experiment.py --dataset-dir)
+datasets/

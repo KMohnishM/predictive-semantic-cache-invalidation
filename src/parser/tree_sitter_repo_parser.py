@@ -75,17 +75,7 @@ class TreeSitterRepoParser:
         """
         self.repo_path = Path(repo_path).resolve()
         self.language_name = language.lower()
-        try:
-            if tree_sitter_language_pack is not None:
-                self.parser = tree_sitter_language_pack.get_parser(self.language_name)
-            else:
-                raise ImportError("tree_sitter_language_pack not available")
-        except Exception as exc:
-            if tree_sitter_python is not None and self.language_name == "python":
-                logger.info("Using local tree_sitter_python parser fallback")
-                self.parser = Parser(Language(tree_sitter_python.language()))
-            else:
-                raise RuntimeError(f"Could not load tree-sitter parser for {self.language_name}: {exc}")
+        self.parser = self._create_ts_parser(self.language_name)
         self.graph = nx.DiGraph()
         self.entities: Dict[str, Entity] = {}
         self.symbol_table: Dict[str, Dict[str, str]] = {}  # RelPath -> {ImportName: Target}
@@ -95,6 +85,30 @@ class TreeSitterRepoParser:
         self._undirected_graph_cache: Optional[nx.Graph] = None
         self._nearest_modified_cache: Optional[Dict[str, int]] = None
         self._nearest_modified_seed: Optional[frozenset] = None
+
+    @staticmethod
+    def _create_ts_parser(language_name: str):
+        """Return a tree-sitter Parser for ``language_name``."""
+        try:
+            if tree_sitter_language_pack is not None:
+                return tree_sitter_language_pack.get_parser(language_name)
+            raise ImportError("tree_sitter_language_pack not available")
+        except Exception as exc:
+            if tree_sitter_python is not None and language_name == "python":
+                logger.info("Using local tree_sitter_python parser fallback")
+                return Parser(Language(tree_sitter_python.language()))
+            raise RuntimeError(f"Could not load tree-sitter parser for {language_name}: {exc}")
+
+    def __getstate__(self):
+        # tree_sitter.Parser cannot be pickled; it holds no parse state, so it is
+        # recreated on load (lets a parsed snapshot be cached to disk).
+        state = self.__dict__.copy()
+        state["parser"] = None
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.parser = self._create_ts_parser(self.language_name)
 
     def _invalidate_graph_caches(self) -> None:
         """Clear cached derived graphs/distances after the graph is mutated."""
