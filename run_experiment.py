@@ -922,6 +922,7 @@ class Experiment:
             try:
                 X_test, y_test = self.predictor.prepare_data(test_df, test_labels)
                 test_metrics = self.predictor.evaluate(X_test, y_test)
+                self._test_xy = (X_test, y_test)
             except ValueError as e:
                 logger.warning(f"Could not evaluate on test pairs: {e}")
         else:
@@ -976,6 +977,27 @@ class Experiment:
                 self.visualizer.plot_model_confusion_matrices(predictors_dict, X_test, y_test)
 
         return True
+
+    def _permutation_importance(self, X: np.ndarray, y: np.ndarray,
+                                max_rows: int = 50000) -> Optional[Dict[str, float]]:
+        """Feature importance for models without ``feature_importances_`` (e.g.
+        hist_gradient_boosting): mean drop in average precision on the test rows
+        when a feature is shuffled (rows subsampled, all positives kept)."""
+        from sklearn.inspection import permutation_importance
+        if self.predictor.feature_names is None or len(np.unique(y)) < 2:
+            return None
+        rng = np.random.default_rng(42)
+        pos, neg = np.flatnonzero(y == 1), np.flatnonzero(y == 0)
+        if len(y) > max_rows:
+            neg = rng.choice(neg, size=max(0, max_rows - len(pos)), replace=False)
+        rows = np.concatenate([pos, neg])
+        result = permutation_importance(
+            self.predictor.model, self.predictor.scaler.transform(X[rows]), y[rows],
+            scoring="average_precision", n_repeats=5, random_state=42, n_jobs=-1,
+        )
+        importance = dict(zip(self.predictor.feature_names, result.importances_mean.astype(float)))
+        logger.info("Feature importance from permutation (model has no feature_importances_)")
+        return dict(sorted(importance.items(), key=lambda kv: kv[1], reverse=True))
 
     def _train_pairs(self) -> List[Tuple[str, str]]:
         """Consecutive sampled-commit pairs entirely inside the training commits."""
@@ -1357,6 +1379,8 @@ class Experiment:
 
         # Feature importance plot
         feature_importance = self.predictor.get_feature_importance()
+        if not feature_importance and getattr(self, "_test_xy", None) is not None:
+            feature_importance = self._permutation_importance(*self._test_xy)
         if feature_importance:
             self.visualizer.plot_feature_importance(feature_importance)
 
