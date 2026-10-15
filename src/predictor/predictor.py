@@ -20,6 +20,22 @@ import os
 
 logger = logging.getLogger(__name__)
 
+# Direct evidence that an entity's embedded text changed. Monotonic models are
+# constrained so these can only raise the stale probability; otherwise a model
+# can let structural features (e.g. "far from any modified entity", as for a
+# formatting-only edit) outweigh a signal that is decisive on its own.
+CHANGE_SIGNAL_FEATURES = (
+    "is_modified",
+    "own_source_changed",
+    "context_stub_changed_count",
+    "modified_member_count",
+)
+
+# With target_recall set, the decision threshold is never placed above this: a
+# missed stale entity costs more than an extra re-embed, so an entity the model
+# itself rates more likely stale than not is always re-embedded.
+RECALL_FIRST_MAX_THRESHOLD = 0.5
+
 
 def positive_class_proba(model, probs: np.ndarray) -> np.ndarray:
     """
@@ -66,7 +82,8 @@ class DriftPredictor:
             target_recall: If set, fit_decision_threshold() picks the highest
                 cut-off whose out-of-fold recall reaches this value (missing a
                 stale entity costs more than an extra re-embed) instead of the
-                F1-optimal one.
+                F1-optimal one, capped at RECALL_FIRST_MAX_THRESHOLD. Use 1.0 to
+                catch every out-of-fold positive.
         """
         if model_type == "linear" and task_type == "classification":
             model_type = "logistic_regression"
@@ -150,9 +167,16 @@ class DriftPredictor:
                     random_state=42
                 )
             elif self.model_type == "hist_gradient_boosting":
+                # StandardScaler is increasing per feature, so the constraint
+                # holds on the scaled inputs too.
+                monotonic_cst = (
+                    [1 if name in CHANGE_SIGNAL_FEATURES else 0 for name in self.feature_names]
+                    if self.feature_names else None
+                )
                 return HistGradientBoostingClassifier(
                     random_state=42,
-                    class_weight='balanced'
+                    class_weight='balanced',
+                    monotonic_cst=monotonic_cst,
                 )
             elif self.model_type == "extra_trees":
                 return ExtraTreesClassifier(
@@ -283,7 +307,7 @@ class DriftPredictor:
         """
         Choose the probability cut-off on out-of-fold predictions: the one that
         maximises F1, or, with ``target_recall`` set, the highest one whose
-        recall reaches ``target_recall``.
+        recall reaches ``target_recall``, capped at RECALL_FIRST_MAX_THRESHOLD.
 
         Rows are grouped (by commit pair) so every row is scored by a model that
         never saw its pair. With rare positives a fixed 0.5 cut-off is almost
@@ -323,9 +347,16 @@ class DriftPredictor:
             # still meeting the target is the highest qualifying cut-off.
             meets = np.flatnonzero(recalls[:-1] >= self.target_recall)
             best = int(meets[-1]) if len(meets) else 0
+            if thresholds[best] > RECALL_FIRST_MAX_THRESHOLD:
+                # Report precision/recall for the capped cut-off: scores >= cap
+                # are exactly those >= the first threshold at or above it.
+                best = min(int(np.searchsorted(thresholds, RECALL_FIRST_MAX_THRESHOLD)), len(thresholds) - 1)
+                self.decision_threshold = RECALL_FIRST_MAX_THRESHOLD
+            else:
+                self.decision_threshold = float(thresholds[best])
         else:
             best = int(np.argmax(f1))
-        self.decision_threshold = float(thresholds[best])
+            self.decision_threshold = float(thresholds[best])
         logger.info(
             f"Decision threshold set to {self.decision_threshold:.4f} from out-of-fold predictions "
             f"({'target recall ' + str(self.target_recall) if self.target_recall is not None else 'max F1'}; "

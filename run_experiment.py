@@ -10,7 +10,10 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional
 import time
 import json
+import hashlib
 from datetime import datetime
+
+import joblib
 
 import numpy as np
 import pandas as pd
@@ -57,6 +60,10 @@ logger = logging.getLogger(__name__)
 # drift in drifts_history).
 BINARY_LABEL_SOURCES = ("leave_one_out", "hybrid", "embedded_text_changed")
 
+# Bump when parsing, context text, features or labels change, so cached
+# datasets built by older code are not reused.
+DATASET_CACHE_VERSION = 1
+
 
 class Experiment:
     """Main experiment orchestrator."""
@@ -81,7 +88,10 @@ class Experiment:
                  ref: str = "HEAD",
                  ground_truth_rule: str = "significant",
                  ground_truth_min_queries: int = 5,
-                 target_recall: Optional[float] = None):
+                 target_recall: Optional[float] = None,
+                 model_type: str = "random_forest",
+                 dataset_dir: Optional[str] = "datasets",
+                 rebuild_dataset: bool = False):
         """
         Initialize experiment.
 
@@ -153,6 +163,13 @@ class Experiment:
         # Recall the predictor's decision threshold must reach out-of-fold
         # (None = F1-optimal threshold).
         self.target_recall = target_recall
+        self.model_type = model_type
+        # Built datasets (per-pair features/labels plus the evaluation commits'
+        # parsers and embeddings) are cached here and reused by later runs with
+        # the same dataset settings, skipping the expensive parse/embed/feature
+        # pass. None disables caching.
+        self.dataset_dir = Path(dataset_dir) if dataset_dir else None
+        self.rebuild_dataset = rebuild_dataset
         # Git ref the sampled commit window ends at (pinned so runs are reproducible
         # and independent of wherever HEAD was left).
         self.ref = ref
@@ -243,7 +260,7 @@ class Experiment:
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode,
                                                    device=self.device)
         self.feature_extractor = FeatureExtractor(self.repo_parser)
-        self.predictor = DriftPredictor(model_type="random_forest", task_type="classification",
+        self.predictor = DriftPredictor(model_type=self.model_type, task_type="classification",
                                         threshold=self.threshold, target_recall=self.target_recall)
         self.evaluator = Evaluator(self.embedding_manager, self.repo_parser)
         self.visualizer = Visualizer(str(self.results_dir))
@@ -563,6 +580,8 @@ class Experiment:
                 logger.warning(f"  No entities found in commit {commit[:8]}")
                 self.embeddings_history[commit] = {}
             self.entity_counts[commit] = len(self.embeddings_history[commit])
+            if commit in keep_for_eval:
+                self._save_snapshot(commit)
 
             # Compare only sampled neighbors; skip all intermediate commits entirely.
             if i > 0:
@@ -643,13 +662,136 @@ class Experiment:
         logger.info("Building RSDs and finalising chronological train/test split...")
         self.rsd.build_all_rsds()
 
-        # Chronological split of sampled commits
-        self.train_commits = self.sampled_commits[:split_idx]
-        self.test_commits  = self.sampled_commits[split_idx:]
-
-        logger.info(f"Chronological split -> train={len(self.train_commits)}, test={len(self.test_commits)}")
+        self._split_commits()
         logger.info("\nRSD Summary:\n" + self.rsd.summary_table())
+        self._save_dataset_cache()
 
+        return True
+
+    def _split_commits(self) -> None:
+        """Chronological train/test split of the sampled commits."""
+        split_idx = max(1, int(len(self.sampled_commits) * self.train_ratio))
+        self.train_commits = self.sampled_commits[:split_idx]
+        self.test_commits = self.sampled_commits[split_idx:]
+        logger.info(f"Chronological split -> train={len(self.train_commits)}, test={len(self.test_commits)}")
+
+    # ------------------------------------------------------------------
+    # Dataset cache
+    # ------------------------------------------------------------------
+
+    def _dataset_cache_meta(self) -> Dict:
+        """Every setting the built dataset depends on (training-only settings excluded)."""
+        sampled = self.commits[::self.commit_stride][:self.num_commits]
+        meta = {
+            "version": DATASET_CACHE_VERSION,
+            "repo_url": self.repo_url,
+            "sampled_commits": list(sampled),
+            "model_name": self.model_name,
+            "context_chunking": self.context_chunking,
+            "clean_mode": self.clean_mode,
+            "label_source": self.label_source,
+        }
+        if self.label_source in ("leave_one_out", "hybrid"):
+            meta.update(
+                ground_truth_queries_path=self.ground_truth_queries_path,
+                ground_truth_top_k=self.ground_truth_top_k,
+                ground_truth_rule=self.ground_truth_rule,
+                ground_truth_min_queries=self.ground_truth_min_queries,
+                max_queries_per_entity=self.max_queries_per_entity,
+            )
+        return meta
+
+    def _dataset_cache_path(self) -> Optional[Path]:
+        if self.dataset_dir is None:
+            return None
+        meta = self._dataset_cache_meta()
+        digest = hashlib.sha1(json.dumps(meta, sort_keys=True).encode()).hexdigest()[:10]
+        repo_name = Path(self.repo_url.rstrip("/\\")).name.removesuffix(".git")
+        model_short = self.model_name.split("/")[-1]
+        name = (f"{repo_name}_{meta['sampled_commits'][0][:8]}_n{self.num_commits}_s{self.commit_stride}_"
+                f"{model_short}_{'ctx' if self.context_chunking else 'iso'}_{self.label_source}_{digest}")
+        return self.dataset_dir / name
+
+    def _save_snapshot(self, commit: str) -> None:
+        """Cache one commit's parser and embeddings (needed again at evaluation)."""
+        path = self._dataset_cache_path()
+        if path is None:
+            return
+        (path / "snapshots").mkdir(parents=True, exist_ok=True)
+        joblib.dump(
+            {"parser": self.parsers_history[commit], "embeddings": self.embeddings_history[commit]},
+            path / "snapshots" / f"{commit}.joblib", compress=3,
+        )
+
+    def _save_dataset_cache(self) -> None:
+        path = self._dataset_cache_path()
+        if path is None:
+            return
+        path.mkdir(parents=True, exist_ok=True)
+        joblib.dump({
+            "features_history": self.features_history,
+            "drifts_history": self.drifts_history,
+            "ground_truth_history": self.ground_truth_history,
+            "modified_entities_history": self.modified_entities_history,
+            "entity_counts": self.entity_counts,
+            "modification_history": self.modification_history,
+            "previous_drifts": self.previous_drifts,
+            "rsd": self.rsd,
+        }, path / "dataset.joblib", compress=3)
+        meta = self._dataset_cache_meta()
+        meta.update(created_at=datetime.now().isoformat(timespec="seconds"),
+                    n_pairs=len(self.features_history),
+                    ref=self.ref)
+        (path / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        logger.info(f"Dataset cached to {path}")
+
+    def _load_dataset_cache(self) -> bool:
+        """Load a cached dataset built with the same settings; False if none."""
+        path = self._dataset_cache_path()
+        if path is None or self.rebuild_dataset or not (path / "dataset.joblib").exists():
+            return False
+        meta = json.loads((path / "meta.json").read_text(encoding="utf-8"))
+        expected = self._dataset_cache_meta()
+        if any(meta.get(k) != v for k, v in expected.items()):
+            logger.warning(f"Dataset cache {path} does not match the current settings; rebuilding.")
+            return False
+
+        logger.info("=" * 80)
+        logger.info(f"LOADING CACHED DATASET from {path}")
+        logger.info("=" * 80)
+        data = joblib.load(path / "dataset.joblib")
+        for key, value in data.items():
+            setattr(self, key, value)
+        self.sampled_commits = expected["sampled_commits"]
+        self._split_commits()
+
+        # Parsers/embeddings of the evaluation commits: from the cache, or
+        # rebuilt for any the cache lacks (e.g. after lowering train_ratio).
+        split_idx = max(1, int(len(self.sampled_commits) * self.train_ratio))
+        for commit in self.sampled_commits[split_idx - 1:]:
+            snap = path / "snapshots" / f"{commit}.joblib"
+            if snap.exists():
+                loaded = joblib.load(snap)
+                self.parsers_history[commit] = loaded["parser"]
+                self.embeddings_history[commit] = loaded["embeddings"]
+                continue
+            logger.info(f"  Snapshot for {commit[:8]} not cached; parsing and embedding it...")
+            if not self.git_helper.checkout_commit(commit):
+                logger.error(f"Failed to checkout {commit[:8]} for evaluation")
+                return False
+            parser = TreeSitterRepoParser(str(self.repo_path))
+            parser.parse_directory(str(self.repo_path))
+            self.repo_parser = parser
+            self.parsers_history[commit] = parser
+            sources = {e.entity_id: self._get_contextual_source(e) for e in parser.get_all_entities()}
+            self.embeddings_history[commit] = (
+                self.embedding_manager.generate_embeddings_batch(sources) if sources else {}
+            )
+            self.embedding_manager.embeddings.clear()
+            self._save_snapshot(commit)
+        self.repo_parser = self.parsers_history[self.sampled_commits[-1]]
+        logger.info(f"Loaded {len(self.features_history)} commit pairs "
+                    f"({len(self.train_commits)} train / {len(self.test_commits)} test commits)")
         return True
 
     def _release_commit(self, commit: str, keep_for_eval: Set[str]) -> None:
@@ -786,6 +928,7 @@ class Experiment:
             "label_source": self.label_source,
             "ground_truth_rule": self.ground_truth_rule,
             "target_recall": self.target_recall,
+            "model_type": self.model_type,
             "sampled_commits": list(self.sampled_commits),
             "train_commits": list(self.train_commits),
             "test_commits": list(self.test_commits),
@@ -1246,8 +1389,8 @@ class Experiment:
             if not self.harvest_commits():
                 return False
 
-            # Build dataset
-            if not self.build_dataset():
+            # Build dataset (or reuse a cached one built with the same settings)
+            if not (self._load_dataset_cache() or self.build_dataset()):
                 return False
 
             # Train model
@@ -1512,6 +1655,24 @@ def main():
         help="Max synthetic queries per uncovered entity for label_source=hybrid",
     )
     parser.add_argument(
+        "--dataset-dir",
+        default="datasets",
+        help="Where built datasets are cached and reused by runs with the same dataset "
+             "settings (empty string disables caching)",
+    )
+    parser.add_argument(
+        "--rebuild-dataset",
+        action="store_true",
+        help="Ignore any cached dataset and rebuild it (the new build replaces the cache)",
+    )
+    parser.add_argument(
+        "--model-type",
+        default="random_forest",
+        choices=["random_forest", "gradient_boosting", "hist_gradient_boosting", "extra_trees",
+                 "logistic_regression", "mlp", "svc", "knn", "decision_tree", "naive_bayes"],
+        help="Predictor model; hist_gradient_boosting is monotonic in the direct change signals",
+    )
+    parser.add_argument(
         "--target-recall",
         type=float,
         default=None,
@@ -1637,6 +1798,9 @@ def main():
         ground_truth_rule=args.ground_truth_rule,
         ground_truth_min_queries=args.ground_truth_min_queries,
         target_recall=args.target_recall,
+        model_type=args.model_type,
+        dataset_dir=args.dataset_dir or None,
+        rebuild_dataset=args.rebuild_dataset,
     )
 
     # Run experiment
