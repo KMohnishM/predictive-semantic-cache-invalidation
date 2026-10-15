@@ -156,10 +156,16 @@ class PredictiveCacheFilter(TransformComponent):
         repo_parser: TreeSitterRepoParser,
         modified_entities: Optional[Set[str]] = None,
         threshold: Optional[float] = None,
+        previous_parser: Optional[TreeSitterRepoParser] = None,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.repo_parser = repo_parser
+        # Parser for the previously indexed commit. Required for the
+        # call-graph-context features (own_source_changed,
+        # context_stub_changed_count, modified_member_count); without it they
+        # are all 0 and recall drops (about 87% vs 100% on psf/black test pairs).
+        self.previous_parser = previous_parser
         self.modified_entities = set(modified_entities or [])
         self.threshold = threshold
 
@@ -186,7 +192,13 @@ class PredictiveCacheFilter(TransformComponent):
 
         logger.info(f"[PredictiveCacheFilter] Scanning {len(nodes)} nodes for semantic cache drifts...")
 
-        extractor = FeatureExtractor(self.repo_parser)
+        if self.previous_parser is None:
+            logger.warning(
+                "[PredictiveCacheFilter] No previous_parser supplied: call-graph-context "
+                "features will be zero and recall will be lower. Pass the parser of the "
+                "previously indexed commit."
+            )
+        extractor = FeatureExtractor(self.repo_parser, parser_a=self.previous_parser)
 
         features: Dict[str, Dict[str, float]] = {}
         for node in nodes:
@@ -242,7 +254,8 @@ def build_predictive_ingestion_pipeline(
     repo_path: str,
     predictor_or_path: Union[str, Path, DriftPredictor],
     modified_entities: Optional[Set[str]] = None,
-    threshold: Optional[float] = None
+    threshold: Optional[float] = None,
+    previous_parser: Optional[TreeSitterRepoParser] = None,
 ) -> Dict[str, Any]:
     """
     Constructs the pair of CodeGraphNodeParser and PredictiveCacheFilter
@@ -253,7 +266,8 @@ def build_predictive_ingestion_pipeline(
         predictor_or_path=predictor_or_path,
         repo_parser=node_parser.repo_parser,
         modified_entities=modified_entities,
-        threshold=threshold
+        threshold=threshold,
+        previous_parser=previous_parser,
     )
     return {
         "node_parser": node_parser,

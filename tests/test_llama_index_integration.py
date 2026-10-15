@@ -138,3 +138,40 @@ def test_build_predictive_ingestion_pipeline(tmp_path):
     assert len(nodes) == 1
     dirty = pipeline["cache_filter"](nodes)
     assert len(dirty) == 1
+
+
+def test_filter_passes_previous_parser_to_feature_extractor(tmp_path, monkeypatch):
+    """The earlier-commit parser must reach FeatureExtractor as parser_a, otherwise
+    the call-graph-context features are always zero."""
+    import llama_index_integration as li
+
+    (tmp_path / "m.py").write_text("def a():\n    return 1\n", encoding="utf-8")
+    node_parser = CodeGraphNodeParser(repo_path=str(tmp_path))
+    nodes = node_parser.parse_repository()
+
+    seen = {}
+    real = li.FeatureExtractor
+
+    class Spy(real):
+        def __init__(self, parser, *args, **kwargs):
+            seen["parser_a"] = kwargs.get("parser_a")
+            super().__init__(parser, *args, **kwargs)
+
+    monkeypatch.setattr(li, "FeatureExtractor", Spy)
+
+    predictor = DriftPredictor(model_type="random_forest", task_type="classification")
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.ensemble import RandomForestClassifier
+    predictor.feature_names = ["out_degree", "in_degree"]
+    X = np.zeros((4, 2)); y = np.array([0, 0, 1, 1])
+    predictor.scaler = StandardScaler().fit(X)
+    predictor.model = RandomForestClassifier(n_estimators=5, random_state=0).fit(predictor.scaler.transform(X), y)
+    predictor.is_trained = True
+    predictor.decision_threshold = 0.5
+
+    prev = node_parser.repo_parser  # any parser object stands in for the earlier commit
+    pipe = build_predictive_ingestion_pipeline(
+        repo_path=str(tmp_path), predictor_or_path=predictor, previous_parser=prev
+    )
+    pipe["cache_filter"](nodes)
+    assert seen["parser_a"] is prev
