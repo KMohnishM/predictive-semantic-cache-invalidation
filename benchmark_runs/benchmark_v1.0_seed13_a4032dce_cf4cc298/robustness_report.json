@@ -1,0 +1,306 @@
+{
+  "k": 5,
+  "bootstrap": 2000,
+  "seed": 13,
+  "min_words": 8,
+  "all_queries": {
+    "n_targets": 285,
+    "per_strategy": {
+      "changed_only": {
+        "lost": 19,
+        "eligible": 14708,
+        "rate": 0.0012918139787870546,
+        "wilson": [
+          0.0008271961772392049,
+          0.002016870556231268
+        ],
+        "bootstrap": [
+          0.0,
+          0.003665988694353667
+        ],
+        "design_effect": 11.350828193791823,
+        "effective_n": 1295.7644806961605,
+        "cost": 0.0435652582179844,
+        "targets": 285,
+        "adjusted_upper": 0.005609321286194887,
+        "adjusted_with": 11.350828193791823
+      },
+      "predictive_ml": {
+        "lost": 0,
+        "eligible": 14708,
+        "rate": 0.0,
+        "wilson": [
+          0.0,
+          0.00026111339576576087
+        ],
+        "bootstrap": [
+          0.0,
+          0.0
+        ],
+        "design_effect": NaN,
+        "effective_n": NaN,
+        "cost": 0.048443248284816685,
+        "targets": 285,
+        "adjusted_upper": 0.002955328786483036,
+        "adjusted_with": 11.350828193791823
+      },
+      "fixed_hop": {
+        "lost": 0,
+        "eligible": 14708,
+        "rate": 0.0,
+        "wilson": [
+          0.0,
+          0.00026111339576576087
+        ],
+        "bootstrap": [
+          0.0,
+          0.0
+        ],
+        "design_effect": NaN,
+        "effective_n": NaN,
+        "cost": 0.1656619201382161,
+        "targets": 285,
+        "adjusted_upper": 0.002955328786483036,
+        "adjusted_with": 11.350828193791823
+      },
+      "full_reindex": {
+        "lost": 0,
+        "eligible": 14708,
+        "rate": 0.0,
+        "wilson": [
+          0.0,
+          0.00026111339576576087
+        ],
+        "bootstrap": [
+          0.0,
+          0.0
+        ],
+        "design_effect": NaN,
+        "effective_n": NaN,
+        "cost": 1.0,
+        "targets": 285,
+        "adjusted_upper": 0.002955328786483036,
+        "adjusted_with": 11.350828193791823
+      }
+    },
+    "pairs": {
+      "changed_only - predictive_ml": {
+        "diff": 0.0012918139787870546,
+        "ci": [
+          0.0,
+          0.003665988694353667
+        ],
+        "share_positive": 0.946,
+        "se": 0.0009978293158896367,
+        "mde": 0.002795503643956668
+      },
+      "changed_only - fixed_hop": {
+        "diff": 0.0012918139787870546,
+        "ci": [
+          0.0,
+          0.003665988694353667
+        ],
+        "share_positive": 0.946,
+        "se": 0.0009978293158896367,
+        "mde": 0.002795503643956668
+      },
+      "changed_only - full_reindex": {
+        "diff": 0.0012918139787870546,
+        "ci": [
+          0.0,
+          0.003665988694353667
+        ],
+        "share_positive": 0.946,
+        "se": 0.0009978293158896367,
+        "mde": 0.002795503643956668
+      },
+      "predictive_ml - fixed_hop": {
+        "diff": 0.0,
+        "ci": [
+          0.0,
+          0.0
+        ],
+        "share_positive": 0.0,
+        "se": 0.0,
+        "mde": 0.0
+      },
+      "predictive_ml - full_reindex": {
+        "diff": 0.0,
+        "ci": [
+          0.0,
+          0.0
+        ],
+        "share_positive": 0.0,
+        "se": 0.0,
+        "mde": 0.0
+      },
+      "fixed_hop - full_reindex": {
+        "diff": 0.0,
+        "ci": [
+          0.0,
+          0.0
+        ],
+        "share_positive": 0.0,
+        "se": 0.0,
+        "mde": 0.0
+      }
+    },
+    "observed_order": [
+      "predictive_ml",
+      "fixed_hop",
+      "full_reindex",
+      "changed_only"
+    ],
+    "ranking_stability": 0.946
+  },
+  "filtered": {
+    "n_targets": 271,
+    "per_strategy": {
+      "changed_only": {
+        "lost": 19,
+        "eligible": 13162,
+        "rate": 0.0014435496125208935,
+        "wilson": [
+          0.0009243778181972631,
+          0.0022536536818760543
+        ],
+        "bootstrap": [
+          0.0,
+          0.003845694226224767
+        ],
+        "design_effect": 10.417546317348107,
+        "effective_n": 1263.445306509616,
+        "cost": 0.0435652582179844,
+        "targets": 271,
+        "adjusted_upper": 0.005755402427860135,
+        "adjusted_with": 10.417546317348107
+      },
+      "predictive_ml": {
+        "lost": 0,
+        "eligible": 13162,
+        "rate": 0.0,
+        "wilson": [
+          0.0,
+          0.0002917746574188513
+        ],
+        "bootstrap": [
+          0.0,
+          0.0
+        ],
+        "design_effect": NaN,
+        "effective_n": NaN,
+        "cost": 0.048443248284816685,
+        "targets": 271,
+        "adjusted_upper": 0.003032312255306406,
+        "adjusted_with": 10.417546317348107
+      },
+      "fixed_hop": {
+        "lost": 0,
+        "eligible": 13162,
+        "rate": 0.0,
+        "wilson": [
+          0.0,
+          0.0002917746574188513
+        ],
+        "bootstrap": [
+          0.0,
+          0.0
+        ],
+        "design_effect": NaN,
+        "effective_n": NaN,
+        "cost": 0.1656619201382161,
+        "targets": 271,
+        "adjusted_upper": 0.003032312255306406,
+        "adjusted_with": 10.417546317348107
+      },
+      "full_reindex": {
+        "lost": 0,
+        "eligible": 13162,
+        "rate": 0.0,
+        "wilson": [
+          0.0,
+          0.0002917746574188513
+        ],
+        "bootstrap": [
+          0.0,
+          0.0
+        ],
+        "design_effect": NaN,
+        "effective_n": NaN,
+        "cost": 1.0,
+        "targets": 271,
+        "adjusted_upper": 0.003032312255306406,
+        "adjusted_with": 10.417546317348107
+      }
+    },
+    "pairs": {
+      "changed_only - predictive_ml": {
+        "diff": 0.0014435496125208935,
+        "ci": [
+          0.0,
+          0.003845694226224767
+        ],
+        "share_positive": 0.956,
+        "se": 0.0010681295861131666,
+        "mde": 0.002992455826510856
+      },
+      "changed_only - fixed_hop": {
+        "diff": 0.0014435496125208935,
+        "ci": [
+          0.0,
+          0.003845694226224767
+        ],
+        "share_positive": 0.956,
+        "se": 0.0010681295861131666,
+        "mde": 0.002992455826510856
+      },
+      "changed_only - full_reindex": {
+        "diff": 0.0014435496125208935,
+        "ci": [
+          0.0,
+          0.003845694226224767
+        ],
+        "share_positive": 0.956,
+        "se": 0.0010681295861131666,
+        "mde": 0.002992455826510856
+      },
+      "predictive_ml - fixed_hop": {
+        "diff": 0.0,
+        "ci": [
+          0.0,
+          0.0
+        ],
+        "share_positive": 0.0,
+        "se": 0.0,
+        "mde": 0.0
+      },
+      "predictive_ml - full_reindex": {
+        "diff": 0.0,
+        "ci": [
+          0.0,
+          0.0
+        ],
+        "share_positive": 0.0,
+        "se": 0.0,
+        "mde": 0.0
+      },
+      "fixed_hop - full_reindex": {
+        "diff": 0.0,
+        "ci": [
+          0.0,
+          0.0
+        ],
+        "share_positive": 0.0,
+        "se": 0.0,
+        "mde": 0.0
+      }
+    },
+    "observed_order": [
+      "predictive_ml",
+      "fixed_hop",
+      "full_reindex",
+      "changed_only"
+    ],
+    "ranking_stability": 0.956
+  }
+}
