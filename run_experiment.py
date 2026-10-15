@@ -40,7 +40,8 @@ from embedder.context_builder import build_contextual_source, extract_signature
 from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
 from evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
                        BaselineCFixedHop, BaselineDPageRankPropagation,
-                       PredictiveStrategy)
+                       PredictiveStrategy, WeightedBFSDecayStrategy)
+from evaluator.reembed_coverage import reembed_coverage_row, save_reembed_coverage
 from visualizer.visualize import Visualizer
 from extractor.rsd import RepositoryStateDescriptor
 from extractor.gtd import GraphTransitionDescriptor
@@ -174,6 +175,10 @@ class Experiment:
         # and independent of wherever HEAD was left).
         self.ref = ref
         self._original_head: Optional[str] = None
+        # Set when this run checks out a commit; a run served entirely from the
+        # dataset cache never touches the working tree (so it can run alongside
+        # a benchmark on the same checkout) and must not restore it either.
+        self._did_checkout = False
         self.joern_session = None
 
         # Lazily populated by _get_ground_truth_queries(). The curated query set
@@ -332,6 +337,7 @@ class Experiment:
         logger.info(f"Processing commit {commit_hash[:8]}...")
 
         # Checkout commit
+        self._did_checkout = True
         if not self.git_helper.checkout_commit(commit_hash):
             logger.warning(f"Failed to checkout commit {commit_hash[:8]}, skipping...")
             return
@@ -554,6 +560,7 @@ class Experiment:
             logger.info(f"\nProcessing sampled commit {i+1}/{len(self.sampled_commits)} ({commit[:8]})...")
             
             # Checkout commit
+            self._did_checkout = True
             if not self.git_helper.checkout_commit(commit):
                 logger.warning(f"Failed to checkout commit {commit[:8]}, skipping...")
                 continue
@@ -776,6 +783,7 @@ class Experiment:
                 self.embeddings_history[commit] = loaded["embeddings"]
                 continue
             logger.info(f"  Snapshot for {commit[:8]} not cached; parsing and embedding it...")
+            self._did_checkout = True
             if not self.git_helper.checkout_commit(commit):
                 logger.error(f"Failed to checkout {commit[:8]} for evaluation")
                 return False
@@ -1004,6 +1012,7 @@ class Experiment:
         drift_by_distance = {}
         all_predictions = []
         all_labels = []
+        reembed_coverage: List[Dict] = []
         self.predictions_export = {}
 
         # Same label-source switch as train_model() — both dicts are
@@ -1095,39 +1104,45 @@ class Experiment:
                 fixed_hop_values=[1, 2]
             )
 
+            # Entities each strategy re-embeds for this pair, and how many of the
+            # entities that needed re-embedding (positive label) each one covered.
+            predicted = {eid: d for eid, d in zip(aligned_ids, y_pred)}
+            strategy_re_embeddings = {
+                "changed_only": list(BaselineAChangedOnly().get_entities_to_update(
+                    modified_entities, predicted, decision_threshold
+                )),
+                "full_reindex": list(BaselineBFullReindex().get_entities_to_update(
+                    modified_entities, predicted, decision_threshold
+                )),
+                "fixed_hop_k1": list(BaselineCFixedHop(k=1).get_entities_to_update(
+                    modified_entities, predicted, decision_threshold, repo_parser=parser_b
+                )),
+                "fixed_hop_k2": list(BaselineCFixedHop(k=2).get_entities_to_update(
+                    modified_entities, predicted, decision_threshold, repo_parser=parser_b
+                )),
+                "predictive_ml": list(PredictiveStrategy().get_entities_to_update(
+                    modified_entities, predicted, decision_threshold
+                )),
+                "pagerank_propagation": list(BaselineDPageRankPropagation(top_fraction=0.3).get_entities_to_update(
+                    modified_entities, predicted, decision_threshold, repo_parser=parser_b
+                )),
+                "weighted_bfs_decay": list(WeightedBFSDecayStrategy(threshold=0.05).get_entities_to_update(
+                    modified_entities, predicted, decision_threshold, repo_parser=parser_b
+                ))
+            }
+            reembed_coverage.append(reembed_coverage_row(
+                commit_a, commit_b,
+                needed={eid for eid, y in zip(aligned_ids, actual_y_true) if y == 1},
+                labeled=set(aligned_ids),
+                strategy_sets=strategy_re_embeddings,
+            ))
+
             # Generate testing log diagnostic
             try:
                 invalidation_decisions = {
                     "predicted_stale": [str(eid) for eid, pred in zip(aligned_ids, y_pred_class) if pred == 1],
                     "predicted_fresh": [str(eid) for eid, pred in zip(aligned_ids, y_pred_class) if pred == 0],
                     "raw_predictions": {str(eid): float(val) for eid, val in zip(aligned_ids, y_pred)}
-                }
-
-                from evaluator import (BaselineAChangedOnly, BaselineBFullReindex,
-                                       BaselineCFixedHop, BaselineDPageRankPropagation,
-                                       PredictiveStrategy, WeightedBFSDecayStrategy)
-                strategy_re_embeddings = {
-                    "changed_only": list(BaselineAChangedOnly().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold
-                    )),
-                    "full_reindex": list(BaselineBFullReindex().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold
-                    )),
-                    "fixed_hop_k1": list(BaselineCFixedHop(k=1).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
-                    )),
-                    "fixed_hop_k2": list(BaselineCFixedHop(k=2).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
-                    )),
-                    "predictive_ml": list(PredictiveStrategy().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold
-                    )),
-                    "pagerank_propagation": list(BaselineDPageRankPropagation(top_fraction=0.3).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
-                    )),
-                    "weighted_bfs_decay": list(WeightedBFSDecayStrategy(threshold=0.05).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
-                    ))
                 }
 
                 parser_prev = self.parsers_history.get(commit_a)
@@ -1218,7 +1233,8 @@ class Experiment:
             'strategy_results': averaged_results,
             'drift_by_distance': drift_by_distance,
             'all_predictions': all_predictions,
-            'all_labels': all_labels
+            'all_labels': all_labels,
+            'reembed_coverage': reembed_coverage,
         }
 
     def _extract_docstring_summary(self, source_code: str) -> Optional[str]:
@@ -1314,6 +1330,19 @@ class Experiment:
         logger.info("=" * 80)
         logger.info("GENERATING VISUALIZATIONS")
         logger.info("=" * 80)
+
+        # Re-embed coverage: of the entities that needed re-embedding, how many
+        # each strategy re-embedded (tables in reembed_coverage.json/.md).
+        if results.get('reembed_coverage'):
+            summary = save_reembed_coverage(results['reembed_coverage'], self.results_dir)
+            results['reembed_coverage_summary'] = summary
+            self.visualizer.plot_reembed_coverage(summary, results['reembed_coverage'])
+            for name, s in summary.items():
+                logger.info(
+                    f"  Re-embed coverage {name:22s}: {s['reembedded_needed']}/{s['needed']} needed "
+                    f"({s['coverage']:.2%}), missed {s['missed']}, extra {s['extra']}, "
+                    f"re-embedded {s['reembedded_fraction']:.2%} of entities"
+                )
 
         # Drift decay plot
         if results.get('drift_by_distance'):
@@ -1422,7 +1451,7 @@ class Experiment:
         finally:
             # build_dataset checks out each sampled commit; put the repository back
             # where it was so later runs (and the benchmark) are unaffected.
-            if self._original_head and self.git_helper:
+            if self._original_head and self.git_helper and self._did_checkout:
                 if self.git_helper.checkout_commit(self._original_head):
                     logger.info(f"Restored repository checkout to {self._original_head}")
 
@@ -1493,6 +1522,9 @@ class Experiment:
                     k: float(v) if isinstance(v, (np.floating, np.integer)) else v
                     for k, v in metrics.items()
                 }
+
+        if 'reembed_coverage_summary' in results:
+            serializable_results['reembed_coverage'] = results['reembed_coverage_summary']
 
         if 'drift_by_distance' in results:
             serializable_results['drift_by_distance'] = {

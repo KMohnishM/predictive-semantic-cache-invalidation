@@ -14,6 +14,21 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Fixed colour per strategy (validated categorical palette, slots 1-7), so a
+# strategy keeps its colour in every re-embed coverage chart.
+REEMBED_STRATEGY_COLORS = {
+    "predictive_ml": "#2a78d6",
+    "changed_only": "#eb6834",
+    "fixed_hop_k1": "#1baf7a",
+    "fixed_hop_k2": "#eda100",
+    "weighted_bfs_decay": "#e87ba4",
+    "pagerank_propagation": "#008300",
+    "full_reindex": "#4a3aa7",
+}
+_INK_PRIMARY = "#0b0b0b"
+_INK_SECONDARY = "#52514e"
+_GRID = "#e4e3df"
+
 
 class Visualizer:
     """Generates visualization plots for experiment results."""
@@ -656,4 +671,115 @@ class Visualizer:
                 logger.warning(f"Could not generate confusion matrix for {m_name}: {exc}")
 
         return saved_paths
-
+
+    def plot_reembed_coverage(self, summary: Dict[str, Dict], rows: List[Dict]) -> List[str]:
+        """
+        Charts for re-embed coverage (see evaluator.reembed_coverage):
+
+        - reembed_missed.png: needed re-embeds each strategy missed
+        - reembed_missed_vs_cost.png: missed vs share of entities re-embedded
+        - reembed_missed_per_pair.png: misses per test commit pair
+
+        Returns:
+            Paths of the saved plots
+        """
+        logger.info("Generating re-embed coverage plots...")
+        names = list(summary)
+        color = lambda n: REEMBED_STRATEGY_COLORS.get(n, "#898781")
+        label = lambda n: n.replace("_", " ")
+        total_needed = max(s["needed"] for s in summary.values())
+        paths = []
+
+        def style(ax):
+            ax.set_facecolor("white")
+            ax.grid(True, color=_GRID, linewidth=0.8)
+            ax.set_axisbelow(True)
+            for side in ("top", "right"):
+                ax.spines[side].set_visible(False)
+            for side in ("left", "bottom"):
+                ax.spines[side].set_color(_GRID)
+            ax.tick_params(colors=_INK_SECONDARY)
+
+        def save(fig, name):
+            path = self.output_dir / name
+            fig.savefig(path, dpi=200, bbox_inches="tight", facecolor="white")
+            plt.close(fig)
+            paths.append(str(path))
+            logger.info(f"Re-embed coverage plot saved to {path}")
+
+        # 1. Missed needed re-embeds per strategy
+        fig, ax = plt.subplots(figsize=(10, 0.6 * len(names) + 1.6))
+        style(ax)
+        ax.grid(False, axis="y")
+        missed = [summary[n]["missed"] for n in names]
+        y = np.arange(len(names))[::-1]
+        ax.barh(y, missed, height=0.55, color=[color(n) for n in names])
+        span = max(missed) if max(missed) else 1
+        for yi, n in zip(y, names):
+            s = summary[n]
+            ax.text(s["missed"] + span * 0.01, yi,
+                    f"{s['missed']:,} missed  ·  re-embedded {s['reembedded_needed']:,}/{s['needed']:,} "
+                    f"({s['coverage']:.2%})",
+                    va="center", fontsize=9, color=_INK_PRIMARY)
+        ax.set_yticks(y)
+        ax.set_yticklabels([label(n) for n in names], color=_INK_PRIMARY)
+        ax.set_xlim(0, span * 1.9)
+        ax.set_xlabel("Needed re-embeds missed (all test pairs)", color=_INK_SECONDARY)
+        ax.set_title(f"Of {total_needed:,} entities that needed re-embedding, how many each strategy missed",
+                     fontsize=12, color=_INK_PRIMARY, loc="left")
+        save(fig, "reembed_missed.png")
+
+        # 2. Missed vs cost
+        fig, ax = plt.subplots(figsize=(10, 6.5))
+        style(ax)
+        for n in names:
+            s = summary[n]
+            ax.scatter(s["reembedded_fraction"] * 100, s["missed"], s=90, color=color(n),
+                       edgecolors="white", linewidths=2, zorder=3)
+        ax.set_xscale("log")
+        ax.set_xlabel("Entities re-embedded (% of all, log scale)", color=_INK_SECONDARY)
+        ax.set_ylabel("Needed re-embeds missed", color=_INK_SECONDARY)
+        ax.set_title("Cost vs. misses — bottom-left is best", fontsize=12, color=_INK_PRIMARY, loc="left")
+        ax.set_ylim(bottom=-0.05 * span, top=span * 1.12)
+        # Direct labels: first free spot among right/left, above/below the point,
+        # then further above, so no two labels overlap.
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        placed = []
+        spots = [(8, 6, "left"), (8, -16, "left"), (-8, 6, "right"), (-8, -16, "right")]
+        spots += [(8, dy, "left") for dy in range(18, 120, 12)]
+        for n in sorted(names, key=lambda n: (summary[n]["missed"], summary[n]["reembedded_fraction"])):
+            s = summary[n]
+            for dx, dy, ha in spots:
+                text = ax.annotate(label(n), (s["reembedded_fraction"] * 100, s["missed"]),
+                                   xytext=(dx, dy), textcoords="offset points", ha=ha,
+                                   fontsize=9, color=_INK_PRIMARY)
+                box = text.get_window_extent(renderer).expanded(1.05, 1.15)
+                if not any(box.overlaps(other) for other in placed):
+                    placed.append(box)
+                    break
+                text.remove()
+        save(fig, "reembed_missed_vs_cost.png")
+
+        # 3. Misses per test commit pair (full re-index never misses, so it is left out)
+        line_names = [n for n in names if n != "full_reindex"]
+        fig, ax = plt.subplots(figsize=(max(10, 0.45 * len(rows) + 4), 6))
+        style(ax)
+        x = np.arange(1, len(rows) + 1)
+        for z, n in enumerate(reversed(line_names)):  # first strategy (ours) drawn on top
+            ax.plot(x, [r["strategies"].get(n, {}).get("missed", 0) for r in rows], color=color(n),
+                    linewidth=2.5 if n == line_names[0] else 2, marker="o", markersize=5,
+                    markeredgecolor="white", markeredgewidth=1, label=label(n), zorder=3 + z)
+        handles, labels_ = ax.get_legend_handles_labels()
+        handles, labels_ = handles[::-1], labels_[::-1]
+        ax.set_xticks(x)
+        ax.set_xticklabels([f"{r['commit_before'][:6]}→{r['commit_after'][:6]}" for r in rows],
+                           rotation=60, ha="right", fontsize=8, color=_INK_SECONDARY)
+        ax.set_ylabel("Needed re-embeds missed", color=_INK_SECONDARY)
+        ax.set_title("Missed re-embeds per test commit pair (full re-index misses none)",
+                     fontsize=12, color=_INK_PRIMARY, loc="left")
+        ax.legend(handles, labels_, frameon=False, fontsize=9, labelcolor=_INK_PRIMARY, ncol=3, loc="upper left")
+        ax.set_ylim(bottom=-0.02 * max(1, max(max(r["strategies"].get(n, {}).get("missed", 0) for n in line_names)
+                                                   for r in rows)))
+        save(fig, "reembed_missed_per_pair.png")
+        return paths
