@@ -1,19 +1,21 @@
 {
-  "repo_url": "https://github.com/psf/black.git",
+  "repo_url": "https://github.com/django/django",
   "model_name": "sentence-transformers/all-MiniLM-L6-v2",
   "parser_mode": "ast",
-  "num_commits": 18,
-  "commit_stride": 30,
+  "num_commits": 100,
+  "commit_stride": 200,
   "train_ratio": 0.7,
   "threshold": 0.05,
   "threshold_mode": "fixed",
   "clean_mode": false,
   "context_chunking": true,
   "device": "auto",
-  "label_source": "hybrid",
+  "label_source": "embedded_text_changed",
   "max_queries_per_entity": 10,
   "ground_truth_queries_path": "src/benchmarking/data/curated_queries_black_change_focused.json",
-  "ref": "3702ba224ecffbcec30af640c149f231d90aebdb~300",
+  "ref": "adeef108afa7c6c50959cf2c94a4d4efbf1fae91~300",
   "ground_truth_rule": "any_displacement",
-  "ground_truth_min_queries": 1
+  "ground_truth_min_queries": 1,
+  "target_recall": 1.0,
+  "model_type": "hist_gradient_boosting"
 }
