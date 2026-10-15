@@ -1,0 +1,990 @@
+{
+  "summary": {
+    "predictive_ml": {
+      "needed": 184,
+      "reembedded_needed": 184,
+      "missed": 0,
+      "extra": 0,
+      "reembedded": 184,
+      "entities": 10226,
+      "coverage": 1.0,
+      "reembedded_fraction": 0.017993350283590847,
+      "pairs_with_misses": 0,
+      "pairs": 18
+    },
+    "changed_only": {
+      "needed": 184,
+      "reembedded_needed": 162,
+      "missed": 22,
+      "extra": 0,
+      "reembedded": 162,
+      "entities": 10226,
+      "coverage": 0.8804347826086957,
+      "reembedded_fraction": 0.01584197144533542,
+      "pairs_with_misses": 2,
+      "pairs": 18
+    },
+    "fixed_hop_k1": {
+      "needed": 184,
+      "reembedded_needed": 184,
+      "missed": 0,
+      "extra": 136,
+      "reembedded": 320,
+      "entities": 10226,
+      "coverage": 1.0,
+      "reembedded_fraction": 0.03129278310189713,
+      "pairs_with_misses": 0,
+      "pairs": 18
+    },
+    "fixed_hop_k2": {
+      "needed": 184,
+      "reembedded_needed": 184,
+      "missed": 0,
+      "extra": 423,
+      "reembedded": 607,
+      "entities": 10226,
+      "coverage": 1.0,
+      "reembedded_fraction": 0.05935849794641111,
+      "pairs_with_misses": 0,
+      "pairs": 18
+    },
+    "weighted_bfs_decay": {
+      "needed": 184,
+      "reembedded_needed": 184,
+      "missed": 0,
+      "extra": 554,
+      "reembedded": 738,
+      "entities": 10226,
+      "coverage": 1.0,
+      "reembedded_fraction": 0.07216898102875025,
+      "pairs_with_misses": 0,
+      "pairs": 18
+    },
+    "pagerank_propagation": {
+      "needed": 184,
+      "reembedded_needed": 168,
+      "missed": 16,
+      "extra": 2870,
+      "reembedded": 3038,
+      "entities": 10226,
+      "coverage": 0.9130434782608695,
+      "reembedded_fraction": 0.2970858595736358,
+      "pairs_with_misses": 2,
+      "pairs": 18
+    },
+    "full_reindex": {
+      "needed": 184,
+      "reembedded_needed": 184,
+      "missed": 0,
+      "extra": 10042,
+      "reembedded": 10226,
+      "entities": 10226,
+      "coverage": 1.0,
+      "reembedded_fraction": 1.0,
+      "pairs_with_misses": 0,
+      "pairs": 18
+    }
+  },
+  "pairs": [
+    {
+      "commit_before": "9bbe11dd7baf7aea23a5b51d7daf9e12acb3b28c",
+      "commit_after": "aafc21aa77f5c4d2ebcb833aa60faba6c2138b94",
+      "entities": 551,
+      "needed": 8,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 8,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 551,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 543
+        },
+        "fixed_hop_k1": {
+          "reembedded": 11,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 3
+        },
+        "fixed_hop_k2": {
+          "reembedded": 15,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 7
+        },
+        "predictive_ml": {
+          "reembedded": 8,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 161,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 153
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 19,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 11
+        }
+      }
+    },
+    {
+      "commit_before": "aafc21aa77f5c4d2ebcb833aa60faba6c2138b94",
+      "commit_after": "cd9fef8bab3a39dfba494f1917e4158faba439f9",
+      "entities": 557,
+      "needed": 2,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 2,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 557,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 555
+        },
+        "fixed_hop_k1": {
+          "reembedded": 8,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 6
+        },
+        "fixed_hop_k2": {
+          "reembedded": 12,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 10
+        },
+        "predictive_ml": {
+          "reembedded": 2,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 167,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 165
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 14,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 12
+        }
+      }
+    },
+    {
+      "commit_before": "cd9fef8bab3a39dfba494f1917e4158faba439f9",
+      "commit_after": "59f03d1b9d3c77f214087948b4d5e3dbb024d0b3",
+      "entities": 557,
+      "needed": 12,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 12,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 557,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 545
+        },
+        "fixed_hop_k1": {
+          "reembedded": 17,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 5
+        },
+        "fixed_hop_k2": {
+          "reembedded": 71,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 59
+        },
+        "predictive_ml": {
+          "reembedded": 12,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 166,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 154
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 90,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 78
+        }
+      }
+    },
+    {
+      "commit_before": "59f03d1b9d3c77f214087948b4d5e3dbb024d0b3",
+      "commit_after": "72a3408965f944f39f1080a5b67c25790acdc4e2",
+      "entities": 558,
+      "needed": 22,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 22,
+          "reembedded_needed": 22,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 558,
+          "reembedded_needed": 22,
+          "missed": 0,
+          "extra": 536
+        },
+        "fixed_hop_k1": {
+          "reembedded": 24,
+          "reembedded_needed": 22,
+          "missed": 0,
+          "extra": 2
+        },
+        "fixed_hop_k2": {
+          "reembedded": 27,
+          "reembedded_needed": 22,
+          "missed": 0,
+          "extra": 5
+        },
+        "predictive_ml": {
+          "reembedded": 22,
+          "reembedded_needed": 22,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 166,
+          "reembedded_needed": 22,
+          "missed": 0,
+          "extra": 144
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 31,
+          "reembedded_needed": 22,
+          "missed": 0,
+          "extra": 9
+        }
+      }
+    },
+    {
+      "commit_before": "72a3408965f944f39f1080a5b67c25790acdc4e2",
+      "commit_after": "4bee9cca5553c55493203822b5a112ec5216bc74",
+      "entities": 560,
+      "needed": 3,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 3,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 560,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 557
+        },
+        "fixed_hop_k1": {
+          "reembedded": 5,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 2
+        },
+        "fixed_hop_k2": {
+          "reembedded": 7,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 4
+        },
+        "predictive_ml": {
+          "reembedded": 3,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 167,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 164
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 11,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 8
+        }
+      }
+    },
+    {
+      "commit_before": "4bee9cca5553c55493203822b5a112ec5216bc74",
+      "commit_after": "7e6d3fac197395b0a2b380cc60811536fe23626b",
+      "entities": 561,
+      "needed": 3,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 3,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 561,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 558
+        },
+        "fixed_hop_k1": {
+          "reembedded": 9,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 6
+        },
+        "fixed_hop_k2": {
+          "reembedded": 14,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 11
+        },
+        "predictive_ml": {
+          "reembedded": 3,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 167,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 164
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 18,
+          "reembedded_needed": 3,
+          "missed": 0,
+          "extra": 15
+        }
+      }
+    },
+    {
+      "commit_before": "7e6d3fac197395b0a2b380cc60811536fe23626b",
+      "commit_after": "eabff673b37c5430d4cf72fa050a189a57be2deb",
+      "entities": 562,
+      "needed": 11,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 11,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 562,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 551
+        },
+        "fixed_hop_k1": {
+          "reembedded": 16,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 5
+        },
+        "fixed_hop_k2": {
+          "reembedded": 21,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 10
+        },
+        "predictive_ml": {
+          "reembedded": 11,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 166,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 155
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 24,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 13
+        }
+      }
+    },
+    {
+      "commit_before": "eabff673b37c5430d4cf72fa050a189a57be2deb",
+      "commit_after": "f4ebc683208d095b252b87147d002e925c9c1171",
+      "entities": 565,
+      "needed": 2,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 2,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 565,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 563
+        },
+        "fixed_hop_k1": {
+          "reembedded": 4,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 2
+        },
+        "fixed_hop_k2": {
+          "reembedded": 7,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 5
+        },
+        "predictive_ml": {
+          "reembedded": 2,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 168,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 166
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 9,
+          "reembedded_needed": 2,
+          "missed": 0,
+          "extra": 7
+        }
+      }
+    },
+    {
+      "commit_before": "f4ebc683208d095b252b87147d002e925c9c1171",
+      "commit_after": "dd0e912a6e7ebe432299e317e2e79b592fc2adc3",
+      "entities": 566,
+      "needed": 30,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 29,
+          "reembedded_needed": 29,
+          "missed": 1,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 566,
+          "reembedded_needed": 30,
+          "missed": 0,
+          "extra": 536
+        },
+        "fixed_hop_k1": {
+          "reembedded": 57,
+          "reembedded_needed": 30,
+          "missed": 0,
+          "extra": 27
+        },
+        "fixed_hop_k2": {
+          "reembedded": 120,
+          "reembedded_needed": 30,
+          "missed": 0,
+          "extra": 90
+        },
+        "predictive_ml": {
+          "reembedded": 30,
+          "reembedded_needed": 30,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 167,
+          "reembedded_needed": 29,
+          "missed": 1,
+          "extra": 138
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 141,
+          "reembedded_needed": 30,
+          "missed": 0,
+          "extra": 111
+        }
+      }
+    },
+    {
+      "commit_before": "dd0e912a6e7ebe432299e317e2e79b592fc2adc3",
+      "commit_after": "9c8464ca7ddd48d1c19112d895ae12d783f01563",
+      "entities": 570,
+      "needed": 11,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 11,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 570,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 559
+        },
+        "fixed_hop_k1": {
+          "reembedded": 13,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 2
+        },
+        "fixed_hop_k2": {
+          "reembedded": 15,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 4
+        },
+        "predictive_ml": {
+          "reembedded": 11,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 169,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 158
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 19,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 8
+        }
+      }
+    },
+    {
+      "commit_before": "9c8464ca7ddd48d1c19112d895ae12d783f01563",
+      "commit_after": "6ffc5f7b01eab341f1b2cd373b6faed0072a2351",
+      "entities": 571,
+      "needed": 12,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 12,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 571,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 559
+        },
+        "fixed_hop_k1": {
+          "reembedded": 23,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 11
+        },
+        "fixed_hop_k2": {
+          "reembedded": 46,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 34
+        },
+        "predictive_ml": {
+          "reembedded": 12,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 169,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 157
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 54,
+          "reembedded_needed": 12,
+          "missed": 0,
+          "extra": 42
+        }
+      }
+    },
+    {
+      "commit_before": "6ffc5f7b01eab341f1b2cd373b6faed0072a2351",
+      "commit_after": "c9efbf9d97b65d67f6e87ee4b77bed0445bd7a9f",
+      "entities": 572,
+      "needed": 11,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 11,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 572,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 561
+        },
+        "fixed_hop_k1": {
+          "reembedded": 49,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 38
+        },
+        "fixed_hop_k2": {
+          "reembedded": 70,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 59
+        },
+        "predictive_ml": {
+          "reembedded": 11,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 168,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 157
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 77,
+          "reembedded_needed": 11,
+          "missed": 0,
+          "extra": 66
+        }
+      }
+    },
+    {
+      "commit_before": "c9efbf9d97b65d67f6e87ee4b77bed0445bd7a9f",
+      "commit_after": "3a9d6f0a5f9013b97676f3d24246bd34d93fce4c",
+      "entities": 576,
+      "needed": 6,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 6,
+          "reembedded_needed": 6,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 576,
+          "reembedded_needed": 6,
+          "missed": 0,
+          "extra": 570
+        },
+        "fixed_hop_k1": {
+          "reembedded": 9,
+          "reembedded_needed": 6,
+          "missed": 0,
+          "extra": 3
+        },
+        "fixed_hop_k2": {
+          "reembedded": 13,
+          "reembedded_needed": 6,
+          "missed": 0,
+          "extra": 7
+        },
+        "predictive_ml": {
+          "reembedded": 6,
+          "reembedded_needed": 6,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 172,
+          "reembedded_needed": 6,
+          "missed": 0,
+          "extra": 166
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 15,
+          "reembedded_needed": 6,
+          "missed": 0,
+          "extra": 9
+        }
+      }
+    },
+    {
+      "commit_before": "3a9d6f0a5f9013b97676f3d24246bd34d93fce4c",
+      "commit_after": "bf5abdb0b6cf6644628977230736a0a6478c1bff",
+      "entities": 576,
+      "needed": 8,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 8,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 576,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 568
+        },
+        "fixed_hop_k1": {
+          "reembedded": 13,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 5
+        },
+        "fixed_hop_k2": {
+          "reembedded": 16,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 8
+        },
+        "predictive_ml": {
+          "reembedded": 8,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 169,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 161
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 18,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 10
+        }
+      }
+    },
+    {
+      "commit_before": "bf5abdb0b6cf6644628977230736a0a6478c1bff",
+      "commit_after": "f265ff5bcd0eafcde1e62df89fb8b62ad1439887",
+      "entities": 581,
+      "needed": 1,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 1,
+          "reembedded_needed": 1,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 581,
+          "reembedded_needed": 1,
+          "missed": 0,
+          "extra": 580
+        },
+        "fixed_hop_k1": {
+          "reembedded": 5,
+          "reembedded_needed": 1,
+          "missed": 0,
+          "extra": 4
+        },
+        "fixed_hop_k2": {
+          "reembedded": 9,
+          "reembedded_needed": 1,
+          "missed": 0,
+          "extra": 8
+        },
+        "predictive_ml": {
+          "reembedded": 1,
+          "reembedded_needed": 1,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 174,
+          "reembedded_needed": 1,
+          "missed": 0,
+          "extra": 173
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 12,
+          "reembedded_needed": 1,
+          "missed": 0,
+          "extra": 11
+        }
+      }
+    },
+    {
+      "commit_before": "f265ff5bcd0eafcde1e62df89fb8b62ad1439887",
+      "commit_after": "e712e48e06420d9240ce95c81acfcf6f11d14c83",
+      "entities": 581,
+      "needed": 8,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 8,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 581,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 573
+        },
+        "fixed_hop_k1": {
+          "reembedded": 16,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 8
+        },
+        "fixed_hop_k2": {
+          "reembedded": 80,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 72
+        },
+        "predictive_ml": {
+          "reembedded": 8,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 174,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 166
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 106,
+          "reembedded_needed": 8,
+          "missed": 0,
+          "extra": 98
+        }
+      }
+    },
+    {
+      "commit_before": "e712e48e06420d9240ce95c81acfcf6f11d14c83",
+      "commit_after": "dc188f2060eff70b539c834f8576e8826cee5de7",
+      "entities": 581,
+      "needed": 29,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 8,
+          "reembedded_needed": 8,
+          "missed": 21,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 581,
+          "reembedded_needed": 29,
+          "missed": 0,
+          "extra": 552
+        },
+        "fixed_hop_k1": {
+          "reembedded": 33,
+          "reembedded_needed": 29,
+          "missed": 0,
+          "extra": 4
+        },
+        "fixed_hop_k2": {
+          "reembedded": 53,
+          "reembedded_needed": 29,
+          "missed": 0,
+          "extra": 24
+        },
+        "predictive_ml": {
+          "reembedded": 29,
+          "reembedded_needed": 29,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 174,
+          "reembedded_needed": 14,
+          "missed": 15,
+          "extra": 160
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 62,
+          "reembedded_needed": 29,
+          "missed": 0,
+          "extra": 33
+        }
+      }
+    },
+    {
+      "commit_before": "dc188f2060eff70b539c834f8576e8826cee5de7",
+      "commit_after": "c99417ffe8aa51015f08a96220072fa0dbcce51d",
+      "entities": 581,
+      "needed": 5,
+      "strategies": {
+        "changed_only": {
+          "reembedded": 5,
+          "reembedded_needed": 5,
+          "missed": 0,
+          "extra": 0
+        },
+        "full_reindex": {
+          "reembedded": 581,
+          "reembedded_needed": 5,
+          "missed": 0,
+          "extra": 576
+        },
+        "fixed_hop_k1": {
+          "reembedded": 8,
+          "reembedded_needed": 5,
+          "missed": 0,
+          "extra": 3
+        },
+        "fixed_hop_k2": {
+          "reembedded": 11,
+          "reembedded_needed": 5,
+          "missed": 0,
+          "extra": 6
+        },
+        "predictive_ml": {
+          "reembedded": 5,
+          "reembedded_needed": 5,
+          "missed": 0,
+          "extra": 0
+        },
+        "pagerank_propagation": {
+          "reembedded": 174,
+          "reembedded_needed": 5,
+          "missed": 0,
+          "extra": 169
+        },
+        "weighted_bfs_decay": {
+          "reembedded": 18,
+          "reembedded_needed": 5,
+          "missed": 0,
+          "extra": 13
+        }
+      }
+    }
+  ]
+}
