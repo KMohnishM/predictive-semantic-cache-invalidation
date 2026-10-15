@@ -91,6 +91,7 @@ class Experiment:
                  ground_truth_min_queries: int = 5,
                  target_recall: Optional[float] = None,
                  model_type: str = "random_forest",
+                 compare_models_exclude: Optional[List[str]] = None,
                  dataset_dir: Optional[str] = "datasets",
                  rebuild_dataset: bool = False):
         """
@@ -165,6 +166,8 @@ class Experiment:
         # (None = F1-optimal threshold).
         self.target_recall = target_recall
         self.model_type = model_type
+        # Architectures left out of --compare-models (e.g. svc/knn on large data).
+        self.compare_models_exclude = compare_models_exclude or []
         # Built datasets (per-pair features/labels plus the evaluation commits'
         # parsers and embeddings) are cached here and reused by later runs with
         # the same dataset settings, skipping the expensive parse/embed/feature
@@ -964,7 +967,11 @@ class Experiment:
             comp_df, predictors_dict = compare_all_models(
                 X_train, y_train, X_test, y_test,
                 task_type=self.predictor.task_type,
-                threshold=self.predictor.threshold
+                threshold=self.predictor.threshold,
+                feature_names=self.predictor.feature_names,
+                target_recall=self.target_recall,
+                groups=pair_groups,
+                exclude=self.compare_models_exclude,
             )
             comp_csv_path = self.results_dir / "model_comparison.csv"
             comp_df.to_csv(comp_csv_path, index=False)
@@ -1706,11 +1713,11 @@ def main():
         help="Ignore any cached dataset and rebuild it (the new build replaces the cache)",
     )
     parser.add_argument(
-        "--model-type",
+        "--model-type", "--predictor-model",
+        dest="model_type",
         default="random_forest",
-        choices=["random_forest", "gradient_boosting", "hist_gradient_boosting", "extra_trees",
-                 "logistic_regression", "mlp", "svc", "knn", "decision_tree", "naive_bayes"],
-        help="Predictor model; hist_gradient_boosting is monotonic in the direct change signals",
+        choices=DriftPredictor.SUPPORTED_MODELS,
+        help="Predictor model; hist_gradient_boosting and lightgbm are monotonic in the direct change signals",
     )
     parser.add_argument(
         "--target-recall",
@@ -1742,10 +1749,10 @@ def main():
         help="Train and compare multiple ML model architectures (Random Forest, Gradient Boosting, HistGB, LightGBM, Extra Trees, Logistic Regression, MLP, SVC, KNN, Decision Tree, Naive Bayes)"
     )
     parser.add_argument(
-        "--predictor-model",
-        default="random_forest",
-        choices=DriftPredictor.SUPPORTED_MODELS,
-        help="Model architecture for drift prediction (e.g. random_forest, lightgbm, hist_gradient_boosting)"
+        "--compare-models-exclude",
+        type=lambda s: [m.strip() for m in s.split(",") if m.strip()],
+        default=[],
+        help="Comma-separated architectures to leave out of --compare-models (e.g. svc,knn on large datasets)",
     )
 
     args = parser.parse_args()
@@ -1845,6 +1852,7 @@ def main():
         ground_truth_min_queries=args.ground_truth_min_queries,
         target_recall=args.target_recall,
         model_type=args.model_type,
+        compare_models_exclude=args.compare_models_exclude,
         dataset_dir=args.dataset_dir or None,
         rebuild_dataset=args.rebuild_dataset,
     )
