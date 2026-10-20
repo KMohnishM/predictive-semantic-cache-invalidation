@@ -30,6 +30,22 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# Direct evidence that an entity's embedded text changed. Monotonic models are
+# constrained so these can only raise the stale probability; otherwise a model
+# can let structural features (e.g. "far from any modified entity", as for a
+# formatting-only edit) outweigh a signal that is decisive on its own.
+CHANGE_SIGNAL_FEATURES = (
+    "is_modified",
+    "own_source_changed",
+    "context_stub_changed_count",
+    "modified_member_count",
+)
+
+# With target_recall set, the decision threshold is never placed above this: a
+# missed stale entity costs more than an extra re-embed, so an entity the model
+# itself rates more likely stale than not is always re-embedded.
+RECALL_FIRST_MAX_THRESHOLD = 0.5
+
 
 def positive_class_proba(model, probs: np.ndarray) -> np.ndarray:
     """
@@ -77,7 +93,8 @@ class DriftPredictor:
             target_recall: If set, fit_decision_threshold() picks the highest
                 cut-off whose out-of-fold recall reaches this value (missing a
                 stale entity costs more than an extra re-embed) instead of the
-                F1-optimal one.
+                F1-optimal one, capped at RECALL_FIRST_MAX_THRESHOLD. Use 1.0 to
+                catch every out-of-fold positive.
         """
         if model_type == "linear" and task_type == "classification":
             model_type = "logistic_regression"
@@ -172,19 +189,32 @@ class DriftPredictor:
                     random_state=42
                 )
             elif self.model_type == "hist_gradient_boosting":
+                # StandardScaler is increasing per feature, so the constraint
+                # holds on the scaled inputs too.
+                monotonic_cst = (
+                    [1 if name in CHANGE_SIGNAL_FEATURES else 0 for name in self.feature_names]
+                    if self.feature_names else None
+                )
                 return HistGradientBoostingClassifier(
                     random_state=42,
-                    class_weight='balanced'
+                    class_weight='balanced',
+                    monotonic_cst=monotonic_cst,
                 )
             elif self.model_type == "lightgbm":
                 if not LIGHTGBM_AVAILABLE:
                     raise ImportError("lightgbm is not installed. Please install it using `pip install lightgbm`.")
+                # Same monotonic constraint as hist_gradient_boosting.
+                monotone_constraints = (
+                    [1 if name in CHANGE_SIGNAL_FEATURES else 0 for name in self.feature_names]
+                    if self.feature_names else None
+                )
                 return LGBMClassifier(
                     n_estimators=100,
                     max_depth=5,
                     learning_rate=0.1,
                     random_state=42,
                     class_weight='balanced',
+                    monotone_constraints=monotone_constraints,
                     n_jobs=-1,
                     verbose=-1
                 )
@@ -317,7 +347,7 @@ class DriftPredictor:
         """
         Choose the probability cut-off on out-of-fold predictions: the one that
         maximises F1, or, with ``target_recall`` set, the highest one whose
-        recall reaches ``target_recall``.
+        recall reaches ``target_recall``, capped at RECALL_FIRST_MAX_THRESHOLD.
 
         Rows are grouped (by commit pair) so every row is scored by a model that
         never saw its pair. With rare positives a fixed 0.5 cut-off is almost
@@ -357,9 +387,16 @@ class DriftPredictor:
             # still meeting the target is the highest qualifying cut-off.
             meets = np.flatnonzero(recalls[:-1] >= self.target_recall)
             best = int(meets[-1]) if len(meets) else 0
+            if thresholds[best] > RECALL_FIRST_MAX_THRESHOLD:
+                # Report precision/recall for the capped cut-off: scores >= cap
+                # are exactly those >= the first threshold at or above it.
+                best = min(int(np.searchsorted(thresholds, RECALL_FIRST_MAX_THRESHOLD)), len(thresholds) - 1)
+                self.decision_threshold = RECALL_FIRST_MAX_THRESHOLD
+            else:
+                self.decision_threshold = float(thresholds[best])
         else:
             best = int(np.argmax(f1))
-        self.decision_threshold = float(thresholds[best])
+            self.decision_threshold = float(thresholds[best])
         logger.info(
             f"Decision threshold set to {self.decision_threshold:.4f} from out-of-fold predictions "
             f"({'target recall ' + str(self.target_recall) if self.target_recall is not None else 'max F1'}; "
@@ -623,24 +660,40 @@ def compare_all_models(
     task_type: str = "classification",
     threshold: float = 0.5,
     model_types: Optional[List[str]] = None,
+    feature_names: Optional[List[str]] = None,
+    target_recall: Optional[float] = None,
+    groups: Optional[List[str]] = None,
+    exclude: Optional[List[str]] = None,
 ) -> Tuple[pd.DataFrame, Dict[str, DriftPredictor]]:
     """
     Train and evaluate multiple ML models on identical train/test splits.
+
+    Every model is set up like the main predictor: same feature names (so the
+    monotonic models get their constraints) and, when ``groups`` is given, a
+    decision threshold fitted out-of-fold with the same ``target_recall``. For
+    classification the table also reports re-embed coverage on the test rows:
+    positives (needed re-embeds) the model missed, extra re-embeds, and the
+    share of entities flagged.
 
     Returns:
         Tuple of (results_df, trained_predictors_dict)
     """
     if model_types is None:
         model_types = DriftPredictor.SUPPORTED_MODELS
+    model_types = [m for m in model_types if m not in set(exclude or [])]
 
     results = []
     predictors = {}
 
     for m_type in model_types:
         try:
-            pred = DriftPredictor(model_type=m_type, task_type=task_type, threshold=threshold)
+            pred = DriftPredictor(model_type=m_type, task_type=task_type, threshold=threshold,
+                                  target_recall=target_recall)
+            pred.feature_names = list(feature_names) if feature_names is not None else None
             t0 = time.perf_counter()
             pred.train(X_train, y_train)
+            if groups is not None and task_type == "classification":
+                pred.fit_decision_threshold(X_train, y_train, groups)
             train_time = time.perf_counter() - t0
 
             t1 = time.perf_counter()
@@ -653,12 +706,28 @@ def compare_all_models(
                 "eval_time_sec": round(eval_time, 4),
                 **{k: round(v, 4) for k, v in metrics.items()},
             }
+            if task_type == "classification" and hasattr(pred.model, "predict_proba"):
+                y_true = np.asarray(y_test).astype(int)
+                flagged = positive_class_proba(
+                    pred.model, pred.model.predict_proba(pred.scaler.transform(X_test))
+                ) >= pred.decision_threshold
+                needed = int(y_true.sum())
+                row.update(
+                    needed=needed,
+                    reembedded_needed=int((flagged & (y_true == 1)).sum()),
+                    missed=int((~flagged & (y_true == 1)).sum()),
+                    extra=int((flagged & (y_true == 0)).sum()),
+                    flagged_pct=round(100 * float(flagged.mean()), 4),
+                )
             results.append(row)
             predictors[m_type] = pred
         except Exception as exc:
             logger.warning(f"Model comparison failed for '{m_type}': {exc}")
 
     df = pd.DataFrame(results)
-    if not df.empty and "test_f1" in df.columns:
+    if not df.empty and "missed" in df.columns:
+        # Recall-first: fewest missed re-embeds, then cheapest.
+        df = df.sort_values(["missed", "flagged_pct"]).reset_index(drop=True)
+    elif not df.empty and "test_f1" in df.columns:
         df = df.sort_values("test_f1", ascending=False).reset_index(drop=True)
     return df, predictors

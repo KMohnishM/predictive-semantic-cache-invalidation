@@ -10,7 +10,10 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional
 import time
 import json
+import hashlib
 from datetime import datetime
+
+import joblib
 
 import numpy as np
 import pandas as pd
@@ -37,7 +40,8 @@ from embedder.context_builder import build_contextual_source, extract_signature
 from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
 from evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
                        BaselineCFixedHop, BaselineDPageRankPropagation,
-                       PredictiveStrategy)
+                       PredictiveStrategy, WeightedBFSDecayStrategy)
+from evaluator.reembed_coverage import reembed_coverage_row, save_reembed_coverage
 from visualizer.visualize import Visualizer
 from extractor.rsd import RepositoryStateDescriptor
 from extractor.gtd import GraphTransitionDescriptor
@@ -56,6 +60,10 @@ logger = logging.getLogger(__name__)
 # Label sources that produce a binary Y_i in ground_truth_history (vs. raw cosine
 # drift in drifts_history).
 BINARY_LABEL_SOURCES = ("leave_one_out", "hybrid", "embedded_text_changed")
+
+# Bump when parsing, context text, features or labels change, so cached
+# datasets built by older code are not reused.
+DATASET_CACHE_VERSION = 1
 
 
 class Experiment:
@@ -82,7 +90,10 @@ class Experiment:
                  ground_truth_rule: str = "significant",
                  ground_truth_min_queries: int = 5,
                  target_recall: Optional[float] = None,
-                 predictor_model: str = "random_forest"):
+                 model_type: str = "random_forest",
+                 compare_models_exclude: Optional[List[str]] = None,
+                 dataset_dir: Optional[str] = "datasets",
+                 rebuild_dataset: bool = False):
         """
         Initialize experiment.
 
@@ -154,11 +165,23 @@ class Experiment:
         # Recall the predictor's decision threshold must reach out-of-fold
         # (None = F1-optimal threshold).
         self.target_recall = target_recall
-        self.predictor_model = predictor_model
+        self.model_type = model_type
+        # Architectures left out of --compare-models (e.g. svc/knn on large data).
+        self.compare_models_exclude = compare_models_exclude or []
+        # Built datasets (per-pair features/labels plus the evaluation commits'
+        # parsers and embeddings) are cached here and reused by later runs with
+        # the same dataset settings, skipping the expensive parse/embed/feature
+        # pass. None disables caching.
+        self.dataset_dir = Path(dataset_dir) if dataset_dir else None
+        self.rebuild_dataset = rebuild_dataset
         # Git ref the sampled commit window ends at (pinned so runs are reproducible
         # and independent of wherever HEAD was left).
         self.ref = ref
         self._original_head: Optional[str] = None
+        # Set when this run checks out a commit; a run served entirely from the
+        # dataset cache never touches the working tree (so it can run alongside
+        # a benchmark on the same checkout) and must not restore it either.
+        self._did_checkout = False
         self.joern_session = None
 
         # Lazily populated by _get_ground_truth_queries(). The curated query set
@@ -245,7 +268,7 @@ class Experiment:
         self.embedding_manager = EmbeddingManager(model_name=self.model_name, clean_mode=self.clean_mode,
                                                    device=self.device)
         self.feature_extractor = FeatureExtractor(self.repo_parser)
-        self.predictor = DriftPredictor(model_type=self.predictor_model, task_type="classification",
+        self.predictor = DriftPredictor(model_type=self.model_type, task_type="classification",
                                         threshold=self.threshold, target_recall=self.target_recall)
         self.evaluator = Evaluator(self.embedding_manager, self.repo_parser)
         self.visualizer = Visualizer(str(self.results_dir))
@@ -317,6 +340,7 @@ class Experiment:
         logger.info(f"Processing commit {commit_hash[:8]}...")
 
         # Checkout commit
+        self._did_checkout = True
         if not self.git_helper.checkout_commit(commit_hash):
             logger.warning(f"Failed to checkout commit {commit_hash[:8]}, skipping...")
             return
@@ -539,6 +563,7 @@ class Experiment:
             logger.info(f"\nProcessing sampled commit {i+1}/{len(self.sampled_commits)} ({commit[:8]})...")
             
             # Checkout commit
+            self._did_checkout = True
             if not self.git_helper.checkout_commit(commit):
                 logger.warning(f"Failed to checkout commit {commit[:8]}, skipping...")
                 continue
@@ -573,6 +598,8 @@ class Experiment:
                 logger.warning(f"  No entities found in commit {commit[:8]}")
                 self.embeddings_history[commit] = {}
             self.entity_counts[commit] = len(self.embeddings_history[commit])
+            if commit in keep_for_eval:
+                self._save_snapshot(commit)
 
             # Compare only sampled neighbors; skip all intermediate commits entirely.
             if i > 0:
@@ -653,13 +680,137 @@ class Experiment:
         logger.info("Building RSDs and finalising chronological train/test split...")
         self.rsd.build_all_rsds()
 
-        # Chronological split of sampled commits
-        self.train_commits = self.sampled_commits[:split_idx]
-        self.test_commits  = self.sampled_commits[split_idx:]
-
-        logger.info(f"Chronological split -> train={len(self.train_commits)}, test={len(self.test_commits)}")
+        self._split_commits()
         logger.info("\nRSD Summary:\n" + self.rsd.summary_table())
+        self._save_dataset_cache()
 
+        return True
+
+    def _split_commits(self) -> None:
+        """Chronological train/test split of the sampled commits."""
+        split_idx = max(1, int(len(self.sampled_commits) * self.train_ratio))
+        self.train_commits = self.sampled_commits[:split_idx]
+        self.test_commits = self.sampled_commits[split_idx:]
+        logger.info(f"Chronological split -> train={len(self.train_commits)}, test={len(self.test_commits)}")
+
+    # ------------------------------------------------------------------
+    # Dataset cache
+    # ------------------------------------------------------------------
+
+    def _dataset_cache_meta(self) -> Dict:
+        """Every setting the built dataset depends on (training-only settings excluded)."""
+        sampled = self.commits[::self.commit_stride][:self.num_commits]
+        meta = {
+            "version": DATASET_CACHE_VERSION,
+            "repo_url": self.repo_url,
+            "sampled_commits": list(sampled),
+            "model_name": self.model_name,
+            "context_chunking": self.context_chunking,
+            "clean_mode": self.clean_mode,
+            "label_source": self.label_source,
+        }
+        if self.label_source in ("leave_one_out", "hybrid"):
+            meta.update(
+                ground_truth_queries_path=self.ground_truth_queries_path,
+                ground_truth_top_k=self.ground_truth_top_k,
+                ground_truth_rule=self.ground_truth_rule,
+                ground_truth_min_queries=self.ground_truth_min_queries,
+                max_queries_per_entity=self.max_queries_per_entity,
+            )
+        return meta
+
+    def _dataset_cache_path(self) -> Optional[Path]:
+        if self.dataset_dir is None:
+            return None
+        meta = self._dataset_cache_meta()
+        digest = hashlib.sha1(json.dumps(meta, sort_keys=True).encode()).hexdigest()[:10]
+        repo_name = Path(self.repo_url.rstrip("/\\")).name.removesuffix(".git")
+        model_short = self.model_name.split("/")[-1]
+        name = (f"{repo_name}_{meta['sampled_commits'][0][:8]}_n{self.num_commits}_s{self.commit_stride}_"
+                f"{model_short}_{'ctx' if self.context_chunking else 'iso'}_{self.label_source}_{digest}")
+        return self.dataset_dir / name
+
+    def _save_snapshot(self, commit: str) -> None:
+        """Cache one commit's parser and embeddings (needed again at evaluation)."""
+        path = self._dataset_cache_path()
+        if path is None:
+            return
+        (path / "snapshots").mkdir(parents=True, exist_ok=True)
+        joblib.dump(
+            {"parser": self.parsers_history[commit], "embeddings": self.embeddings_history[commit]},
+            path / "snapshots" / f"{commit}.joblib", compress=3,
+        )
+
+    def _save_dataset_cache(self) -> None:
+        path = self._dataset_cache_path()
+        if path is None:
+            return
+        path.mkdir(parents=True, exist_ok=True)
+        joblib.dump({
+            "features_history": self.features_history,
+            "drifts_history": self.drifts_history,
+            "ground_truth_history": self.ground_truth_history,
+            "modified_entities_history": self.modified_entities_history,
+            "entity_counts": self.entity_counts,
+            "modification_history": self.modification_history,
+            "previous_drifts": self.previous_drifts,
+            "rsd": self.rsd,
+        }, path / "dataset.joblib", compress=3)
+        meta = self._dataset_cache_meta()
+        meta.update(created_at=datetime.now().isoformat(timespec="seconds"),
+                    n_pairs=len(self.features_history),
+                    ref=self.ref)
+        (path / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        logger.info(f"Dataset cached to {path}")
+
+    def _load_dataset_cache(self) -> bool:
+        """Load a cached dataset built with the same settings; False if none."""
+        path = self._dataset_cache_path()
+        if path is None or self.rebuild_dataset or not (path / "dataset.joblib").exists():
+            return False
+        meta = json.loads((path / "meta.json").read_text(encoding="utf-8"))
+        expected = self._dataset_cache_meta()
+        if any(meta.get(k) != v for k, v in expected.items()):
+            logger.warning(f"Dataset cache {path} does not match the current settings; rebuilding.")
+            return False
+
+        logger.info("=" * 80)
+        logger.info(f"LOADING CACHED DATASET from {path}")
+        logger.info("=" * 80)
+        data = joblib.load(path / "dataset.joblib")
+        for key, value in data.items():
+            setattr(self, key, value)
+        self.sampled_commits = expected["sampled_commits"]
+        self._split_commits()
+
+        # Parsers/embeddings of the evaluation commits: from the cache, or
+        # rebuilt for any the cache lacks (e.g. after lowering train_ratio).
+        split_idx = max(1, int(len(self.sampled_commits) * self.train_ratio))
+        for commit in self.sampled_commits[split_idx - 1:]:
+            snap = path / "snapshots" / f"{commit}.joblib"
+            if snap.exists():
+                loaded = joblib.load(snap)
+                self.parsers_history[commit] = loaded["parser"]
+                self.embeddings_history[commit] = loaded["embeddings"]
+                continue
+            logger.info(f"  Snapshot for {commit[:8]} not cached; parsing and embedding it...")
+            self._did_checkout = True
+            if not self.git_helper.checkout_commit(commit):
+                logger.error(f"Failed to checkout {commit[:8]} for evaluation")
+                return False
+            parser = TreeSitterRepoParser(str(self.repo_path))
+            parser.parse_directory(str(self.repo_path))
+            self.repo_parser = parser
+            self.parsers_history[commit] = parser
+            sources = {e.entity_id: self._get_contextual_source(e) for e in parser.get_all_entities()}
+            self.embeddings_history[commit] = (
+                self.embedding_manager.generate_embeddings_batch(sources) if sources else {}
+            )
+            self.embedding_manager.embeddings.clear()
+            self._save_snapshot(commit)
+        self.repo_parser = self.parsers_history[self.sampled_commits[-1]]
+        logger.info(f"Loaded {len(self.features_history)} commit pairs "
+                    f"({len(self.train_commits)} train / {len(self.test_commits)} test commits)")
         return True
 
     def _release_commit(self, commit: str, keep_for_eval: Set[str]) -> None:
@@ -779,6 +930,7 @@ class Experiment:
             try:
                 X_test, y_test = self.predictor.prepare_data(test_df, test_labels)
                 test_metrics = self.predictor.evaluate(X_test, y_test)
+                self._test_xy = (X_test, y_test)
             except ValueError as e:
                 logger.warning(f"Could not evaluate on test pairs: {e}")
         else:
@@ -796,6 +948,7 @@ class Experiment:
             "label_source": self.label_source,
             "ground_truth_rule": self.ground_truth_rule,
             "target_recall": self.target_recall,
+            "model_type": self.model_type,
             "sampled_commits": list(self.sampled_commits),
             "train_commits": list(self.train_commits),
             "test_commits": list(self.test_commits),
@@ -815,7 +968,11 @@ class Experiment:
             comp_df, predictors_dict = compare_all_models(
                 X_train, y_train, X_test, y_test,
                 task_type=self.predictor.task_type,
-                threshold=self.predictor.threshold
+                threshold=self.predictor.threshold,
+                feature_names=self.predictor.feature_names,
+                target_recall=self.target_recall,
+                groups=pair_groups,
+                exclude=self.compare_models_exclude,
             )
             comp_csv_path = self.results_dir / "model_comparison.csv"
             comp_df.to_csv(comp_csv_path, index=False)
@@ -828,6 +985,27 @@ class Experiment:
                 self.visualizer.plot_model_confusion_matrices(predictors_dict, X_test, y_test)
 
         return True
+
+    def _permutation_importance(self, X: np.ndarray, y: np.ndarray,
+                                max_rows: int = 50000) -> Optional[Dict[str, float]]:
+        """Feature importance for models without ``feature_importances_`` (e.g.
+        hist_gradient_boosting): mean drop in average precision on the test rows
+        when a feature is shuffled (rows subsampled, all positives kept)."""
+        from sklearn.inspection import permutation_importance
+        if self.predictor.feature_names is None or len(np.unique(y)) < 2:
+            return None
+        rng = np.random.default_rng(42)
+        pos, neg = np.flatnonzero(y == 1), np.flatnonzero(y == 0)
+        if len(y) > max_rows:
+            neg = rng.choice(neg, size=max(0, max_rows - len(pos)), replace=False)
+        rows = np.concatenate([pos, neg])
+        result = permutation_importance(
+            self.predictor.model, self.predictor.scaler.transform(X[rows]), y[rows],
+            scoring="average_precision", n_repeats=5, random_state=42, n_jobs=-1,
+        )
+        importance = dict(zip(self.predictor.feature_names, result.importances_mean.astype(float)))
+        logger.info("Feature importance from permutation (model has no feature_importances_)")
+        return dict(sorted(importance.items(), key=lambda kv: kv[1], reverse=True))
 
     def _train_pairs(self) -> List[Tuple[str, str]]:
         """Consecutive sampled-commit pairs entirely inside the training commits."""
@@ -871,6 +1049,7 @@ class Experiment:
         drift_by_distance = {}
         all_predictions = []
         all_labels = []
+        reembed_coverage: List[Dict] = []
         self.predictions_export = {}
 
         # Same label-source switch as train_model() — both dicts are
@@ -962,39 +1141,45 @@ class Experiment:
                 fixed_hop_values=[1, 2]
             )
 
+            # Entities each strategy re-embeds for this pair, and how many of the
+            # entities that needed re-embedding (positive label) each one covered.
+            predicted = {eid: d for eid, d in zip(aligned_ids, y_pred)}
+            strategy_re_embeddings = {
+                "changed_only": list(BaselineAChangedOnly().get_entities_to_update(
+                    modified_entities, predicted, decision_threshold
+                )),
+                "full_reindex": list(BaselineBFullReindex().get_entities_to_update(
+                    modified_entities, predicted, decision_threshold
+                )),
+                "fixed_hop_k1": list(BaselineCFixedHop(k=1).get_entities_to_update(
+                    modified_entities, predicted, decision_threshold, repo_parser=parser_b
+                )),
+                "fixed_hop_k2": list(BaselineCFixedHop(k=2).get_entities_to_update(
+                    modified_entities, predicted, decision_threshold, repo_parser=parser_b
+                )),
+                "predictive_ml": list(PredictiveStrategy().get_entities_to_update(
+                    modified_entities, predicted, decision_threshold
+                )),
+                "pagerank_propagation": list(BaselineDPageRankPropagation(top_fraction=0.3).get_entities_to_update(
+                    modified_entities, predicted, decision_threshold, repo_parser=parser_b
+                )),
+                "weighted_bfs_decay": list(WeightedBFSDecayStrategy(threshold=0.05).get_entities_to_update(
+                    modified_entities, predicted, decision_threshold, repo_parser=parser_b
+                ))
+            }
+            reembed_coverage.append(reembed_coverage_row(
+                commit_a, commit_b,
+                needed={eid for eid, y in zip(aligned_ids, actual_y_true) if y == 1},
+                labeled=set(aligned_ids),
+                strategy_sets=strategy_re_embeddings,
+            ))
+
             # Generate testing log diagnostic
             try:
                 invalidation_decisions = {
                     "predicted_stale": [str(eid) for eid, pred in zip(aligned_ids, y_pred_class) if pred == 1],
                     "predicted_fresh": [str(eid) for eid, pred in zip(aligned_ids, y_pred_class) if pred == 0],
                     "raw_predictions": {str(eid): float(val) for eid, val in zip(aligned_ids, y_pred)}
-                }
-
-                from evaluator import (BaselineAChangedOnly, BaselineBFullReindex,
-                                       BaselineCFixedHop, BaselineDPageRankPropagation,
-                                       PredictiveStrategy, WeightedBFSDecayStrategy)
-                strategy_re_embeddings = {
-                    "changed_only": list(BaselineAChangedOnly().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold
-                    )),
-                    "full_reindex": list(BaselineBFullReindex().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold
-                    )),
-                    "fixed_hop_k1": list(BaselineCFixedHop(k=1).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
-                    )),
-                    "fixed_hop_k2": list(BaselineCFixedHop(k=2).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
-                    )),
-                    "predictive_ml": list(PredictiveStrategy().get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold
-                    )),
-                    "pagerank_propagation": list(BaselineDPageRankPropagation(top_fraction=0.3).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
-                    )),
-                    "weighted_bfs_decay": list(WeightedBFSDecayStrategy(threshold=0.05).get_entities_to_update(
-                        modified_entities, {eid: d for eid, d in zip(aligned_ids, y_pred)}, decision_threshold, repo_parser=parser_b
-                    ))
                 }
 
                 parser_prev = self.parsers_history.get(commit_a)
@@ -1085,7 +1270,8 @@ class Experiment:
             'strategy_results': averaged_results,
             'drift_by_distance': drift_by_distance,
             'all_predictions': all_predictions,
-            'all_labels': all_labels
+            'all_labels': all_labels,
+            'reembed_coverage': reembed_coverage,
         }
 
     def _extract_docstring_summary(self, source_code: str) -> Optional[str]:
@@ -1182,12 +1368,27 @@ class Experiment:
         logger.info("GENERATING VISUALIZATIONS")
         logger.info("=" * 80)
 
+        # Re-embed coverage: of the entities that needed re-embedding, how many
+        # each strategy re-embedded (tables in reembed_coverage.json/.md).
+        if results.get('reembed_coverage'):
+            summary = save_reembed_coverage(results['reembed_coverage'], self.results_dir)
+            results['reembed_coverage_summary'] = summary
+            self.visualizer.plot_reembed_coverage(summary, results['reembed_coverage'])
+            for name, s in summary.items():
+                logger.info(
+                    f"  Re-embed coverage {name:22s}: {s['reembedded_needed']}/{s['needed']} needed "
+                    f"({s['coverage']:.2%}), missed {s['missed']}, extra {s['extra']}, "
+                    f"re-embedded {s['reembedded_fraction']:.2%} of entities"
+                )
+
         # Drift decay plot
         if results.get('drift_by_distance'):
             self.visualizer.plot_drift_decay(results['drift_by_distance'])
 
         # Feature importance plot
         feature_importance = self.predictor.get_feature_importance()
+        if not feature_importance and getattr(self, "_test_xy", None) is not None:
+            feature_importance = self._permutation_importance(*self._test_xy)
         if feature_importance:
             self.visualizer.plot_feature_importance(feature_importance)
 
@@ -1256,8 +1457,8 @@ class Experiment:
             if not self.harvest_commits():
                 return False
 
-            # Build dataset
-            if not self.build_dataset():
+            # Build dataset (or reuse a cached one built with the same settings)
+            if not (self._load_dataset_cache() or self.build_dataset()):
                 return False
 
             # Train model
@@ -1289,7 +1490,7 @@ class Experiment:
         finally:
             # build_dataset checks out each sampled commit; put the repository back
             # where it was so later runs (and the benchmark) are unaffected.
-            if self._original_head and self.git_helper:
+            if self._original_head and self.git_helper and self._did_checkout:
                 if self.git_helper.checkout_commit(self._original_head):
                     logger.info(f"Restored repository checkout to {self._original_head}")
 
@@ -1360,6 +1561,9 @@ class Experiment:
                     k: float(v) if isinstance(v, (np.floating, np.integer)) else v
                     for k, v in metrics.items()
                 }
+
+        if 'reembed_coverage_summary' in results:
+            serializable_results['reembed_coverage'] = results['reembed_coverage_summary']
 
         if 'drift_by_distance' in results:
             serializable_results['drift_by_distance'] = {
@@ -1522,6 +1726,24 @@ def main():
         help="Max synthetic queries per uncovered entity for label_source=hybrid",
     )
     parser.add_argument(
+        "--dataset-dir",
+        default="datasets",
+        help="Where built datasets are cached and reused by runs with the same dataset "
+             "settings (empty string disables caching)",
+    )
+    parser.add_argument(
+        "--rebuild-dataset",
+        action="store_true",
+        help="Ignore any cached dataset and rebuild it (the new build replaces the cache)",
+    )
+    parser.add_argument(
+        "--model-type", "--predictor-model",
+        dest="model_type",
+        default="random_forest",
+        choices=DriftPredictor.SUPPORTED_MODELS,
+        help="Predictor model; hist_gradient_boosting and lightgbm are monotonic in the direct change signals",
+    )
+    parser.add_argument(
         "--target-recall",
         type=float,
         default=None,
@@ -1551,10 +1773,10 @@ def main():
         help="Train and compare multiple ML model architectures (Random Forest, Gradient Boosting, HistGB, LightGBM, Extra Trees, Logistic Regression, MLP, SVC, KNN, Decision Tree, Naive Bayes)"
     )
     parser.add_argument(
-        "--predictor-model",
-        default="random_forest",
-        choices=DriftPredictor.SUPPORTED_MODELS,
-        help="Model architecture for drift prediction (e.g. random_forest, lightgbm, hist_gradient_boosting)"
+        "--compare-models-exclude",
+        type=lambda s: [m.strip() for m in s.split(",") if m.strip()],
+        default=[],
+        help="Comma-separated architectures to leave out of --compare-models (e.g. svc,knn on large datasets)",
     )
 
     args = parser.parse_args()
@@ -1653,7 +1875,10 @@ def main():
         ground_truth_rule=args.ground_truth_rule,
         ground_truth_min_queries=args.ground_truth_min_queries,
         target_recall=args.target_recall,
-        predictor_model=getattr(args, "predictor_model", "random_forest"),
+        model_type=args.model_type,
+        compare_models_exclude=args.compare_models_exclude,
+        dataset_dir=args.dataset_dir or None,
+        rebuild_dataset=args.rebuild_dataset,
     )
 
     # Run experiment
