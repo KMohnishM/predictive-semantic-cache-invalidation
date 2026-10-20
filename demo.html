@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRIDSCI Demo</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --gridsci: #2a78d6; --changed: #eb6834; --critical: #d03b3b; --good-text: #006300;
+  --gridsci-soft: rgba(42,120,214,0.14); --changed-soft: rgba(235,104,52,0.14); --critical-soft: rgba(208,59,59,0.08);
+  --code-bg: #f3f3f0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --gridsci: #3987e5; --changed: #d95926; --critical: #e05252; --good-text: #0ca30c;
+    --gridsci-soft: rgba(57,135,229,0.22); --changed-soft: rgba(217,89,38,0.22); --critical-soft: rgba(224,82,82,0.10);
+    --code-bg: #232321;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --gridsci: #3987e5; --changed: #d95926; --critical: #e05252; --good-text: #0ca30c;
+  --gridsci-soft: rgba(57,135,229,0.22); --changed-soft: rgba(217,89,38,0.22); --critical-soft: rgba(224,82,82,0.10);
+  --code-bg: #232321;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+nav { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--page) 88%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+nav .in { max-width: 1040px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 6px; align-items: center; overflow-x: auto; }
+nav b { margin-right: 10px; letter-spacing: .02em; }
+nav a { color: var(--ink-2); text-decoration: none; padding: 5px 10px; border-radius: 999px; font-size: .9rem; white-space: nowrap; }
+nav a.on { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--border); }
+main { max-width: 1040px; margin: 0 auto; padding: 0 16px 80px; }
+section { padding: 56px 0 8px; scroll-margin-top: 48px; }
+.kicker { color: var(--gridsci); font-weight: 600; font-size: .85rem; letter-spacing: .06em; text-transform: uppercase; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); margin: 6px 0 6px; letter-spacing: -.02em; }
+h2 { font-size: clamp(1.4rem, 3.2vw, 1.9rem); margin: 4px 0 8px; letter-spacing: -.01em; }
+.lede { color: var(--ink-2); max-width: 760px; margin: 0 0 24px; font-size: 1.05rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 28px; }
+.tile .v { font-size: 2.6rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.tile .l { color: var(--ink-2); font-size: .95rem; margin-top: 6px; }
+.tile .s { color: var(--muted); font-size: .82rem; margin-top: 4px; }
+.seg { display: inline-flex; background: var(--page); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; color: var(--ink-2); font: inherit; font-size: .92rem;
+  padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--border); font-weight: 600; }
+.row { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.counts { display: flex; gap: 22px; flex-wrap: wrap; }
+.count .n { font-size: 1.7rem; font-weight: 700; line-height: 1.1; }
+.count .t { color: var(--ink-2); font-size: .85rem; }
+.bad { color: var(--critical); } .ok { color: var(--good-text); }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; color: var(--ink-2); font-size: .88rem; margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.two { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 820px) { .two { grid-template-columns: 1fr; } }
+pre { background: var(--code-bg); border-radius: 10px; padding: 12px 14px; margin: 10px 0 0; overflow-x: auto;
+  font: .9rem/1.6 ui-monospace, Consolas, monospace; }
+pre .del { color: var(--critical); } pre .add { color: var(--good-text); }
+code { font: .88em ui-monospace, Consolas, monospace; }
+.quote { font-size: 1.15rem; font-weight: 600; margin: 4px 0 2px; }
+.note { color: var(--muted); font-size: .85rem; margin-top: 10px; }
+#tip { position: fixed; pointer-events: none; z-index: 10; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; font-size: .85rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,.12); max-width: 320px; opacity: 0; transition: opacity .12s; }
+.flowbox { transition: all .5s ease; }
+.band { transition: d .6s ease, stroke-width .6s ease; }
+.pill rect { transition: fill .35s, stroke .35s; }
+</style>
+</head>
+<body>
+<nav><div class="in"><b>GRIDSCI</b>
+  <a href="#intro">Overview</a><a href="#commit">1 · A real commit</a><a href="#retrieval">2 · Retrieval</a>
+  <a href="#coverage">3 · Coverage</a><a href="#replay">4 · Replay</a><a href="#llama">5 · LlamaIndex</a>
+  <button id="theme" title="Light / dark" style="margin-left:auto;border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 10px;cursor:pointer;font:inherit;font-size:.85rem">◐ Theme</button>
+</div></nav>
+<main>
+
+<section id="intro">
+  <div class="kicker">Predictive semantic cache invalidation</div>
+  <h1>GRIDSCI</h1>
+  <p class="lede"><b>GR</b>aph-learned <b>I</b>ndirect <b>D</b>rift-aware <b>S</b>emantic <b>C</b>ache <b>I</b>nvalidation.
+  After every commit, it decides which code vectors in a RAG index have gone stale — including functions that were
+  never edited — <b>before computing a single new embedding</b>.</p>
+  <div class="tiles" id="tiles"></div>
+</section>
+
+<section id="commit">
+  <div class="kicker">1 · One real commit in psf/black</div>
+  <h2>Editing 3 functions silently made 21 others stale</h2>
+  <p class="lede" id="commit-lede"></p>
+  <div class="card">
+    <div class="row">
+      <div class="seg" id="strat-seg">
+        <button data-s="changed_only" class="on">Changed only</button>
+        <button data-s="gridsci">GRIDSCI</button>
+      </div>
+      <div class="counts" id="commit-counts"></div>
+    </div>
+    <svg id="graph" role="img" aria-label="Call-graph slice of the commit"></svg>
+    <div class="legend">
+      <span><i class="sw" id="lg-chosen"></i><span id="lg-chosen-t">Re-embedded</span></span>
+      <span><i class="sw" style="border:2px dashed var(--critical)"></i>Stale but not re-embedded</span>
+      <span><svg width="26" height="10" style="width:26px"><path d="M1 5 H25" stroke="var(--axis)" stroke-width="2"/></svg>calls (stub embedded in the caller's text)</span>
+    </div>
+  </div>
+  <div class="two">
+    <div class="card">
+      <div class="kicker" style="color:var(--ink-2)">Why was it stale?</div>
+      <div class="quote"><code id="ex-name"></code> was not edited</div>
+      <div style="color:var(--ink-2)">but its embedded text contains a stub of every function it calls, and this one changed:</div>
+      <div id="ex-diff"></div>
+    </div>
+    <div class="card">
+      <div class="kicker" style="color:var(--ink-2)">What GRIDSCI saw</div>
+      <div class="count" style="margin-top:8px"><div class="n" id="ex-prob"></div><div class="t">stale probability for this caller</div></div>
+      <p style="color:var(--ink-2);margin:12px 0 0">The decision uses only call-graph and text-change features —
+      no embedding is computed. Threshold <b id="ex-thr"></b>, set for full recall.</p>
+    </div>
+  </div>
+</section>
+
+<section id="retrieval">
+  <div class="kicker">2 · What a stale vector does to search</div>
+  <h2>The right answer drops to #4 — and stays there</h2>
+  <p class="lede" id="ret-lede"></p>
+  <div class="card">
+    <div class="quote" id="ret-query"></div>
+    <div style="color:var(--ink-2);margin-bottom:10px">target function <code id="ret-target"></code> · rank in the search results at each replayed commit</div>
+    <svg id="timeline" role="img" aria-label="Rank of the correct function over 15 commits"></svg>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--gridsci)"></i>GRIDSCI (identical to a full re-index)</span>
+      <span><i class="sw" style="background:var(--changed)"></i>Changed only</span>
+    </div>
+  </div>
+</section>
+
+<section id="coverage">
+  <div class="kicker">3 · Every test commit, two repositories</div>
+  <h2>Only GRIDSCI is both cheap and complete</h2>
+  <p class="lede">Each dot is a strategy: how many entities it re-embeds per commit (cost) against how many entities
+  that needed re-embedding it skipped (misses). Bottom-left is best.</p>
+  <div class="card">
+    <div class="row">
+      <div class="seg" id="repo-seg"><button data-r="Django" class="on">Django</button><button data-r="psf/black">psf/black</button></div>
+      <div class="counts" id="cov-counts"></div>
+    </div>
+    <svg id="scatter" role="img" aria-label="Cost versus missed re-embeds per strategy"></svg>
+  </div>
+</section>
+
+<section id="replay">
+  <div class="kicker">4 · Stateful replay · 15 consecutive psf/black commits</div>
+  <h2>Missed refreshes accumulate — unless you never miss</h2>
+  <p class="lede">Each strategy maintains its own index across commits, so anything it skips stays stale.
+  Cost is the share of entities re-embedded per commit; losses are search results a full re-index would have
+  put in the top 5.</p>
+  <div class="card"><svg id="replaybars" role="img" aria-label="Cost and lost results per strategy"></svg></div>
+</section>
+
+<section id="llama">
+  <div class="kicker">5 · Drop-in for RAG pipelines</div>
+  <h2>A LlamaIndex filter in front of the embedder</h2>
+  <p class="lede">The same commit, as a LlamaIndex ingestion step. The filter needs the previously indexed commit's
+  parser to see which callee stubs changed.</p>
+  <div class="card">
+    <div class="row"><div class="seg" id="llama-seg">
+      <button data-m="1" class="on">With previous-commit parser</button><button data-m="0">Without</button></div></div>
+    <svg id="flow" role="img" aria-label="Ingestion flow"></svg>
+  </div>
+</section>
+</main>
+<div id="tip"></div>
+
+<script>
+const D = {"commit": {"pair": ["e712e48e06420d9240ce95c81acfcf6f11d14c83", "dc188f2060eff70b539c834f8576e8826cee5de7"], "entities": 581, "needed": 29, "direct": 8, "indirect": 21, "rows": [{"strategy": "changed only", "reembedded": 8, "share": 0.013769363166953529, "missed": 21, "extra": 0}, {"strategy": "GRIDSCI", "reembedded": 29, "share": 0.04991394148020654, "missed": 0, "extra": 0}, {"strategy": "full re-index", "reembedded": 581, "share": 1.0, "missed": 0, "extra": 552}], "example": "src/black/files.py::path_is_excluded", "probability": 0.9999731601013062, "threshold": 0.0026186180926694343, "diffs": [{"callee": "src/blib2to3/pgen2/tokenize.py::group", "diff": ["-def group(*choices):", "+def group(*choices: str) -> str:"]}], "graph": {"nodes": [{"id": "src/blib2to3/pgen2/tokenize.py::Untokenizer", "name": "Untokenizer", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "edited", "needed": true, "changed_only": true, "gridsci": true, "proba": 0.9999781175639552}, {"id": "src/blib2to3/pgen2/tokenize.py::_combinations", "name": "_combinations", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "edited", "needed": true, "changed_only": true, "gridsci": true, "proba": 0.9999781175639552}, {"id": "src/blib2to3/pgen2/tokenize.py::any", "name": "any", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "edited", "needed": true, "changed_only": true, "gridsci": true, "proba": 0.9999781175639552}, {"id": "src/blib2to3/pgen2/tokenize.py::generate_tokens", "name": "generate_tokens", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "edited", "needed": true, "changed_only": true, "gridsci": true, "proba": 0.9999781175639552}, {"id": "src/blib2to3/pgen2/tokenize.py::group", "name": "group", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "edited", "needed": true, "changed_only": true, "gridsci": true, "proba": 0.9999781175639552}, {"id": "src/blib2to3/pgen2/tokenize.py::maybe", "name": "maybe", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "edited", "needed": true, "changed_only": true, "gridsci": true, "proba": 0.9999781175639552}, {"id": "src/blib2to3/pgen2/tokenize.py::printtoken", "name": "printtoken", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "edited", "needed": true, "changed_only": true, "gridsci": true, "proba": 0.9999781175639552}, {"id": "src/blib2to3/pgen2/tokenize.py::tokenize_loop", "name": "tokenize_loop", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "edited", "needed": true, "changed_only": true, "gridsci": true, "proba": 0.9999781175639552}, {"id": "src/black/__init__.py::get_features_used", "name": "get_features_used", "file": "src/black/__init__.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/__init__.py::get_sources", "name": "get_sources", "file": "src/black/__init__.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/__init__.py::validate_cell", "name": "validate_cell", "file": "src/black/__init__.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/files.py::path_is_excluded", "name": "path_is_excluded", "file": "src/black/files.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/linegen.py::_maybe_split_omitting_optional_parens", "name": "_maybe_split_omitting_optional_parens", "file": "src/black/linegen.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/linegen.py::_prefer_split_rhs_oop", "name": "_prefer_split_rhs_oop", "file": "src/black/linegen.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/linegen.py::bracket_split_build_line", "name": "bracket_split_build_line", "file": "src/black/linegen.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/linegen.py::remove_with_parens", "name": "remove_with_parens", "file": "src/black/linegen.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/linegen.py::run_transformer", "name": "run_transformer", "file": "src/black/linegen.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/lines.py::Line::contains_multiline_strings", "name": "contains_multiline_strings", "file": "src/black/lines.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/lines.py::Line::is_complex_subscript", "name": "is_complex_subscript", "file": "src/black/lines.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999723198276929}, {"id": "src/black/nodes.py::is_tuple_containing_walrus", "name": "is_tuple_containing_walrus", "file": "src/black/nodes.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/parsing.py::get_grammars", "name": "get_grammars", "file": "src/black/parsing.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/strings.py::normalize_string_prefix", "name": "normalize_string_prefix", "file": "src/black/strings.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/trans.py::StringParenWrapper::do_splitter_match", "name": "do_splitter_match", "file": "src/black/trans.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/trans.py::StringTransformer::__call__", "name": "__call__", "file": "src/black/trans.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/black/trans.py::fstring_contains_expr", "name": "fstring_contains_expr", "file": "src/black/trans.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/blib2to3/pgen2/conv.py::Converter::parse_graminit_c", "name": "parse_graminit_c", "file": "src/blib2to3/pgen2/conv.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/blib2to3/pgen2/literals.py::escape", "name": "escape", "file": "src/blib2to3/pgen2/literals.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/blib2to3/pgen2/tokenize.py::detect_encoding", "name": "detect_encoding", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}, {"id": "src/blib2to3/pgen2/tokenize.py::tokenize", "name": "tokenize", "file": "src/blib2to3/pgen2/tokenize.py", "kind": "indirect", "needed": true, "changed_only": false, "gridsci": true, "proba": 0.9999731601013062}], "edges": [{"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/__init__.py::get_features_used"}, {"from": "src/blib2to3/pgen2/tokenize.py::group", "to": "src/black/__init__.py::get_sources"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/__init__.py::validate_cell"}, {"from": "src/blib2to3/pgen2/tokenize.py::group", "to": "src/black/files.py::path_is_excluded"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/linegen.py::_maybe_split_omitting_optional_parens"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/linegen.py::_prefer_split_rhs_oop"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/linegen.py::bracket_split_build_line"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/linegen.py::remove_with_parens"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/linegen.py::run_transformer"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/lines.py::Line::contains_multiline_strings"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/lines.py::Line::is_complex_subscript"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/nodes.py::is_tuple_containing_walrus"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/parsing.py::get_grammars"}, {"from": "src/blib2to3/pgen2/tokenize.py::group", "to": "src/black/strings.py::normalize_string_prefix"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/trans.py::StringParenWrapper::do_splitter_match"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/trans.py::StringTransformer::__call__"}, {"from": "src/blib2to3/pgen2/tokenize.py::any", "to": "src/black/trans.py::fstring_contains_expr"}, {"from": "src/blib2to3/pgen2/tokenize.py::group", "to": "src/blib2to3/pgen2/conv.py::Converter::parse_graminit_c"}, {"from": "src/blib2to3/pgen2/tokenize.py::group", "to": "src/blib2to3/pgen2/literals.py::escape"}, {"from": "src/blib2to3/pgen2/tokenize.py::group", "to": "src/blib2to3/pgen2/tokenize.py::detect_encoding"}, {"from": "src/blib2to3/pgen2/tokenize.py::tokenize_loop", "to": "src/blib2to3/pgen2/tokenize.py::tokenize"}]}}, "queries": {"counts": {"changed only": [28, 19], "GRIDSCI": [0, 0]}, "examples": [{"query": "Compute the FIRST sets of every rule, in sorted order, unless already done.", "target": "addfirstsets", "full": "#1", "changed_only": "#4", "gridsci": "#1", "commits": 14}, {"query": "Prior to determining all rules' FIRST sets, with a sorted arrangement, unless completed.", "target": "addfirstsets", "full": "#1", "changed_only": "#3", "gridsci": "#1", "commits": 14}], "timeline": [{"pair": 1, "full": 3, "changed_only": 3, "gridsci": 3}, {"pair": 2, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 3, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 4, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 5, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 6, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 7, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 8, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 9, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 10, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 11, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 12, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 13, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 14, "full": 1, "changed_only": 4, "gridsci": 1}, {"pair": 15, "full": 1, "changed_only": 4, "gridsci": 1}]}, "numbers": {"coverage": {"psf/black": [{"strategy": "GRIDSCI", "missed": 0, "extra": 0, "share": 0.017993350283590847}, {"strategy": "changed only", "missed": 22, "extra": 0, "share": 0.01584197144533542}, {"strategy": "fixed hop k=1", "missed": 0, "extra": 136, "share": 0.03129278310189713}, {"strategy": "fixed hop k=2", "missed": 0, "extra": 423, "share": 0.05935849794641111}, {"strategy": "PageRank", "missed": 16, "extra": 2870, "share": 0.2970858595736358}, {"strategy": "full re-index", "missed": 0, "extra": 10042, "share": 1.0}], "Django": [{"strategy": "GRIDSCI", "missed": 0, "extra": 12, "share": 0.05317508846794338}, {"strategy": "changed only", "missed": 1782, "extra": 0, "share": 0.04734010720233139}, {"strategy": "fixed hop k=1", "missed": 191, "extra": 5627, "share": 0.0708166371773522}, {"strategy": "fixed hop k=2", "missed": 169, "extra": 11606, "share": 0.0903348771856786}, {"strategy": "PageRank", "missed": 1364, "extra": 78603, "share": 0.30435574521232306}, {"strategy": "full re-index", "missed": 0, "extra": 291119, "share": 1.0}]}, "bench": [{"strategy": "changed only", "cost": 0.0431, "lost5": 19, "checks5": 14708}, {"strategy": "GRIDSCI", "cost": 0.0479, "lost5": 0, "checks5": 14708}, {"strategy": "fixed hop k=2", "cost": 0.166, "lost5": 0, "checks5": 14708}, {"strategy": "full re-index", "cost": 1.0, "lost5": 0, "checks5": 14708}]}, "llama": {"nodes": 581, "rows": [{"mode": "without previous-commit parser", "passed": 7, "caught": 7, "needed": 29}, {"mode": "with previous-commit parser", "passed": 29, "caught": 29, "needed": 29}]}};
+const NS = "http://www.w3.org/2000/svg";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = n => n.toLocaleString("en-US");
+const pct = (x, d = 1) => (100 * x).toFixed(d) + "%";
+function el(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function txt(parent, x, y, s, attrs = {}) { const t = el("text", { x, y, ...attrs }, parent); t.textContent = s; return t; }
+const tip = document.getElementById("tip");
+function showTip(ev, html) { tip.innerHTML = html; tip.style.opacity = 1; moveTip(ev); }
+function moveTip(ev) {
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = ev.clientY - h - 14;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+function hideTip() { tip.style.opacity = 0; }
+function hover(node, html) {
+  node.addEventListener("mouseenter", e => showTip(e, html()));
+  node.addEventListener("mousemove", moveTip);
+  node.addEventListener("mouseleave", hideTip);
+}
+function segment(id, attr, onChange) {
+  const seg = document.getElementById(id);
+  seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    seg.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+    onChange(b.dataset[attr]);
+  }));
+}
+
+/* ---------- overview tiles ---------- */
+const cov = D.numbers.coverage, bench = D.numbers.bench;
+const dj = cov["Django"].find(r => r.strategy === "GRIDSCI");
+const djChanged = cov["Django"].find(r => r.strategy === "changed only");
+const gb = bench.find(r => r.strategy === "GRIDSCI");
+document.getElementById("tiles").innerHTML = [
+  [`<span class="ok">0</span>`, `needed re-embeds missed on Django`, `changed-only tracking missed ${fmt(djChanged.missed)}`],
+  [pct(dj.share), `of Django entities re-embedded per commit`, `instead of 100% for a full re-index`],
+  [`<span class="ok">${gb.lost5}</span> / ${fmt(gb.checks5)}`, `top-5 search results lost over 15 commits`, `at ${pct(gb.cost, 2)} update cost`],
+].map(([v, l, s]) => `<div class="card tile"><div class="v">${v}</div><div class="l">${l}</div><div class="s">${s}</div></div>`).join("");
+
+/* ---------- 1. commit graph ---------- */
+const C = D.commit, G = C.graph;
+document.getElementById("commit-lede").innerHTML =
+  `Commit <code>${C.pair[0].slice(0, 8)} → ${C.pair[1].slice(0, 8)}</code>: ${C.entities} functions in the repository.
+   ${C.needed} have a different embedded text after the commit, but only ${C.direct} of them appear in the diff.
+   Switch strategies to see which vectors each one refreshes.`;
+document.getElementById("ex-name").textContent = C.example.split("::").pop();
+document.getElementById("ex-prob").textContent = C.probability.toFixed(3);
+document.getElementById("ex-thr").textContent = C.threshold.toFixed(4);
+document.getElementById("ex-diff").innerHTML = C.diffs.slice(0, 1).map(d =>
+  `<div style="margin-top:10px;color:var(--ink-2);font-size:.9rem">callee <code>${d.callee.split("::").pop()}</code> · stub before → after</div>
+   <pre>${d.diff.map(l => `<span class="${l.startsWith("-") ? "del" : "add"}">${l.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</span>`).join("\n")}</pre>`).join("");
+
+const byId = Object.fromEntries(G.nodes.map(n => [n.id, n]));
+const fan = {};
+G.edges.forEach(e => (fan[e.from] = fan[e.from] || []).push(e.to));
+const causes = Object.keys(fan).sort((a, b) => fan[b].length - fan[a].length);
+const quiet = G.nodes.filter(n => n.kind !== "indirect" && !fan[n.id]).map(n => n.id);
+const RH = 30, PH = 24, LX = 20, LW = 250, RX = 560, RW = 300, W = 880;
+const pos = {};
+let y = 54;
+causes.forEach(c => {
+  const top = y;
+  fan[c].forEach(t => { pos[t] = { x: RX, y }; y += RH; });
+  pos[c] = { x: LX, y: (top + y - RH) / 2 };
+  y += 16;
+});
+const quietTop = y + 22;
+quiet.forEach((q, i) => { pos[q] = { x: LX, y: quietTop + i * RH }; });
+const H = Math.max(y, quietTop + quiet.length * RH) + 6;
+const svg = document.getElementById("graph");
+svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+txt(svg, LX, 26, "EDITED IN THIS COMMIT", { fill: "var(--muted)", "font-size": 12, "font-weight": 600, "letter-spacing": ".06em" });
+txt(svg, LX, 42, "in the diff", { fill: "var(--muted)", "font-size": 12 });
+txt(svg, RX, 26, "UNEDITED CALLERS", { fill: "var(--muted)", "font-size": 12, "font-weight": 600, "letter-spacing": ".06em" });
+txt(svg, RX, 42, "not in the diff — their callee stub changed", { fill: "var(--muted)", "font-size": 12 });
+if (quiet.length) txt(svg, LX, quietTop - 12, "edited, no callers affected", { fill: "var(--muted)", "font-size": 12 });
+const edgeLayer = el("g", {}, svg);
+G.edges.forEach(e => {
+  const a = pos[e.from], b = pos[e.to];
+  const x1 = a.x + LW, y1 = a.y + PH / 2, x2 = b.x, y2 = b.y + PH / 2, mx = (x1 + x2) / 2;
+  el("path", { d: `M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`, fill: "none",
+               stroke: "var(--axis)", "stroke-width": 1.5 }, edgeLayer);
+});
+const pills = G.nodes.filter(n => pos[n.id]).map(n => {
+  const p = pos[n.id], w = n.kind === "indirect" ? RW : LW;
+  const g = el("g", { class: "pill", transform: `translate(${p.x},${p.y})`, cursor: "default" }, svg);
+  const r = el("rect", { width: w, height: PH, rx: 7, "stroke-width": 1.5 }, g);
+  const icon = txt(g, 10, 16.5, "", { "font-size": 13, "font-weight": 700 });
+  const label = txt(g, 28, 16.5, n.name.length > 34 ? n.name.slice(0, 33) + "…" : n.name,
+                    { "font-size": 13, fill: "var(--ink)", "font-family": "ui-monospace, Consolas, monospace" });
+  if (fan[n.id]) txt(g, w - 10, 16.5, `→ ${fan[n.id].length} callers`, { "font-size": 11.5, fill: "var(--ink-2)", "text-anchor": "end" });
+  hover(g, () => `<b>${n.name}</b><br><span style="color:var(--muted)">${n.file}</span><br>` +
+    `${n.kind === "indirect" ? "Not edited — a callee's stub changed" : "Edited in this commit"}<br>` +
+    `GRIDSCI stale probability <b>${n.proba.toFixed(3)}</b>`);
+  return { n, r, icon };
+});
+function paintGraph(s) {
+  const colour = s === "gridsci" ? "var(--gridsci)" : "var(--changed)";
+  const soft = s === "gridsci" ? "var(--gridsci-soft)" : "var(--changed-soft)";
+  let chosen = 0, missed = 0;
+  pills.forEach(({ n, r, icon }) => {
+    const hit = n[s];
+    if (hit) chosen++; else if (n.needed) missed++;
+    r.setAttribute("fill", hit ? soft : "var(--critical-soft)");
+    r.setAttribute("stroke", hit ? colour : "var(--critical)");
+    r.setAttribute("stroke-dasharray", hit ? "" : "5 4");
+    icon.textContent = hit ? "✓" : "✕";
+    icon.setAttribute("fill", hit ? colour : "var(--critical)");
+  });
+  document.getElementById("lg-chosen").style.cssText = `background:${soft};border:1.5px solid ${colour}`;
+  document.getElementById("lg-chosen-t").textContent = `Re-embedded by ${s === "gridsci" ? "GRIDSCI" : "changed only"}`;
+  const row = C.rows.find(r => r.strategy === (s === "gridsci" ? "GRIDSCI" : "changed only"));
+  document.getElementById("commit-counts").innerHTML =
+    `<div class="count"><div class="n">${row.reembedded}</div><div class="t">re-embedded (${pct(row.share)} of ${C.entities})</div></div>
+     <div class="count"><div class="n ${row.missed ? "bad" : "ok"}">${row.missed}</div><div class="t">stale vectors left in the index</div></div>`;
+}
+segment("strat-seg", "s", paintGraph);
+paintGraph("changed_only");
+
+/* ---------- 2. rank timeline ---------- */
+const Q = D.queries, T = Q.timeline, ex = Q.examples[0];
+const counts = Q.counts;
+document.getElementById("ret-lede").innerHTML =
+  `Across the 15-commit replay, changed-only tracking lost the #1 search result <b class="bad">${counts["changed only"][0]} times</b>
+   and a top-5 result <b class="bad">${counts["changed only"][1]} times</b>. GRIDSCI lost <b class="ok">none</b>.
+   Here is one query, commit by commit.`;
+document.getElementById("ret-query").textContent = `“${ex.query}”`;
+document.getElementById("ret-target").textContent = ex.target;
+(function timeline() {
+  const svg = document.getElementById("timeline");
+  const W = 880, H = 300, L = 70, R = 24, Tp = 16, B = 46, maxRank = 5;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const xs = p => L + (p - 1) * (W - L - R) / (T.length - 1 || 1);
+  const ys = r => Tp + (Math.min(r ?? maxRank + 1, maxRank + 1) - 1) * (H - Tp - B) / maxRank;
+  for (let r = 1; r <= maxRank; r++) {
+    el("line", { x1: L, x2: W - R, y1: ys(r), y2: ys(r), stroke: "var(--grid)" }, svg);
+    txt(svg, L - 12, ys(r) + 4, `#${r}`, { "text-anchor": "end", "font-size": 12.5, fill: "var(--muted)",
+      "font-weight": r === 1 ? 700 : 400 });
+  }
+  txt(svg, 10, ys(1) + 4, "top", { "font-size": 11, fill: "var(--muted)" });
+  T.forEach(t => txt(svg, xs(t.pair), H - B + 22, t.pair, { "text-anchor": "middle", "font-size": 12, fill: "var(--muted)" }));
+  txt(svg, (L + W - R) / 2, H - 6, "commit in the replay", { "text-anchor": "middle", "font-size": 12, fill: "var(--muted)" });
+  // shaded gap between the two lines: results the stale vector cost
+  const gap = T.filter(t => t.changed_only !== t.gridsci);
+  if (gap.length) {
+    const d = `M${gap.map(t => `${xs(t.pair)} ${ys(t.gridsci)}`).join(" L")} L${gap.slice().reverse().map(t => `${xs(t.pair)} ${ys(t.changed_only)}`).join(" L")} Z`;
+    el("path", { d, fill: "var(--critical-soft)" }, svg);
+    const mid = gap[Math.floor(gap.length / 2)];
+    txt(svg, xs(mid.pair), (ys(mid.gridsci) + ys(mid.changed_only)) / 2 + 5,
+        `stale vector: right answer pushed down ${mid.changed_only - mid.gridsci} places for ${gap.length} commits`,
+        { "text-anchor": "middle", "font-size": 13, fill: "var(--critical)", "font-weight": 600 });
+  }
+  for (const [key, colour] of [["changed_only", "var(--changed)"], ["gridsci", "var(--gridsci)"]]) {
+    el("path", { d: "M" + T.map(t => `${xs(t.pair)} ${ys(t[key])}`).join(" L"), fill: "none", stroke: colour,
+                 "stroke-width": 2.5, "stroke-linejoin": "round" }, svg);
+    T.forEach(t => el("circle", { cx: xs(t.pair), cy: ys(t[key]), r: 5, fill: colour, stroke: "var(--surface)", "stroke-width": 2 }, svg));
+  }
+  T.forEach(t => {
+    const hit = el("rect", { x: xs(t.pair) - 22, y: Tp - 8, width: 44, height: H - Tp - B + 16, fill: "transparent" }, svg);
+    hover(hit, () => `<b>Commit ${t.pair}</b><br>Full re-index #${t.full}<br>` +
+      `<span style="color:var(--gridsci)">●</span> GRIDSCI #${t.gridsci}<br><span style="color:var(--changed)">●</span> Changed only #${t.changed_only}`);
+  });
+})();
+
+/* ---------- 3. cost vs misses scatter ---------- */
+function scatter(repo) {
+  const rows = cov[repo], svg = document.getElementById("scatter");
+  svg.innerHTML = "";
+  const W = 880, H = 380, L = 70, R = 30, Tp = 20, B = 56;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const lx = v => Math.log10(Math.max(v * 100, 0.5));
+  const x0 = lx(0.01), x1 = lx(1.0);
+  const xs = v => L + (lx(v) - x0) / (x1 - x0) * (W - L - R);
+  const maxM = Math.max(...rows.map(r => r.missed));
+  // Four round ticks: step = 1, 2, 2.5 or 5 x a power of ten.
+  const raw = Math.max(maxM, 1) * 1.15 / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw);
+  const top = step * 4;
+  const ys = m => H - B - m / top * (H - Tp - B);
+  [1, 2, 5, 10, 20, 50, 100].forEach(p => {
+    el("line", { x1: xs(p / 100), x2: xs(p / 100), y1: Tp, y2: H - B, stroke: "var(--grid)" }, svg);
+    txt(svg, xs(p / 100), H - B + 20, p + "%", { "text-anchor": "middle", "font-size": 12, fill: "var(--muted)" });
+  });
+  for (let i = 0; i <= 4; i++) {
+    const m = top * i / 4;
+    el("line", { x1: L, x2: W - R, y1: ys(m), y2: ys(m), stroke: i ? "var(--grid)" : "var(--axis)" }, svg);
+    txt(svg, L - 10, ys(m) + 4, fmt(Math.round(m)), { "text-anchor": "end", "font-size": 12, fill: "var(--muted)" });
+  }
+  txt(svg, (L + W - R) / 2, H - 10, "entities re-embedded per commit (cost, log scale)", { "text-anchor": "middle", "font-size": 12.5, fill: "var(--ink-2)" });
+  txt(svg, 16, Tp + (H - Tp - B) / 2, "needed re-embeds missed", { "text-anchor": "middle", "font-size": 12.5, fill: "var(--ink-2)",
+       transform: `rotate(-90 16 ${Tp + (H - Tp - B) / 2})` });
+  el("rect", { x: L + 1, y: ys(top * 0.12), width: xs(0.06) - L, height: ys(0) - ys(top * 0.12) - 1, rx: 8,
+               fill: "var(--gridsci-soft)" }, svg);
+  txt(svg, L + 10, ys(top * 0.12) - 8, "the target: cheap and nothing missed", { "font-size": 12, fill: "var(--gridsci)", "font-weight": 600 });
+  const pts = rows.map(r => ({ r, me: r.strategy === "GRIDSCI", cx: xs(r.share), cy: ys(r.missed) }));
+  pts.forEach(({ r, me, cx, cy }) => {
+    el("circle", { cx, cy, r: me ? 9 : 7, fill: me ? "var(--gridsci)" : "var(--muted)", stroke: "var(--surface)", "stroke-width": 2.5 }, svg);
+    const hit = el("circle", { cx, cy, r: 18, fill: "transparent" }, svg);
+    hover(hit, () => `<b>${r.strategy}</b><br>re-embeds ${pct(r.share, 2)} of entities<br>` +
+      `<span class="${r.missed ? "bad" : "ok"}">${fmt(r.missed)} needed re-embeds missed</span>`);
+  });
+  // Direct labels: first candidate spot that overlaps no placed label or point.
+  const boxes = pts.map(p => ({ x: p.cx - 9, y: p.cy - 9, w: 18, h: 18 }));
+  const clash = b => boxes.some(o => b.x < o.x + o.w && o.x < b.x + b.w && b.y < o.y + o.h && o.y < b.y + b.h);
+  pts.sort((a, b) => b.me - a.me).forEach(({ r, me, cx, cy }) => {
+    const t = txt(svg, 0, 0, r.strategy, { "font-size": me ? 14 : 12.5, "font-weight": me ? 700 : 500,
+                                         fill: me ? "var(--gridsci)" : "var(--ink-2)" });
+    const { width: w, height: h } = t.getBBox();
+    const spots = [[12, -6], [-12 - w, -6], [-w / 2, -16], [12, -24], [-12 - w, -24], [-w / 2, -34], [-w / 2, -52], [12, -44], [-12 - w, -44]];
+    for (const [dx, dy] of spots) {
+      const b = { x: cx + dx, y: cy + dy - h + 4, w, h };
+      if (b.x < L || b.x + w > W - 4 || b.y < 0) continue;
+      if (!clash(b)) { t.setAttribute("x", cx + dx); t.setAttribute("y", cy + dy); boxes.push(b); return; }
+    }
+    t.setAttribute("x", cx + 12); t.setAttribute("y", cy - 6);
+  });
+  const me = rows.find(r => r.strategy === "GRIDSCI"), co = rows.find(r => r.strategy === "changed only");
+  document.getElementById("cov-counts").innerHTML =
+    `<div class="count"><div class="n ok">${fmt(me.missed)}</div><div class="t">missed by GRIDSCI</div></div>
+     <div class="count"><div class="n bad">${fmt(co.missed)}</div><div class="t">missed by changed only</div></div>`;
+}
+segment("repo-seg", "r", scatter);
+scatter("Django");
+
+/* ---------- 4. replay bars ---------- */
+(function replay() {
+  const svg = document.getElementById("replaybars");
+  const W = 880, rowH = 58, L = 150, R = 250, H = bench.length * rowH + 30;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const xs = v => L + v * (W - L - R);
+  [0, 0.25, 0.5, 0.75, 1].forEach(v => {
+    el("line", { x1: xs(v), x2: xs(v), y1: 0, y2: H - 26, stroke: v ? "var(--grid)" : "var(--axis)" }, svg);
+    txt(svg, xs(v), H - 8, pct(v, 0), { "text-anchor": "middle", "font-size": 12, fill: "var(--muted)" });
+  });
+  bench.forEach((b, i) => {
+    const y = i * rowH + 12, me = b.strategy === "GRIDSCI";
+    txt(svg, L - 14, y + 21, b.strategy, { "text-anchor": "end", "font-size": 14, "font-weight": me ? 700 : 500,
+         fill: me ? "var(--gridsci)" : "var(--ink)" });
+    const w = Math.max(xs(b.cost) - L, 3);
+    el("path", { d: `M${L} ${y + 6} H${L + w - 4} a4 4 0 0 1 4 4 V${y + 28} a4 4 0 0 1 -4 4 H${L} Z`,
+                 fill: me ? "var(--gridsci)" : b.strategy === "changed only" ? "var(--changed)" : "var(--muted)" }, svg);
+    const inside = w > 220;
+    txt(svg, inside ? L + w - 12 : L + w + 10, y + 24, pct(b.cost, 2) + " re-embedded",
+        { "font-size": 13, fill: inside ? "#fff" : "var(--ink-2)", "text-anchor": inside ? "end" : "start",
+          "font-weight": inside ? 600 : 400 });
+    const lost = b.lost5;
+    txt(svg, W - 8, y + 24, lost ? `✕ ${lost} results lost` : "✓ 0 results lost",
+        { "text-anchor": "end", "font-size": 14, "font-weight": 700, fill: lost ? "var(--critical)" : "var(--good-text)" });
+  });
+})();
+
+/* ---------- 5. LlamaIndex flow ---------- */
+(function flow() {
+  const L = D.llama, svg = document.getElementById("flow");
+  const W = 880, H = 300;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const box = (x, y, w, h, t1, t2, fill, stroke) => {
+    const g = el("g", { class: "flowbox" }, svg);
+    el("rect", { x, y, width: w, height: h, rx: 12, fill, stroke, "stroke-width": 1.5 }, g);
+    const a = txt(g, x + w / 2, y + h / 2 - 4, t1, { "text-anchor": "middle", "font-size": 22, "font-weight": 700, fill: "var(--ink)" });
+    const b = txt(g, x + w / 2, y + h / 2 + 18, t2, { "text-anchor": "middle", "font-size": 12.5, fill: "var(--ink-2)" });
+    return { a, b };
+  };
+  const bands = el("g", {}, svg);
+  const src = box(20, 100, 150, 100, fmt(L.nodes), "nodes from the commit", "var(--surface)", "var(--axis)");
+  box(300, 100, 190, 100, "GRIDSCI filter", "PredictiveCacheFilter", "var(--gridsci-soft)", "var(--gridsci)");
+  const emb = box(650, 20, 210, 80, "", "", "var(--gridsci-soft)", "var(--gridsci)");
+  const cached = box(650, 200, 210, 80, "", "", "var(--surface)", "var(--axis)");
+  const miss = txt(svg, 755, 128, "", { "text-anchor": "middle", "font-size": 13.5, "font-weight": 700, fill: "var(--critical)" });
+  const p1 = el("path", { class: "band", fill: "none", stroke: "var(--axis)", "stroke-opacity": .5 }, bands);
+  const p2 = el("path", { class: "band", fill: "none", stroke: "var(--gridsci)", "stroke-opacity": .45 }, bands);
+  const p3 = el("path", { class: "band", fill: "none", stroke: "var(--axis)", "stroke-opacity": .5 }, bands);
+  function paint(withParser) {
+    const r = L.rows[withParser ? 1 : 0];
+    const thick = n => 4 + 46 * Math.sqrt(n / L.nodes);
+    p1.setAttribute("d", "M170 150 H300"); p1.setAttribute("stroke-width", thick(L.nodes));
+    p2.setAttribute("d", "M490 140 C570 140 570 60 650 60"); p2.setAttribute("stroke-width", thick(r.passed));
+    p3.setAttribute("d", "M490 160 C570 160 570 240 650 240"); p3.setAttribute("stroke-width", thick(L.nodes - r.passed));
+    emb.a.textContent = `${r.passed} → embedder`;
+    emb.b.textContent = `${r.caught} of ${r.needed} stale caught`;
+    cached.a.textContent = `${fmt(L.nodes - r.passed)} cached`;
+    cached.b.textContent = "keep their existing vectors";
+    miss.textContent = r.caught < r.needed ? `✕ ${r.needed - r.caught} stale vectors slip through` : "";
+  }
+  segment("llama-seg", "m", m => paint(m === "1"));
+  paint(true);
+})();
+
+/* ---------- theme toggle (charts use CSS variables, so they follow) ---------- */
+document.getElementById("theme").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+});
+
+/* ---------- nav: highlight section, arrow keys step through ---------- */
+const secs = [...document.querySelectorAll("section")], links = [...document.querySelectorAll("nav a")];
+const obs = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) links.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id));
+}), { rootMargin: "-45% 0px -50% 0px" });
+secs.forEach(s => obs.observe(s));
+addEventListener("keydown", e => {
+  if (!["ArrowRight", "ArrowLeft", "PageDown", "PageUp"].includes(e.key)) return;
+  const i = secs.findIndex(s => s.getBoundingClientRect().top > 80);
+  const cur = i === -1 ? secs.length - 1 : Math.max(i - 1, 0);
+  const next = e.key === "ArrowRight" || e.key === "PageDown" ? Math.min(cur + 1, secs.length - 1) : Math.max(cur - 1, 0);
+  secs[next].scrollIntoView(); e.preventDefault();
+});
+
+/* ---------- optional URL state, e.g. demo.html?theme=light&strategy=gridsci&repo=psf/black ---------- */
+const qs = new URLSearchParams(location.search);
+if (qs.get("theme")) document.documentElement.dataset.theme = qs.get("theme");
+for (const [key, attr] of [["strategy", "s"], ["repo", "r"], ["parser", "m"]]) {
+  const v = qs.get(key);
+  if (v) document.querySelector(`button[data-${attr}="${v}"]`)?.click();
+}
+</script>
+</body>
+</html>
