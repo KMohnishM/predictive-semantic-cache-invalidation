@@ -20,31 +20,58 @@ import pandas as pd
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent / "src" / "predictive_semantic_cache"))
 
-from parser.git_helper import GitHelper
-from parser.tree_sitter_repo_parser import TreeSitterRepoParser, Entity
-from embedder.embedding_manager import EmbeddingManager
-from embedder.ground_truth import (
-    binarize_ground_truth,
-    compute_leave_one_out_scores,
-    load_ground_truth_queries,
-    load_hybrid_ground_truth_queries,
-)
-from extractor.feature_extractor import FeatureExtractor
-from extractor.semantic_modification import (  # noqa: F401
-    compute_semantic_modified_entities,
-    compute_source_changed_entities,
-    normalize_source,
-)
-from embedder.context_builder import build_contextual_source, extract_signature
-from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
-from evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
-                       BaselineCFixedHop, BaselineDPageRankPropagation,
-                       PredictiveStrategy, WeightedBFSDecayStrategy)
-from evaluator.reembed_coverage import reembed_coverage_row, save_reembed_coverage
-from visualizer.visualize import Visualizer
-from extractor.rsd import RepositoryStateDescriptor
-from extractor.gtd import GraphTransitionDescriptor
+try:
+    from predictive_semantic_cache.parser.git_helper import GitHelper
+    from predictive_semantic_cache.parser.tree_sitter_repo_parser import TreeSitterRepoParser, Entity
+    from predictive_semantic_cache.embedder.embedding_manager import EmbeddingManager
+    from predictive_semantic_cache.embedder.ground_truth import (
+        binarize_ground_truth,
+        compute_leave_one_out_scores,
+        load_ground_truth_queries,
+        load_hybrid_ground_truth_queries,
+    )
+    from predictive_semantic_cache.extractor.feature_extractor import FeatureExtractor
+    from predictive_semantic_cache.extractor.semantic_modification import (  # noqa: F401
+        compute_semantic_modified_entities,
+        compute_source_changed_entities,
+        normalize_source,
+    )
+    from predictive_semantic_cache.embedder.context_builder import build_contextual_source, extract_signature
+    from predictive_semantic_cache.predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
+    from predictive_semantic_cache.evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
+                           BaselineCFixedHop, BaselineDPageRankPropagation,
+                           PredictiveStrategy, WeightedBFSDecayStrategy)
+    from predictive_semantic_cache.evaluator.reembed_coverage import reembed_coverage_row, save_reembed_coverage
+    from predictive_semantic_cache.visualizer.visualize import Visualizer
+    from predictive_semantic_cache.extractor.rsd import RepositoryStateDescriptor
+    from predictive_semantic_cache.extractor.gtd import GraphTransitionDescriptor
+except ImportError:
+    from parser.git_helper import GitHelper
+    from parser.tree_sitter_repo_parser import TreeSitterRepoParser, Entity
+    from embedder.embedding_manager import EmbeddingManager
+    from embedder.ground_truth import (
+        binarize_ground_truth,
+        compute_leave_one_out_scores,
+        load_ground_truth_queries,
+        load_hybrid_ground_truth_queries,
+    )
+    from extractor.feature_extractor import FeatureExtractor
+    from extractor.semantic_modification import (  # noqa: F401
+        compute_semantic_modified_entities,
+        compute_source_changed_entities,
+        normalize_source,
+    )
+    from embedder.context_builder import build_contextual_source, extract_signature
+    from predictor.predictor import DriftPredictor, train_test_split_temporal, positive_class_proba
+    from evaluator.evaluator import (Evaluator, BaselineAChangedOnly, BaselineBFullReindex,
+                           BaselineCFixedHop, BaselineDPageRankPropagation,
+                           PredictiveStrategy, WeightedBFSDecayStrategy)
+    from evaluator.reembed_coverage import reembed_coverage_row, save_reembed_coverage
+    from visualizer.visualize import Visualizer
+    from extractor.rsd import RepositoryStateDescriptor
+    from extractor.gtd import GraphTransitionDescriptor
 
 # Configure logging
 logging.basicConfig(

@@ -18,15 +18,11 @@ logger = logging.getLogger(__name__)
 # Import Pipeline A parser (single source of truth for graph building)
 # ---------------------------------------------------------------------------
 try:
-    from parser.git_helper import GitHelper
-    from parser.tree_sitter_repo_parser import TreeSitterRepoParser
-except ImportError:
-    try:
-        from src.parser.git_helper import GitHelper
-        from src.parser.tree_sitter_repo_parser import TreeSitterRepoParser
-    except ImportError:
-        from ..parser.git_helper import GitHelper
-        from ..parser.tree_sitter_repo_parser import TreeSitterRepoParser
+    from ..parser.git_helper import GitHelper
+    from ..parser.tree_sitter_repo_parser import TreeSitterRepoParser
+except (ImportError, ValueError):
+    from predictive_semantic_cache.parser.git_helper import GitHelper
+    from predictive_semantic_cache.parser.tree_sitter_repo_parser import TreeSitterRepoParser
 
 from .types import RepositoryEntity, RepositorySnapshot
 

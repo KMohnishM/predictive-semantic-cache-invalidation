@@ -6,12 +6,9 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 try:
-    from parser.git_helper import GitHelper
-except ImportError:
-    try:
-        from src.parser.git_helper import GitHelper
-    except ImportError:
-        from ..parser.git_helper import GitHelper
+    from ..parser.git_helper import GitHelper
+except (ImportError, ValueError):
+    from predictive_semantic_cache.parser.git_helper import GitHelper
 
 from .types import CommitPair
 

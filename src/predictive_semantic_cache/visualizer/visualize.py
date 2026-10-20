@@ -587,7 +587,10 @@ class Visualizer:
             Path to saved plot
         """
         from sklearn.metrics import precision_recall_curve, auc
-        from predictor.predictor import positive_class_proba
+        try:
+            from ..predictor.predictor import positive_class_proba
+        except ImportError:
+            from predictor.predictor import positive_class_proba
 
         logger.info("Generating Precision-Recall comparison curves...")
 

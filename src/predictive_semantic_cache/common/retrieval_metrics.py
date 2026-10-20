@@ -13,7 +13,13 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
-from embedder.util import compute_cosine_similarity
+try:
+    from ..embedder.util import compute_cosine_similarity
+except ImportError:
+    try:
+        from predictive_semantic_cache.embedder.util import compute_cosine_similarity
+    except ImportError:
+        from embedder.util import compute_cosine_similarity
 
 
 def rank_entities(

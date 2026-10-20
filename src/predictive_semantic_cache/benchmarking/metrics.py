@@ -9,15 +9,26 @@ it. Kept importable from here unchanged so existing `from .metrics import
 
 from __future__ import annotations
 
-from common.retrieval_metrics import (
-    compute_rank,
-    mean_reciprocal_rank,
-    ndcg_at_k,
-    rank_delta,
-    rank_entities,
-    recall_at_k,
-    score_delta,
-)
+try:
+    from ..common.retrieval_metrics import (
+        compute_rank,
+        mean_reciprocal_rank,
+        ndcg_at_k,
+        rank_delta,
+        rank_entities,
+        recall_at_k,
+        score_delta,
+    )
+except ImportError:
+    from common.retrieval_metrics import (
+        compute_rank,
+        mean_reciprocal_rank,
+        ndcg_at_k,
+        rank_delta,
+        rank_entities,
+        recall_at_k,
+        score_delta,
+    )
 
 __all__ = [
     "compute_rank",

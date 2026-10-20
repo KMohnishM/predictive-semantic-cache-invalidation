@@ -20,27 +20,19 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from embedder.embedding_manager import EmbeddingManager
-    from extractor.semantic_modification import (
+    from ..embedder.embedding_manager import EmbeddingManager
+    from ..extractor.semantic_modification import (
         compute_semantic_modified_entities,
         compute_source_changed_entities,
     )
-    from parser.git_helper import GitHelper
-except ImportError:
-    try:
-        from src.embedder.embedding_manager import EmbeddingManager
-        from src.extractor.semantic_modification import (
-            compute_semantic_modified_entities,
-            compute_source_changed_entities,
-        )
-        from src.parser.git_helper import GitHelper
-    except ImportError:
-        from ..embedder.embedding_manager import EmbeddingManager
-        from ..extractor.semantic_modification import (
-            compute_semantic_modified_entities,
-            compute_source_changed_entities,
-        )
-        from ..parser.git_helper import GitHelper
+    from ..parser.git_helper import GitHelper
+except (ImportError, ValueError):
+    from predictive_semantic_cache.embedder.embedding_manager import EmbeddingManager
+    from predictive_semantic_cache.extractor.semantic_modification import (
+        compute_semantic_modified_entities,
+        compute_source_changed_entities,
+    )
+    from predictive_semantic_cache.parser.git_helper import GitHelper
 
 from .commit_sampler import sample_commit_pairs
 from .config import load_config

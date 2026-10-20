@@ -140,13 +140,13 @@ class ModelRunner:
             return {}
 
         try:
-            from src.extractor.feature_extractor import FeatureExtractor
-            from src.extractor.gtd import GraphTransitionDescriptor
-            from src.extractor.semantic_modification import compute_semantic_modified_entities
-        except ImportError:
-            from extractor.feature_extractor import FeatureExtractor
-            from extractor.gtd import GraphTransitionDescriptor
-            from extractor.semantic_modification import compute_semantic_modified_entities
+            from ..extractor.feature_extractor import FeatureExtractor
+            from ..extractor.gtd import GraphTransitionDescriptor
+            from ..extractor.semantic_modification import compute_semantic_modified_entities
+        except (ImportError, ValueError):
+            from predictive_semantic_cache.extractor.feature_extractor import FeatureExtractor
+            from predictive_semantic_cache.extractor.gtd import GraphTransitionDescriptor
+            from predictive_semantic_cache.extractor.semantic_modification import compute_semantic_modified_entities
 
         modification_history = modification_history if modification_history is not None else {}
         previous_drifts = previous_drifts if previous_drifts is not None else {}

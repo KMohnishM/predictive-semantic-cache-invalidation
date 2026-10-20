@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import sys
 
-from benchmarking.runner import main
+try:
+    from .runner import main
+except ImportError:
+    from predictive_semantic_cache.benchmarking.runner import main
 
 
 if __name__ == "__main__":

@@ -99,14 +99,20 @@ def main():
         for e in raw_emb
     ]
 
-    from src.benchmarking.reporting import compute_pareto_frontier
+    try:
+        from predictive_semantic_cache.benchmarking.reporting import compute_pareto_frontier
+    except ImportError:
+        from src.benchmarking.reporting import compute_pareto_frontier
     real_ss = {k: v for k, v in strategy_summaries.items() if not k.startswith("__")}
     pareto_strategies = compute_pareto_frontier(real_ss)
 
     out_dir = Path(args.output_dir).resolve() if args.output_dir else run_path
 
     # Generate image charts
-    from src.benchmarking.visualizer import generate_benchmark_charts
+    try:
+        from predictive_semantic_cache.benchmarking.visualizer import generate_benchmark_charts
+    except ImportError:
+        from src.benchmarking.visualizer import generate_benchmark_charts
     chart_paths = generate_benchmark_charts(
         output_dir=str(out_dir),
         strategy_summaries=strategy_summaries,

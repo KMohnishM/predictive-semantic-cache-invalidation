@@ -8,15 +8,11 @@ from typing import Dict, List, Optional
 import numpy as np
 
 try:
-    from embedder.context_builder import build_contextual_source
-    from embedder.embedding_manager import EmbeddingManager
-except ImportError:
-    try:
-        from src.embedder.context_builder import build_contextual_source
-        from src.embedder.embedding_manager import EmbeddingManager
-    except ImportError:
-        from ..embedder.context_builder import build_contextual_source
-        from ..embedder.embedding_manager import EmbeddingManager
+    from ..embedder.context_builder import build_contextual_source
+    from ..embedder.embedding_manager import EmbeddingManager
+except (ImportError, ValueError):
+    from predictive_semantic_cache.embedder.context_builder import build_contextual_source
+    from predictive_semantic_cache.embedder.embedding_manager import EmbeddingManager
 
 from .types import IndexSnapshot, RepositorySnapshot
 

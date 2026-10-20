@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=64.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "predictive-semantic-cache"
+version = "0.1.0"
+description = "Predictive semantic cache invalidation for RAG and code search across Git revisions"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "KMohnishM" }
+]
+keywords = [
+    "semantic-cache",
+    "cache-invalidation",
+    "rag",
+    "llama-index",
+    "code-search",
+    "tree-sitter",
+    "code-graph",
+    "ast-analysis",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Version Control :: Git",
+]
+dependencies = [
+    "gitpython>=3.1.0",
+    "networkx>=3.0",
+    "tree-sitter-language-pack>=0.1.0",
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+    "joblib>=1.3.0",
+]
+
+[project.optional-dependencies]
+lightgbm = [
+    "lightgbm>=4.0.0",
+]
+llamaindex = [
+    "llama-index-core>=0.10.0",
+]
+eval = [
+    "sentence-transformers>=2.2.0",
+    "torch>=2.0.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+]
+cpg = [
+    "cpgqls-client>=0.0.9",
+]
+all = [
+    "lightgbm>=4.0.0",
+    "llama-index-core>=0.10.0",
+    "sentence-transformers>=2.2.0",
+    "torch>=2.0.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "cpgqls-client>=0.0.9",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "build>=1.0.0",
+    "twine>=4.0.0",
+    "wheel",
+]
+
+[project.urls]
+Homepage = "https://github.com/KMohnishM/predictive-semantic-cache-invalidation"
+Repository = "https://github.com/KMohnishM/predictive-semantic-cache-invalidation"
+Issues = "https://github.com/KMohnishM/predictive-semantic-cache-invalidation/issues"
+
+[project.scripts]
+predictive-cache-benchmark = "predictive_semantic_cache.benchmarking.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"predictive_semantic_cache.benchmarking" = ["data/*.json"]

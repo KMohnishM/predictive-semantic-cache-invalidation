@@ -290,7 +290,10 @@ class FeatureExtractor:
         edits that the AST-normalized ``modified_entities`` ignores (comments,
         docstrings, formatting) still change the embedded text.
         """
-        from embedder.context_builder import build_callee_stubs
+        try:
+            from ..embedder.context_builder import build_callee_stubs
+        except ImportError:
+            from embedder.context_builder import build_callee_stubs
 
         stub_changes = 0.0
         own_source_changed = 0.0

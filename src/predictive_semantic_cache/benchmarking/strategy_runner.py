@@ -28,9 +28,9 @@ def _get_stateful_changed_entities(
         return []
 
     try:
-        from extractor.semantic_modification import compute_source_changed_entities
-    except ImportError:
-        from src.extractor.semantic_modification import compute_source_changed_entities
+        from ..extractor.semantic_modification import compute_source_changed_entities
+    except (ImportError, ValueError):
+        from predictive_semantic_cache.extractor.semantic_modification import compute_source_changed_entities
 
     anchors = cache_tracker.get_all_anchors()
     anchor_groups: Dict[str, List[str]] = {}

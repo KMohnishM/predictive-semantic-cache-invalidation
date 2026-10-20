@@ -35,11 +35,11 @@ from scipy.stats import binomtest
 logger = logging.getLogger(__name__)
 
 try:
-    from benchmarking.query_sources import load_curated_queries
-    from benchmarking.types import QueryCase
-except ImportError:
-    from src.benchmarking.query_sources import load_curated_queries
-    from src.benchmarking.types import QueryCase
+    from ..benchmarking.query_sources import load_curated_queries
+    from ..benchmarking.types import QueryCase
+except (ImportError, ValueError):
+    from predictive_semantic_cache.benchmarking.query_sources import load_curated_queries
+    from predictive_semantic_cache.benchmarking.types import QueryCase
 
 
 DEFAULT_CURATED_QUERIES_PATH = str(
@@ -182,11 +182,11 @@ def load_hybrid_ground_truth_queries(
     covered_entities = {q.target_entity_id for q in curated}
 
     try:
-        from benchmarking.query_sources import build_synthetic_queries
-        from benchmarking.types import CommitPair, RepositorySnapshot, RepositoryEntity
-    except ImportError:
-        from src.benchmarking.query_sources import build_synthetic_queries
-        from src.benchmarking.types import CommitPair, RepositorySnapshot, RepositoryEntity
+        from ..benchmarking.query_sources import build_synthetic_queries
+        from ..benchmarking.types import CommitPair, RepositorySnapshot, RepositoryEntity
+    except (ImportError, ValueError):
+        from predictive_semantic_cache.benchmarking.query_sources import build_synthetic_queries
+        from predictive_semantic_cache.benchmarking.types import CommitPair, RepositorySnapshot, RepositoryEntity
 
     entities = repo_parser.get_all_entities()
     snapshot_entities = {}

@@ -12,14 +12,24 @@ _repo_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_repo_root))
 sys.path.insert(0, str(_repo_root / "src"))
 
-from llama_index_integration import (
-    CodeGraphNodeParser,
-    PredictiveCacheFilter,
-    build_predictive_ingestion_pipeline,
-    TextNode
-)
-from parser.tree_sitter_repo_parser import TreeSitterRepoParser
-from predictor.predictor import DriftPredictor
+try:
+    from predictive_semantic_cache import (
+        CodeGraphNodeParser,
+        PredictiveCacheFilter,
+        build_predictive_ingestion_pipeline,
+        TreeSitterRepoParser,
+        DriftPredictor,
+    )
+    from predictive_semantic_cache.integrations.llama_index import TextNode
+except ImportError:
+    from llama_index_integration import (
+        CodeGraphNodeParser,
+        PredictiveCacheFilter,
+        build_predictive_ingestion_pipeline,
+        TextNode
+    )
+    from parser.tree_sitter_repo_parser import TreeSitterRepoParser
+    from predictor.predictor import DriftPredictor
 
 
 def test_code_graph_node_parser(tmp_path):
