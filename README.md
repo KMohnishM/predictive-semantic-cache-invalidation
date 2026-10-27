@@ -1,8 +1,9 @@
 # Predictive Semantic Cache Invalidation (`predictive-semantic-cache`)
 
+[![CI Tests](https://github.com/KMohnishM/predictive-semantic-cache-invalidation/actions/workflows/ci.yml/badge.svg)](https://github.com/KMohnishM/predictive-semantic-cache-invalidation/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![PyPI Version](https://img.shields.io/pypi/v/predictive-semantic-cache.svg)](https://pypi.org/project/predictive-semantic-cache/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/predictive-semantic-cache.svg)](https://pypi.org/project/predictive-semantic-cache/)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 **Predictive Semantic Cache Invalidation** is an intelligent caching and re-indexing framework for Retrieval-Augmented Generation (RAG) and semantic code search systems.
 
