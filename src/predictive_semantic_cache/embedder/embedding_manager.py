@@ -2,18 +2,27 @@
 
 from typing import Dict, List, Tuple, Optional
 import numpy as np
-import torch
-from sentence_transformers import SentenceTransformer
 import logging
+
+try:
+    import torch
+    from sentence_transformers import SentenceTransformer
+    import transformers
+    import transformers.pytorch_utils as _pt_utils
+    EMBEDDINGS_AVAILABLE = True
+except ImportError:
+    torch = None
+    SentenceTransformer = None
+    transformers = None
+    _pt_utils = None
+    EMBEDDINGS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
 from .util import remove_comments_and_docstrings, compute_cosine_similarity
 
 # Compatibility patch for Jina embeddings on newer transformers versions (e.g. Kaggle/Colab)
-import transformers
-import transformers.pytorch_utils as _pt_utils
-if not hasattr(_pt_utils, "find_pruneable_heads_and_indices"):
+if EMBEDDINGS_AVAILABLE and _pt_utils is not None and not hasattr(_pt_utils, "find_pruneable_heads_and_indices"):
     def _find_pruneable_heads_and_indices(heads, n_heads, head_size, already_pruned_heads):
         """Find pruneable attention heads and indices for transformers model compatibility."""
         mask = torch.ones(n_heads, head_size)
@@ -26,26 +35,28 @@ if not hasattr(_pt_utils, "find_pruneable_heads_and_indices"):
         return heads, index
     _pt_utils.find_pruneable_heads_and_indices = _find_pruneable_heads_and_indices
 
-if not hasattr(transformers.PretrainedConfig, "is_decoder"):
-    transformers.PretrainedConfig.is_decoder = False
-if not hasattr(transformers.PretrainedConfig, "add_cross_attention"):
-    transformers.PretrainedConfig.add_cross_attention = False
+if EMBEDDINGS_AVAILABLE and transformers is not None:
+    if hasattr(transformers, "PretrainedConfig"):
+        if not hasattr(transformers.PretrainedConfig, "is_decoder"):
+            transformers.PretrainedConfig.is_decoder = False
+        if not hasattr(transformers.PretrainedConfig, "add_cross_attention"):
+            transformers.PretrainedConfig.add_cross_attention = False
 
-if not hasattr(transformers.PreTrainedModel, "get_head_mask"):
-    def _get_head_mask(self, head_mask, num_hidden_layers, is_attention_chunked=False):
-        """Resolve head mask tensor shape for transformers model attention layers."""
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.unsqueeze(0).unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
-                head_mask = head_mask.expand(num_hidden_layers, -1, -1, -1, -1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(1).unsqueeze(1)
-            if is_attention_chunked:
-                head_mask = head_mask.unsqueeze(-1)
-        else:
-            head_mask = [None] * num_hidden_layers
-        return head_mask
-    transformers.PreTrainedModel.get_head_mask = _get_head_mask
+    if hasattr(transformers, "PreTrainedModel") and not hasattr(transformers.PreTrainedModel, "get_head_mask"):
+        def _get_head_mask(self, head_mask, num_hidden_layers, is_attention_chunked=False):
+            """Resolve head mask tensor shape for transformers model attention layers."""
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.unsqueeze(0).unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
+                    head_mask = head_mask.expand(num_hidden_layers, -1, -1, -1, -1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.unsqueeze(1).unsqueeze(1)
+                if is_attention_chunked:
+                    head_mask = head_mask.unsqueeze(-1)
+            else:
+                head_mask = [None] * num_hidden_layers
+            return head_mask
+        transformers.PreTrainedModel.get_head_mask = _get_head_mask
 
 
 
@@ -56,6 +67,8 @@ def resolve_device(device: str = "auto") -> str:
     concrete torch device string. "auto" picks CUDA when available, else CPU.
     Validates CUDA compute capability to prevent crashes on legacy GPUs (e.g., P100 sm_60).
     """
+    if not EMBEDDINGS_AVAILABLE or torch is None:
+        return "cpu"
     target = "cuda" if device == "auto" else device
     if target.startswith("cuda") and torch.cuda.is_available():
         try:
@@ -91,6 +104,11 @@ class EmbeddingManager:
             device: "auto" (use CUDA if available, else CPU), "cpu", "cuda", or
                 a specific device string (e.g. "cuda:0")
         """
+        if not EMBEDDINGS_AVAILABLE:
+            raise ImportError(
+                "EmbeddingManager requires 'torch' and 'sentence-transformers'. "
+                "Install them with: pip install 'predictive-semantic-cache[eval]'"
+            )
         self.model_name = model_name
         self.clean_mode = clean_mode
         self.device = resolve_device(device)

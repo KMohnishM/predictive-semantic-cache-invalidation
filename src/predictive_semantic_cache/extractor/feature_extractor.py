@@ -292,8 +292,11 @@ class FeatureExtractor:
         """
         try:
             from ..embedder.context_builder import build_callee_stubs
-        except ImportError:
-            from embedder.context_builder import build_callee_stubs
+        except (ImportError, ValueError):
+            try:
+                from predictive_semantic_cache.embedder.context_builder import build_callee_stubs
+            except ImportError:
+                from embedder.context_builder import build_callee_stubs
 
         stub_changes = 0.0
         own_source_changed = 0.0
