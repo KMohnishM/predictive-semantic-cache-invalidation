@@ -134,29 +134,6 @@ predictive-cache-benchmark --repo-path ./my-repo --num-commits 10 --strategies p
 
 ---
 
-## Publishing to PyPI
-
-To build and publish a new version:
-
-```bash
-# 1. Install build tools
-pip install build twine
-
-# 2. Build distribution packages
-python -m build
-
-# 3. Check distribution packages
-twine check dist/*
-
-# 4. Upload to TestPyPI (optional verification)
-twine upload --repository testpypi dist/*
-
-# 5. Upload to Production PyPI
-twine upload dist/*
-```
-
----
-
 ## Authors & Contributors
 
 - **Kodukulla Mohnish Mythreya** ([@KMohnishM](https://github.com/KMohnishM) - `kmohnishm@gmail.com`)
