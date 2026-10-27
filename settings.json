@@ -12,7 +12,7 @@
   "device": "auto",
   "label_source": "embedded_text_changed",
   "max_queries_per_entity": 10,
-  "ground_truth_queries_path": "src/benchmarking/data/curated_queries_black_change_focused.json",
+  "ground_truth_queries_path": "src/predictive_semantic_cache/benchmarking/data/curated_queries_black_change_focused.json",
   "ref": "adeef108afa7c6c50959cf2c94a4d4efbf1fae91~300",
   "ground_truth_rule": "any_displacement",
   "ground_truth_min_queries": 1,
