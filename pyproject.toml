@@ -11,7 +11,9 @@ requires-python = ">=3.9"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [
-    { name = "KMohnishM" }
+    { name = "Kodukulla Mohnish Mythreya", email = "kmohnishm@gmail.com" },
+    { name = "Aditya Bhandari", email = "aditya07.11.04.12@gmail.com" },
+    { name = "Tarun Chebolu", email = "chebolutarun5@gmail.com" },
 ]
 keywords = [
     "semantic-cache",

@@ -157,6 +157,14 @@ twine upload dist/*
 
 ---
 
+## Authors & Contributors
+
+- **Kodukulla Mohnish Mythreya** ([@KMohnishM](https://github.com/KMohnishM) - `kmohnishm@gmail.com`)
+- **Aditya Bhandari** (`aditya07.11.04.12@gmail.com`)
+- **Tarun Chebolu** (`chebolutarun5@gmail.com`)
+
+---
+
 ## License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
