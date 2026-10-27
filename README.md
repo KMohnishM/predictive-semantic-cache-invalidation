@@ -10,13 +10,24 @@ When codebases evolve across Git commits, naively re-embedding every entity or f
 
 ---
 
+## System Architecture
+
+![End-to-End Pipeline Architecture](assets/architecture.png)
+
+The framework operates across three key phases:
+1. **Offline Ground-Truth & Model Training**: Extracts call graphs, computes structural and semantic drift via leave-one-out rank displacement, and trains recall-calibrated ML models.
+2. **Real-Time Git Commit Invalidation**: Processes git diffs, extracts lightweight static and evolutionary features, and evaluates code nodes through the trained predictor to identify stale entities.
+3. **Production Vector-Store Refresh**: Selectively routes only stale nodes to neural embedding models, preserving fresh cached representations.
+
+---
+
 ## Key Features
 
-- 🌲 **Tree-Sitter AST & Call-Graph Parser**: Multi-language parsing of classes, methods, functions, and call relationships without requiring full compiler environments.
-- 📐 **Graph & Evolution Feature Extraction**: Computes structural metrics (centrality, degree, depth), evolutionary stats (churn, diff size, modification frequency), and Graph Transition Descriptors (GTD).
-- 🤖 **ML Drift Prediction**: Supports LightGBM, Random Forest, HistGradientBoosting, and ExtraTrees with recall-calibrated decision thresholds to ensure stale entities are never missed.
-- 🦙 **Drop-in LlamaIndex Integration**: Custom `CodeGraphNodeParser` and `PredictiveCacheFilter` transformation components that fit directly into standard LlamaIndex ingestion pipelines.
-- 📊 **Comprehensive Benchmarking Suite**: CLI and reporting utilities to evaluate retrieval retention vs. full re-indexing and update cost.
+- **Tree-Sitter AST & Call-Graph Parser**: Multi-language parsing of classes, methods, functions, and call relationships without requiring full compiler environments.
+- **Graph & Evolution Feature Extraction**: Computes structural metrics (centrality, degree, depth), evolutionary stats (churn, diff size, modification frequency), and Graph Transition Descriptors (GTD).
+- **ML Drift Prediction**: Supports LightGBM, Random Forest, HistGradientBoosting, and ExtraTrees with recall-calibrated decision thresholds to ensure stale entities are never missed.
+- **Drop-in LlamaIndex Integration**: Custom `CodeGraphNodeParser` and `PredictiveCacheFilter` transformation components that fit directly into standard LlamaIndex ingestion pipelines.
+- **Comprehensive Benchmarking Suite**: CLI and reporting utilities to evaluate retrieval retention vs. full re-indexing and update cost.
 
 ---
 
