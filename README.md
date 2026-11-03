@@ -58,40 +58,78 @@ pip install "predictive-semantic-cache[all]"
 
 ## Quickstart
 
-### 1. LlamaIndex Ingestion Pipeline
+### 1. Zero-Config Predictive Invalidation (Default ML)
 
-Integrate predictive cache invalidation directly into your LlamaIndex ingestion flow:
+The easiest way to use the library. Automatically loads the bundled 50 KB pre-trained model:
 
 ```python
-from predictive_semantic_cache import (
-    CodeGraphNodeParser,
-    PredictiveCacheFilter,
-    DriftPredictor,
-)
-from llama_index.core import Document
-from llama_index.core.ingestion import IngestionPipeline
+from predictive_semantic_cache import PredictiveCache
 
-# 1. Parse repository into call-graph-aware nodes
-node_parser = CodeGraphNodeParser(repo_path="./my-repo")
-nodes = node_parser.parse_repository()
+# Point to your repository
+cache = PredictiveCache(repo_path=".")
 
-# 2. Load trained drift predictor
-predictor = DriftPredictor.load_artifact("path/to/drift_predictor.pkl")
+# Detect functions and classes requiring re-embedding between Git commits
+stale_entities = cache.get_stale_entities(from_commit="HEAD~1", to_commit="HEAD")
 
-# 3. Create cache filter that retains only drifted nodes for re-embedding
-cache_filter = PredictiveCacheFilter(
-    predictor_or_path=predictor,
-    repo_parser=node_parser.repo_parser,
-    modified_entities={"my_module::MyClass::modified_method"},
-)
-
-# 4. Pipeline routes only stale nodes to the embedding model
-pipeline = IngestionPipeline(
-    transformations=[cache_filter]
-)
-nodes_to_reembed = pipeline.run(nodes=nodes)
-print(f"Total nodes: {len(nodes)} -> Re-embedding only: {len(nodes_to_reembed)}")
+print(f"Entities requiring re-indexing: {len(stale_entities)}")
+for ent in stale_entities:
+    print(f" -> {ent.name} in {ent.file_path}:{ent.lineno}")
 ```
+
+---
+
+### 2. Custom Model Training & Inference
+
+You can also train a custom `DriftPredictor` model tailored specifically to your codebase's architecture and Git history:
+
+```python
+from predictive_semantic_cache import PredictiveCache
+
+# Point to your own fine-tuned .pkl artifact
+cache = PredictiveCache(
+    repo_path=".",
+    model_path="models/custom_drift_predictor.pkl",
+    threshold=0.55,  # Optional custom threshold
+)
+stale_entities = cache.get_stale_entities("HEAD~1", "HEAD")
+```
+*For complete instructions on extracting features and training your own model, see [examples/05_train_custom_model.py](examples/05_train_custom_model.py).*
+
+---
+
+### 3. LlamaIndex Ingestion Pipeline
+
+Integrate predictive cache invalidation directly into your LlamaIndex RAG pipeline:
+
+```python
+from predictive_semantic_cache.integrations.llama_index import (
+    build_predictive_ingestion_pipeline,
+)
+
+# Build pipeline (predictor_or_path=None auto-loads the default model!)
+pipeline = build_predictive_ingestion_pipeline(
+    repo_path="./my-repo",
+    predictor_or_path=None,  # Or pass your custom model path
+)
+
+nodes = pipeline["node_parser"].parse_repository()
+stale_nodes = pipeline["cache_filter"](nodes)
+
+# Only stale nodes proceed to embedding and vector store upsert!
+print(f"Total nodes: {len(nodes)} -> Re-embedding only: {len(stale_nodes)}")
+```
+
+---
+
+## Examples & Tutorials
+
+Check out the [`examples/`](examples/) directory for complete, copy-pasteable workflows:
+
+- **[01_basic_usage.py](examples/01_basic_usage.py)**: Basic API, summary statistics, and graph heuristics.
+- **[02_llama_index_pipeline.py](examples/02_llama_index_pipeline.py)**: End-to-end LlamaIndex RAG ingestion pipeline.
+- **[03_github_actions/](examples/03_github_actions/)**: Ready-to-use GitHub Actions workflow and re-indexing script.
+- **[04_benchmark_custom_repo.py](examples/04_benchmark_custom_repo.py)**: Running comparative benchmarks.
+- **[05_train_custom_model.py](examples/05_train_custom_model.py)**: Training a custom `DriftPredictor` model on your commit history.
 
 ---
 

@@ -66,6 +66,10 @@ eval = [
 cpg = [
     "cpgqls-client>=0.0.9",
 ]
+docs = [
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+]
 all = [
     "lightgbm>=4.0.0",
     "llama-index-core>=0.10.0",
@@ -74,6 +78,8 @@ all = [
     "matplotlib>=3.7.0",
     "seaborn>=0.12.0",
     "cpgqls-client>=0.0.9",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
 ]
 dev = [
     "pytest>=7.0.0",
@@ -95,6 +101,7 @@ predictive-cache-benchmark = "predictive_semantic_cache.benchmarking.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
+"predictive_semantic_cache" = ["models/*.pkl"]
 "predictive_semantic_cache.benchmarking" = ["data/*.json"]
 
 [tool.pytest.ini_options]

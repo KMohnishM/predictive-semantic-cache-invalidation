@@ -499,9 +499,16 @@ class TreeSitterRepoParser:
         """Parse all Python files in a directory using two-pass resolution."""
         dir_path = Path(directory).resolve()
         py_files = []
+        ignored_parts = {
+            "venv", ".venv", "env", ".env", "__pycache__", ".git", "build", "dist",
+            ".pytest_cache", ".eggs", "site-packages", ".tox", ".nox"
+        }
         for py_file in dir_path.rglob("*.py"):
+            parts = set(py_file.parts)
+            if parts & ignored_parts:
+                continue
             rel_p = str(py_file.relative_to(dir_path)).replace("\\", "/")
-            if "__pycache__" in rel_p or rel_p.startswith("tests/") or "/tests/" in rel_p or py_file.name.startswith("test_"):
+            if rel_p.startswith("tests/") or "/tests/" in rel_p or py_file.name.startswith("test_"):
                 continue
             py_files.append(str(py_file.resolve()))
 

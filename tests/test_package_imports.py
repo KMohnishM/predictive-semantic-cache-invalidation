@@ -11,6 +11,8 @@ def test_package_metadata():
 
 def test_top_level_exports():
     import predictive_semantic_cache as psc
+    assert hasattr(psc, "PredictiveCache")
+    assert hasattr(psc, "DEFAULT_MODEL_PATH")
     assert hasattr(psc, "TreeSitterRepoParser")
     assert hasattr(psc, "Entity")
     assert hasattr(psc, "FeatureExtractor")

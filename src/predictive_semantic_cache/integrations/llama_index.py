@@ -147,8 +147,8 @@ class PredictiveCacheFilter(TransformComponent):
 
     def __init__(
         self,
-        predictor_or_path: Union[str, Path, DriftPredictor],
-        repo_parser: TreeSitterRepoParser,
+        predictor_or_path: Optional[Union[str, Path, DriftPredictor]] = None,
+        repo_parser: Optional[TreeSitterRepoParser] = None,
         modified_entities: Optional[Set[str]] = None,
         threshold: Optional[float] = None,
         previous_parser: Optional[TreeSitterRepoParser] = None,
@@ -164,14 +164,18 @@ class PredictiveCacheFilter(TransformComponent):
         self.modified_entities = set(modified_entities or [])
         self.threshold = threshold
 
-        if isinstance(predictor_or_path, (str, Path)):
+        if predictor_or_path is None:
+            from ..client import DEFAULT_MODEL_PATH
+            self.model_path = str(DEFAULT_MODEL_PATH)
+            self.predictor = DriftPredictor.load_artifact(self.model_path)
+        elif isinstance(predictor_or_path, (str, Path)):
             self.model_path = os.path.abspath(str(predictor_or_path))
             self.predictor = DriftPredictor.load_artifact(self.model_path)
         elif isinstance(predictor_or_path, DriftPredictor):
             self.model_path = None
             self.predictor = predictor_or_path
         else:
-            raise TypeError(f"Expected model path or DriftPredictor instance, got {type(predictor_or_path)}")
+            raise TypeError(f"Expected model path, DriftPredictor instance, or None, got {type(predictor_or_path)}")
 
     def set_modified_entities(self, modified_entities: Set[str]) -> None:
         """Update the set of modified entities for a new commit cycle."""
@@ -247,7 +251,7 @@ class PredictiveCacheFilter(TransformComponent):
 # =========================================================================
 def build_predictive_ingestion_pipeline(
     repo_path: str,
-    predictor_or_path: Union[str, Path, DriftPredictor],
+    predictor_or_path: Optional[Union[str, Path, DriftPredictor]] = None,
     modified_entities: Optional[Set[str]] = None,
     threshold: Optional[float] = None,
     previous_parser: Optional[TreeSitterRepoParser] = None,

@@ -153,7 +153,7 @@ def test_build_predictive_ingestion_pipeline(tmp_path):
 def test_filter_passes_previous_parser_to_feature_extractor(tmp_path, monkeypatch):
     """The earlier-commit parser must reach FeatureExtractor as parser_a, otherwise
     the call-graph-context features are always zero."""
-    import llama_index_integration as li
+    import predictive_semantic_cache.integrations.llama_index as li
 
     (tmp_path / "m.py").write_text("def a():\n    return 1\n", encoding="utf-8")
     node_parser = CodeGraphNodeParser(repo_path=str(tmp_path))

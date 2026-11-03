@@ -7,6 +7,7 @@ only drifted entities while preserving fresh cache entries.
 
 __version__ = "0.1.0"
 
+from .client import PredictiveCache, DEFAULT_MODEL_PATH
 from .parser.tree_sitter_repo_parser import TreeSitterRepoParser, Entity
 from .extractor.feature_extractor import FeatureExtractor
 from .predictor.predictor import DriftPredictor, positive_class_proba
@@ -18,6 +19,8 @@ from .integrations.llama_index import (
 
 __all__ = [
     "__version__",
+    "PredictiveCache",
+    "DEFAULT_MODEL_PATH",
     "TreeSitterRepoParser",
     "Entity",
     "FeatureExtractor",
