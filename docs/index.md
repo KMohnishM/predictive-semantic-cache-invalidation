@@ -4,7 +4,7 @@
 
 By combining **Tree-sitter AST parsing**, **dependency graph feature extraction**, and **machine learning classification**, it detects which code entities (functions, classes) have experienced semantic drift across Git commits and selectively re-indexes only those affected.
 
-![System Architecture](../assets/architecture.png)
+![System Architecture](assets/architecture.png)
 
 ---
 

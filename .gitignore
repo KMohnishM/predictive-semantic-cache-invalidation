@@ -9,7 +9,8 @@ dist/
 *.egg-info/
 .eggs/
 
-# Testing & Coverage
+# Documentation build output
+site/
 .pytest_cache/
 .coverage
 htmlcov/
