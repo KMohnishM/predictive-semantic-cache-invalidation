@@ -31,6 +31,6 @@ When code changes in a repository:
 
 ## Authors
 
-- **Kodukulla Mohnish Mythreya** - [kmohnishm@gmail.com](mailto:kmohnishm@gmail.com)
-- **Aditya Bhandari** - [aditya07.11.04.12@gmail.com](mailto:aditya07.11.04.12@gmail.com)
-- **Tarun Chebolu** - [chebolutarun5@gmail.com](mailto:chebolutarun5@gmail.com)
+- **Kodukulla Mohnish Mythreya** ([@KMohnishM](https://github.com/KMohnishM)) - [kmohnishm@gmail.com](mailto:kmohnishm@gmail.com)
+- **Aditya Narayan Bhandari** ([@TheUnnamedOne-design](https://github.com/TheUnnamedOne-design)) - [aditya07.11.04.12@gmail.com](mailto:aditya07.11.04.12@gmail.com)
+- **Tarun Chebolu** ([@NonCompactdesign](https://github.com/NonCompactdesign)) - [chebolutarun5@gmail.com](mailto:chebolutarun5@gmail.com)

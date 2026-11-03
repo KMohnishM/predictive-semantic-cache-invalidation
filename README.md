@@ -187,8 +187,8 @@ predictive-cache-benchmark --repo-path ./my-repo --num-commits 10 --strategies p
 ## Authors & Contributors
 
 - **Kodukulla Mohnish Mythreya** ([@KMohnishM](https://github.com/KMohnishM) - `kmohnishm@gmail.com`)
-- **Aditya Bhandari** (`aditya07.11.04.12@gmail.com`)
-- **Tarun Chebolu** (`chebolutarun5@gmail.com`)
+- **Aditya Narayan Bhandari** ([@TheUnnamedOne-design](https://github.com/TheUnnamedOne-design) - `aditya07.11.04.12@gmail.com`)
+- **Tarun Chebolu** ([@NonCompactdesign](https://github.com/NonCompactdesign) - `chebolutarun5@gmail.com`)
 
 ---
 
