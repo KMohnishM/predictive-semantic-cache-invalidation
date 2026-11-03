@@ -1,0 +1,671 @@
+"""Tree-sitter based Python repository parser and dependency graph builder."""
+
+import os
+from pathlib import Path
+from typing import Dict, List, Set, Tuple, Optional
+import networkx as nx
+import logging
+try:
+    import tree_sitter_language_pack
+except ImportError:
+    tree_sitter_language_pack = None
+
+try:
+    import tree_sitter_python
+    from tree_sitter import Language, Parser
+except ImportError:
+    tree_sitter_python = None
+
+logger = logging.getLogger(__name__)
+
+
+class Entity:
+    """Represents a code entity (function, method, or class)."""
+
+    def __init__(self, entity_id: str, entity_type: str, file_path: str,
+                 lineno: int, end_lineno: int, source_code: str,
+                 cyclomatic_complexity: float = 1.0,
+                 ast_node_count: float = 0.0,
+                 max_nesting_depth: float = 0.0,
+                 param_count: float = 0.0,
+                 return_count: float = 0.0):
+        """
+        Initialize an entity.
+
+        Args:
+            entity_id: Unique identifier (e.g., "path::class::method")
+            entity_type: Type of entity ("function", "method", "class")
+            file_path: Path to the file containing this entity
+            lineno: Starting line number
+            end_lineno: Ending line number
+            source_code: Source code of the entity
+            cyclomatic_complexity: McCabe cyclomatic complexity
+            ast_node_count: AST node count
+            max_nesting_depth: Maximum control block nesting depth
+            param_count: Parameter count
+            return_count: Return statement count
+        """
+        self.entity_id = entity_id
+        self.entity_type = entity_type
+        self.file_path = file_path
+        self.lineno = lineno
+        self.end_lineno = end_lineno
+        self.source_code = source_code
+        self.cyclomatic_complexity = cyclomatic_complexity
+        self.ast_node_count = ast_node_count
+        self.max_nesting_depth = max_nesting_depth
+        self.param_count = param_count
+        self.return_count = return_count
+
+    def __repr__(self):
+        """Return string representation of Entity."""
+        return f"Entity({self.entity_id}, {self.entity_type})"
+
+
+class TreeSitterRepoParser:
+    """Parses source files using Tree-sitter and builds dependency graph."""
+
+    def __init__(self, repo_path: str, language: str = 'python'):
+        """
+        Initialize repository parser.
+
+        Args:
+            repo_path: Path to the repository root
+            language: Programming language to parse ('python')
+        """
+        self.repo_path = Path(repo_path).resolve()
+        self.language_name = language.lower()
+        self.parser = self._create_ts_parser(self.language_name)
+        self.graph = nx.DiGraph()
+        self.entities: Dict[str, Entity] = {}
+        self.symbol_table: Dict[str, Dict[str, str]] = {}  # RelPath -> {ImportName: Target}
+
+        # Derived-graph / distance caches, invalidated whenever self.graph mutates.
+        self._reverse_graph_cache: Optional[nx.DiGraph] = None
+        self._undirected_graph_cache: Optional[nx.Graph] = None
+        self._nearest_modified_cache: Optional[Dict[str, int]] = None
+        self._nearest_modified_seed: Optional[frozenset] = None
+
+    @staticmethod
+    def _create_ts_parser(language_name: str):
+        """Return a tree-sitter Parser for ``language_name``."""
+        try:
+            if tree_sitter_language_pack is not None:
+                return tree_sitter_language_pack.get_parser(language_name)
+            raise ImportError("tree_sitter_language_pack not available")
+        except Exception as exc:
+            if tree_sitter_python is not None and language_name == "python":
+                logger.info("Using local tree_sitter_python parser fallback")
+                return Parser(Language(tree_sitter_python.language()))
+            raise RuntimeError(f"Could not load tree-sitter parser for {language_name}: {exc}")
+
+    def __getstate__(self):
+        # tree_sitter.Parser cannot be pickled; it holds no parse state, so it is
+        # recreated on load (lets a parsed snapshot be cached to disk).
+        state = self.__dict__.copy()
+        state["parser"] = None
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.parser = self._create_ts_parser(self.language_name)
+
+    def _invalidate_graph_caches(self) -> None:
+        """Clear cached derived graphs/distances after the graph is mutated."""
+        self._reverse_graph_cache = None
+        self._undirected_graph_cache = None
+        self._nearest_modified_cache = None
+        self._nearest_modified_seed = None
+
+    def _get_entity_id(self, file_path: str, class_name: Optional[str],
+                       func_name: str) -> str:
+        """Generate unique entity ID."""
+        if class_name:
+            return f"{file_path}::{class_name}::{func_name}"
+        else:
+            return f"{file_path}::{func_name}"
+
+    def _get_relative_path(self, absolute_path: str) -> str:
+        """Convert absolute path to relative path from repo root."""
+        return str(Path(absolute_path).relative_to(self.repo_path)).replace("\\", "/")
+
+    def _analyze_tree_sitter_metrics(self, node) -> Dict[str, float]:
+        """Extract Python code complexity metrics directly from Tree-sitter node."""
+        decision_types = {
+            'if_statement', 'for_statement', 'while_statement',
+            'except_clause', 'boolean_operator', 'conditional_expression',
+            'case_clause'
+        }
+        nesting_types = {
+            'if_statement', 'for_statement', 'while_statement',
+            'try_statement', 'with_statement'
+        }
+
+        branch_count = 0
+        node_count = 0
+        max_depth = 0
+        return_count = 0
+
+        def walk(n, current_depth):
+            """Walk AST node tree recursively to compute node metrics and nesting depth."""
+            nonlocal branch_count, node_count, max_depth, return_count
+            node_count += 1
+
+            if n.type in decision_types:
+                branch_count += 1
+                if n.type == 'if_statement':
+                    for c in n.children:
+                        if c.type == 'elif_clause':
+                            branch_count += 1
+
+            if n.type == 'return_statement':
+                return_count += 1
+
+            next_depth = current_depth + 1 if n.type in nesting_types else current_depth
+            max_depth = max(max_depth, current_depth)
+
+            for c in n.children:
+                walk(c, next_depth)
+
+        walk(node, 0)
+
+        # Count declared parameters only (named children), not the parentheses /
+        # commas, and not a leading self/cls receiver.
+        param_count = 0
+        params_node = node.child_by_field_name('parameters')
+        if params_node:
+            params = [c for c in params_node.named_children if c.type != 'comment']
+            if params and params[0].type == 'identifier' and params[0].text in (b'self', b'cls'):
+                params = params[1:]
+            param_count = len(params)
+
+        return {
+            'cyclomatic_complexity': float(1 + branch_count),
+            'ast_node_count': float(node_count),
+            'max_nesting_depth': float(max_depth),
+            'param_count': float(param_count),
+            'return_count': float(return_count)
+        }
+
+    def _build_symbol_table(self, root_node, file_path: str,
+                             source_bytes: bytes) -> Dict[str, str]:
+        """Build symbol table for imports in a file using Tree-sitter."""
+        symbol_table = {}
+
+        def _traverse_imports(node):
+            """Traverse AST nodes recursively to collect import statements into symbol table."""
+            if node.type in ('import_statement', 'import_from_statement'):
+                if node.type == 'import_statement':
+                    for child in node.children:
+                        if child.type in ('dotted_name', 'aliased_import'):
+                            text = child.text.decode('utf-8', errors='ignore')
+                            if ' as ' in text:
+                                orig, alias = text.split(' as ')
+                                symbol_table[alias.strip()] = f"import:{orig.strip()}"
+                            else:
+                                symbol_table[text.strip()] = f"import:{text.strip()}"
+
+                elif node.type == 'import_from_statement':
+                    module_name = ""
+                    module_node = node.child_by_field_name('module_name')
+                    if module_node:
+                        module_name = module_node.text.decode('utf-8', errors='ignore')
+
+                    for child in node.children:
+                        if child.type == 'dotted_name' and child != module_node:
+                            alias = child.text.decode('utf-8', errors='ignore')
+                            full = f"{module_name}.{alias}" if module_name else alias
+                            symbol_table[alias] = f"import:{full}"
+                        elif child.type == 'aliased_import':
+                            text = child.text.decode('utf-8', errors='ignore')
+                            if ' as ' in text:
+                                orig, alias = text.split(' as ')
+                                full = f"{module_name}.{orig.strip()}" if module_name else orig.strip()
+                                symbol_table[alias.strip()] = f"import:{full}"
+
+            for child in node.children:
+                _traverse_imports(child)
+
+        _traverse_imports(root_node)
+        return symbol_table
+
+    def _parse_file(self, file_path: str) -> Tuple[List[Entity], Dict[str, str]]:
+        """Parse a Python source file using Tree-sitter and extract entities."""
+        try:
+            with open(file_path, 'rb') as f:
+                source_bytes = f.read()
+        except Exception as e:
+            logger.error(f"Failed to read file {file_path}: {e}")
+            return [], {}
+
+        try:
+            tree = self.parser.parse(source_bytes)
+        except Exception as e:
+            logger.error(f"Tree-sitter parse error in {file_path}: {e}")
+            return [], {}
+
+        rel_path = self._get_relative_path(file_path)
+        entities = []
+        symbol_table = self._build_symbol_table(tree.root_node, rel_path, source_bytes)
+
+        def _traverse_nodes(node, current_class: Optional[str] = None):
+            """Traverse AST nodes recursively to extract function and class entities."""
+            if node.type == 'class_definition':
+                name_node = node.child_by_field_name('name')
+                class_name = name_node.text.decode('utf-8', errors='ignore') if name_node else "UnknownClass"
+                class_id = self._get_entity_id(rel_path, None, class_name)
+
+                start_line = node.start_point[0] + 1
+                end_line = node.end_point[0] + 1
+                code_snippet = source_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='ignore')
+                ts_metrics = self._analyze_tree_sitter_metrics(node)
+
+                class_entity = Entity(
+                    entity_id=class_id,
+                    entity_type="class",
+                    file_path=rel_path,
+                    lineno=start_line,
+                    end_lineno=end_line,
+                    source_code=code_snippet,
+                    cyclomatic_complexity=ts_metrics['cyclomatic_complexity'],
+                    ast_node_count=ts_metrics['ast_node_count'],
+                    max_nesting_depth=ts_metrics['max_nesting_depth'],
+                    param_count=ts_metrics['param_count'],
+                    return_count=ts_metrics['return_count']
+                )
+                entities.append(class_entity)
+
+                body_node = node.child_by_field_name('body')
+                if body_node:
+                    for child in body_node.children:
+                        _traverse_nodes(child, current_class=class_name)
+
+            elif node.type == 'function_definition':
+                name_node = node.child_by_field_name('name')
+                func_name = name_node.text.decode('utf-8', errors='ignore') if name_node else "unknown_func"
+
+                entity_type = "method" if current_class else "function"
+                entity_id = self._get_entity_id(rel_path, current_class, func_name)
+
+                start_line = node.start_point[0] + 1
+                end_line = node.end_point[0] + 1
+                code_snippet = source_bytes[node.start_byte:node.end_byte].decode('utf-8', errors='ignore')
+                ts_metrics = self._analyze_tree_sitter_metrics(node)
+
+                func_entity = Entity(
+                    entity_id=entity_id,
+                    entity_type=entity_type,
+                    file_path=rel_path,
+                    lineno=start_line,
+                    end_lineno=end_line,
+                    source_code=code_snippet,
+                    cyclomatic_complexity=ts_metrics['cyclomatic_complexity'],
+                    ast_node_count=ts_metrics['ast_node_count'],
+                    max_nesting_depth=ts_metrics['max_nesting_depth'],
+                    param_count=ts_metrics['param_count'],
+                    return_count=ts_metrics['return_count']
+                )
+                entities.append(func_entity)
+
+            else:
+                for child in node.children:
+                    _traverse_nodes(child, current_class=current_class)
+
+        _traverse_nodes(tree.root_node, current_class=None)
+        return entities, symbol_table
+
+    def _resolve_external_import(self, import_str: str, local_entities: Dict[str, Entity]) -> Optional[str]:
+        """Resolve import string to local entity ID if it exists."""
+        if not import_str.startswith("import:"):
+            return None
+
+        parts = import_str[len("import:"):].split(".")
+        if not parts:
+            return None
+
+        for i in range(len(parts), 0, -1):
+            module_parts = parts[:i]
+            entity_parts = parts[i:]
+
+            possible_paths = [
+                "/".join(module_parts) + ".py",
+                "src/" + "/".join(module_parts) + ".py"
+            ]
+
+            for rel_path in possible_paths:
+                rel_path = rel_path.replace("\\", "/")
+
+                file_entities = [
+                    ent for ent in local_entities.values()
+                    if ent.file_path == rel_path
+                ]
+
+                if file_entities:
+                    if not entity_parts:
+                        return None
+
+                    if len(entity_parts) == 1:
+                        ent_id = f"{rel_path}::{entity_parts[0]}"
+                        if ent_id in local_entities:
+                            return ent_id
+                    elif len(entity_parts) == 2:
+                        ent_id = f"{rel_path}::{entity_parts[0]}::{entity_parts[1]}"
+                        if ent_id in local_entities:
+                            return ent_id
+
+        return None
+
+    def _resolve_call_target(self, call_name: str, local_entities: Dict[str, Entity],
+                             symbol_table: Dict[str, str], file_path: str,
+                             current_class: Optional[str] = None) -> Optional[str]:
+        """Resolve function/method call target name to entity ID with high precision."""
+        if not call_name:
+            return None
+
+        # 1. Resolve local method calls (if current_class is present)
+        if current_class:
+            local_method_id = f"{file_path}::{current_class}::{call_name}"
+            if local_method_id in local_entities:
+                return local_method_id
+
+        # 2. Resolve local module-level function calls
+        local_func_id = f"{file_path}::{call_name}"
+        if local_func_id in local_entities:
+            return local_func_id
+
+        # 3. Resolve imports from symbol table
+        if call_name in symbol_table:
+            resolved = self._resolve_external_import(symbol_table[call_name], local_entities)
+            if resolved:
+                return resolved
+
+        # 4. Suffix matching (fallback) - only resolve if unique or highly likely
+        matches = []
+        for entity_id, entity in local_entities.items():
+            if entity.entity_type in ["method", "function"]:
+                if entity_id.endswith(f"::{call_name}"):
+                    matches.append(entity_id)
+
+        if len(matches) == 1:
+            return matches[0]
+        elif len(matches) > 1:
+            # If multiple matches, prioritize matches in the same module / directory
+            file_dir = os.path.dirname(file_path)
+            close_matches = [m for m in matches if os.path.dirname(local_entities[m].file_path) == file_dir]
+            if len(close_matches) == 1:
+                return close_matches[0]
+
+        return None
+
+    def _extract_edges(self, root_node, file_path: str,
+                       local_entities: Dict[str, Entity],
+                       symbol_table: Dict[str, str],
+                       source_bytes: bytes) -> List[Tuple[str, str]]:
+        """Extract caller -> callee dependency edges using Tree-sitter AST nodes."""
+        edges = []
+
+        def _scan_calls_and_definitions(node, current_entity_id: Optional[str] = None,
+                                        current_class: Optional[str] = None,
+                                        in_function: bool = False):
+            """Scan AST nodes recursively to record call graph edges between entities.
+
+            Mirrors the entity extraction in _parse_file: classes and functions are
+            entities only outside function bodies, and methods are keyed by their
+            enclosing class, so calls are credited to the right entity even when
+            several classes in a file define a method with the same name.
+            Calls inside nested functions are credited to the enclosing entity.
+            """
+            active_id = current_entity_id
+            child_class = current_class
+            child_in_function = in_function
+
+            if not in_function and node.type in ('function_definition', 'class_definition'):
+                name_node = node.child_by_field_name('name')
+                name = name_node.text.decode('utf-8', errors='ignore') if name_node else ""
+
+                if node.type == 'class_definition':
+                    class_id = self._get_entity_id(file_path, None, name)
+                    if class_id in local_entities:
+                        active_id = class_id
+                    child_class = name
+                else:
+                    func_id = self._get_entity_id(file_path, current_class, name)
+                    if func_id in local_entities:
+                        active_id = func_id
+                    child_in_function = True
+
+            elif node.type == 'call' and active_id:
+                func_node = node.child_by_field_name('function')
+                if func_node:
+                    call_text = func_node.text.decode('utf-8', errors='ignore')
+                    call_name = call_text.split('.')[-1]
+
+                    # Parse current_class from active_id
+                    caller_class = None
+                    parts = active_id.split("::")
+                    if len(parts) == 3:
+                        caller_class = parts[1]
+
+                    callee_id = self._resolve_call_target(
+                        call_name, local_entities, symbol_table,
+                        file_path=file_path, current_class=caller_class
+                    )
+                    if callee_id and callee_id in local_entities and callee_id != active_id:
+                        edges.append((active_id, callee_id))
+
+            for child in node.children:
+                _scan_calls_and_definitions(child, current_entity_id=active_id,
+                                            current_class=child_class,
+                                            in_function=child_in_function)
+
+        _scan_calls_and_definitions(root_node, current_entity_id=None)
+        return edges
+
+    def parse_file(self, file_path: str) -> None:
+        """Parse a single file and add entities/edges to graph."""
+        if not file_path.endswith('.py'):
+            return
+
+        entities, symbol_table = self._parse_file(file_path)
+
+        for entity in entities:
+            self.entities[entity.entity_id] = entity
+            self.graph.add_node(entity.entity_id, **{
+                'type': entity.entity_type,
+                'file_path': entity.file_path,
+                'lineno': entity.lineno,
+                'end_lineno': entity.end_lineno,
+                'source_code': entity.source_code
+            })
+
+        rel_path = self._get_relative_path(file_path)
+        self.symbol_table[rel_path] = symbol_table
+
+        try:
+            with open(file_path, 'rb') as f:
+                source_bytes = f.read()
+            tree = self.parser.parse(source_bytes)
+            edges = self._extract_edges(tree.root_node, rel_path, self.entities, symbol_table, source_bytes)
+
+            for caller_id, callee_id in edges:
+                self.graph.add_edge(caller_id, callee_id, type='calls')
+
+        except Exception as e:
+            logger.error(f"Failed to extract edges from {file_path}: {e}")
+
+        self._invalidate_graph_caches()
+
+    def parse_directory(self, directory: str) -> None:
+        """Parse all Python files in a directory using two-pass resolution."""
+        dir_path = Path(directory).resolve()
+        py_files = []
+        ignored_parts = {
+            "venv", ".venv", "env", ".env", "__pycache__", ".git", "build", "dist",
+            ".pytest_cache", ".eggs", "site-packages", ".tox", ".nox"
+        }
+        for py_file in dir_path.rglob("*.py"):
+            parts = set(py_file.parts)
+            if parts & ignored_parts:
+                continue
+            rel_p = str(py_file.relative_to(dir_path)).replace("\\", "/")
+            if rel_p.startswith("tests/") or "/tests/" in rel_p or py_file.name.startswith("test_"):
+                continue
+            py_files.append(str(py_file.resolve()))
+
+        # Pass 1: Parse entities and symbol tables
+        for py_file in py_files:
+            entities, symbol_table = self._parse_file(py_file)
+
+            for entity in entities:
+                self.entities[entity.entity_id] = entity
+                self.graph.add_node(entity.entity_id, **{
+                    'type': entity.entity_type,
+                    'file_path': entity.file_path,
+                    'lineno': entity.lineno,
+                    'end_lineno': entity.end_lineno,
+                    'source_code': entity.source_code
+                })
+
+            rel_path = self._get_relative_path(py_file)
+            self.symbol_table[rel_path] = symbol_table
+
+        # Pass 2: Extract dependency edges
+        for py_file in py_files:
+            rel_path = self._get_relative_path(py_file)
+            symbol_table = self.symbol_table.get(rel_path, {})
+            try:
+                with open(py_file, 'rb') as f:
+                    source_bytes = f.read()
+                tree = self.parser.parse(source_bytes)
+                edges = self._extract_edges(tree.root_node, rel_path, self.entities, symbol_table, source_bytes)
+
+                for caller_id, callee_id in edges:
+                    self.graph.add_edge(caller_id, callee_id, type='calls')
+
+            except Exception as e:
+                logger.error(f"Failed to extract edges from {py_file}: {e}")
+
+        self._invalidate_graph_caches()
+
+    def remove_file(self, file_path: str) -> None:
+        """Remove entities and edges for a deleted file."""
+        entities_to_remove = [
+            entity_id for entity_id, entity in self.entities.items()
+            if entity.file_path == file_path
+        ]
+
+        for entity_id in entities_to_remove:
+            if entity_id in self.graph:
+                self.graph.remove_node(entity_id)
+            if entity_id in self.entities:
+                del self.entities[entity_id]
+
+        if file_path in self.symbol_table:
+            del self.symbol_table[file_path]
+
+        self._invalidate_graph_caches()
+
+    def update_file(self, file_path: str) -> None:
+        """Update entities and edges for a modified file."""
+        self.remove_file(file_path)
+        absolute_path = self.repo_path / file_path
+        if absolute_path.exists():
+            self.parse_file(str(absolute_path))
+
+    def get_entity(self, entity_id: str) -> Optional[Entity]:
+        """Get entity by ID."""
+        return self.entities.get(entity_id)
+
+    def get_all_entities(self) -> List[Entity]:
+        """Get list of all entities."""
+        return list(self.entities.values())
+
+    def get_code_metrics(self, entity_id: str) -> Dict[str, float]:
+        """Get Tree-sitter extracted Python code complexity metrics for an entity."""
+        entity = self.get_entity(entity_id)
+        if not entity:
+            return {
+                "cyclomatic_complexity": 1.0,
+                "ast_node_count": 0.0,
+                "max_nesting_depth": 0.0,
+                "param_count": 0.0,
+                "return_count": 0.0
+            }
+        return {
+            "cyclomatic_complexity": entity.cyclomatic_complexity,
+            "ast_node_count": entity.ast_node_count,
+            "max_nesting_depth": entity.max_nesting_depth,
+            "param_count": entity.param_count,
+            "return_count": entity.return_count
+        }
+
+    def get_graph(self) -> nx.DiGraph:
+        """Get NetworkX directed dependency graph."""
+        return self.graph
+
+    def get_undirected_graph(self) -> nx.Graph:
+        """Get NetworkX undirected graph (cached until the graph is next mutated)."""
+        if self._undirected_graph_cache is None:
+            self._undirected_graph_cache = self.graph.to_undirected()
+        return self._undirected_graph_cache
+
+    def get_dependents(self, entity_id: str, max_hops: Optional[int] = None) -> Set[str]:
+        """Get all dependent entity IDs downstream."""
+        if entity_id not in self.graph:
+            return set()
+
+        if self._reverse_graph_cache is None:
+            self._reverse_graph_cache = self.graph.reverse()
+        reverse_graph = self._reverse_graph_cache
+        if max_hops is None:
+            return nx.descendants(reverse_graph, entity_id)
+        # Breadth-first with a distance cutoff: every node within max_hops is
+        # found (depth-limited DFS can miss nodes first reached via a longer path).
+        return set(nx.single_source_shortest_path_length(reverse_graph, entity_id, cutoff=max_hops))
+
+    def get_dependencies(self, entity_id: str, max_hops: Optional[int] = None) -> Set[str]:
+        """Get all dependency entity IDs upstream."""
+        if entity_id not in self.graph:
+            return set()
+
+        if max_hops is None:
+            return nx.descendants(self.graph, entity_id)
+        return set(nx.single_source_shortest_path_length(self.graph, entity_id, cutoff=max_hops))
+
+    def get_shortest_path_distance(self, source: str, target: str) -> Optional[int]:
+        """Get shortest path distance between two entities."""
+        try:
+            return nx.shortest_path_length(self.graph, source, target)
+        except nx.NetworkXNoPath:
+            return None
+
+    def get_nearest_modified_distance(self, entity_id: str,
+                                       modified_entities: Set[str]) -> Optional[int]:
+        """
+        Get shortest (undirected) distance to the nearest modified entity.
+
+        Computed once per distinct modified_entities set via a single
+        multi-source search, cached and reused across the many per-entity
+        calls made for the same commit pair (instead of a separate
+        shortest-path search per entity per modified entity).
+        """
+        if entity_id in modified_entities:
+            return 0
+
+        undirected_graph = self.get_undirected_graph()
+        seed = frozenset(e for e in modified_entities if e in undirected_graph)
+
+        if self._nearest_modified_seed != seed or self._nearest_modified_cache is None:
+            self._nearest_modified_seed = seed
+            if not seed:
+                self._nearest_modified_cache = {}
+            else:
+                try:
+                    self._nearest_modified_cache = dict(
+                        nx.multi_source_dijkstra_path_length(undirected_graph, list(seed))
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to compute nearest-modified distances: {e}")
+                    self._nearest_modified_cache = {}
+
+        return self._nearest_modified_cache.get(entity_id)

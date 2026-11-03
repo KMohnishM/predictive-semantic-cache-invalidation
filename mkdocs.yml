@@ -1,0 +1,50 @@
+site_name: Predictive Semantic Cache
+site_description: Intelligent cache invalidation and re-indexing framework for Code RAG and semantic search across Git revisions.
+site_url: https://predictive-semantic-cache.readthedocs.io/
+repo_url: https://github.com/KMohnishM/predictive-semantic-cache-invalidation
+repo_name: KMohnishM/predictive-semantic-cache-invalidation
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+
+nav:
+  - Overview: index.md
+  - Quickstart: quickstart.md
+  - Guides:
+      - Default ML vs Custom Model: guides/default_vs_custom_model.md
+      - LlamaIndex Integration: guides/llama_index.md
+      - GitHub Actions CI/CD: guides/github_actions.md
+      - Benchmarking & Evaluation: guides/benchmarking.md
+  - Architecture & Concepts:
+      - Semantic Cache Invalidation: concepts/semantic_drift.md
+      - Graph Features & AST: concepts/graph_features.md
+  - API Reference:
+      - PredictiveCache: api/client.md
+      - LlamaIndex Integration: api/integrations.md

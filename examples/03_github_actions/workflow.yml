@@ -1,0 +1,32 @@
+name: Incremental Vector DB Update
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  reindex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Needed to compare with previous commit
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install predictive-semantic-cache openai
+
+      - name: Re-embed drifted code entities
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # VECTOR_DB_KEY: ${{ secrets.VECTOR_DB_KEY }}
+        run: |
+          python examples/03_github_actions/update_vector_db.py \
+            --from ${{ github.event.before }} \
+            --to ${{ github.sha }}
