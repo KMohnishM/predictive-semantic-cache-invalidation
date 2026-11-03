@@ -46,5 +46,12 @@ nav:
       - Semantic Cache Invalidation: concepts/semantic_drift.md
       - Graph Features & AST: concepts/graph_features.md
   - API Reference:
-      - PredictiveCache: api/client.md
-      - LlamaIndex Integration: api/integrations.md
+      - Overview: api/index.md
+      - Client Facade: api/client.md
+      - Code & Git Parser: api/parser.md
+      - Feature Extractor: api/extractor.md
+      - ML Drift Predictor: api/predictor.md
+      - Framework Integrations: api/integrations.md
+      - Context & Embeddings: api/embedder.md
+      - Evaluator & Strategies: api/evaluator.md
+      - Benchmarking Suite: api/benchmarking.md
