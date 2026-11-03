@@ -324,13 +324,13 @@ class GraphTransitionDescriptor:
         Compute the full GTD.
 
         Args:
-            parser_a : RepoParser for commit t
-            parser_b : RepoParser for commit t+1
-            drifts   : entity_id → cosine drift. Legacy mode: "modified" means
+            parser_a: RepoParser for commit t
+            parser_b: RepoParser for commit t+1
+            drifts: entity_id → cosine drift. Legacy mode: "modified" means
                        drift > 0 and the sm_* drift statistics are included.
                        Drift is only known AFTER re-embedding, so a predictor
                        must not be trained on these features.
-            modified_entities : entities whose code changed between t and t+1.
+            modified_entities: entities whose code changed between t and t+1.
                        When given, "modified" is defined by code change and the
                        drift statistics are omitted — every feature is then
                        available before deciding what to re-embed (Pipeline A
