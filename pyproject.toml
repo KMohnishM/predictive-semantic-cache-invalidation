@@ -91,6 +91,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/KMohnishM/predictive-semantic-cache-invalidation"
+Documentation = "https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/"
 Repository = "https://github.com/KMohnishM/predictive-semantic-cache-invalidation"
 Issues = "https://github.com/KMohnishM/predictive-semantic-cache-invalidation/issues"
 
