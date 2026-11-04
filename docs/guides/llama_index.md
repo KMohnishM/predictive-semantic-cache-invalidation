@@ -1,6 +1,6 @@
 # LlamaIndex Integration
 
-`predictive-semantic-cache` provides first-class integration with [LlamaIndex](https://www.llamaindex.ai/) through custom AST node parsing and predictive caching filters.
+`predictive-semantic-cache-invalidation` provides first-class integration with [LlamaIndex](https://www.llamaindex.ai/) through custom AST node parsing and predictive caching filters.
 
 ---
 
@@ -9,7 +9,7 @@
 Install with the `[llamaindex]` extra:
 
 ```bash
-pip install "predictive-semantic-cache[llamaindex]"
+pip install "predictive-semantic-cache-invalidation[llamaindex]"
 ```
 
 ---

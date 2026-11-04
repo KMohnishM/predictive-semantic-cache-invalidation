@@ -1,6 +1,6 @@
 # Default ML vs Custom Model
 
-`predictive-semantic-cache` is designed with maximum flexibility: it provides both a **Zero-Config Default Pre-Trained Model** and a **Custom Model Training Pipeline**.
+`predictive-semantic-cache-invalidation` is designed with maximum flexibility: it provides both a **Zero-Config Default Pre-Trained Model** and a **Custom Model Training Pipeline**.
 
 ---
 

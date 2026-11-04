@@ -3,7 +3,7 @@ requires = ["setuptools>=64.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "predictive-semantic-cache"
+name = "predictive-semantic-cache-invalidation"
 version = "0.1.0"
 description = "Predictive semantic cache invalidation for RAG and code search across Git revisions"
 readme = "README.md"

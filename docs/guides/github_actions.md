@@ -6,7 +6,7 @@ Automate vector database updates whenever code is pushed or merged into your rep
 
 ## 1. Overview
 
-Instead of re-indexing the entire codebase or running fragile file diff scripts, configure a GitHub Action that uses `predictive-semantic-cache` to selectively update only drifted code entities.
+Instead of re-indexing the entire codebase or running fragile file diff scripts, configure a GitHub Action that uses `predictive-semantic-cache-invalidation` to selectively update only drifted code entities.
 
 ---
 
@@ -37,7 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install predictive-semantic-cache openai
+          pip install predictive-semantic-cache-invalidation openai
 
       - name: Re-embed drifted code entities
         env:

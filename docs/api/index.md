@@ -1,6 +1,6 @@
 # API Reference Overview
 
-This section contains the comprehensive API reference for all public classes, methods, and functions in `predictive-semantic-cache`.
+This section contains the comprehensive API reference for all public classes, methods, and functions in `predictive-semantic-cache-invalidation`.
 
 ## Core Modules
 

@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install predictive-semantic-cache openai
+          pip install predictive-semantic-cache-invalidation openai
 
       - name: Re-embed drifted code entities
         env:

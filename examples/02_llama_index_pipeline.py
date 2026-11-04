@@ -8,7 +8,7 @@ sent to the neural embedding model and vector store.
 import os
 from pathlib import Path
 
-# Note: Requires 'llama-index-core' installed (`pip install "predictive-semantic-cache[llamaindex]"`)
+# Note: Requires 'llama-index-core' installed (`pip install "predictive-semantic-cache-invalidation[llamaindex]"`)
 try:
     from llama_index.core import Document, VectorStoreIndex
     from llama_index.core.node_parser import SentenceSplitter
@@ -25,7 +25,7 @@ from predictive_semantic_cache.integrations.llama_index import (
 
 def run_pipeline():
     if not LLAMA_INDEX_INSTALLED:
-        print("LlamaIndex is not installed. Install with: pip install 'predictive-semantic-cache[llamaindex]'")
+        print("LlamaIndex is not installed. Install with: pip install 'predictive-semantic-cache-invalidation[llamaindex]'")
         return
 
     repo_dir = str(Path(".").resolve())

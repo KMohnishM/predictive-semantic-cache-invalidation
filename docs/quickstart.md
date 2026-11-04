@@ -9,22 +9,22 @@ Get started with **Predictive Semantic Cache** in less than 5 minutes.
 Install the base package from PyPI:
 
 ```bash
-pip install predictive-semantic-cache
+pip install predictive-semantic-cache-invalidation
 ```
 
 ### Optional Extras
 
 - **LlamaIndex Support**:
   ```bash
-  pip install "predictive-semantic-cache[llamaindex]"
+  pip install "predictive-semantic-cache-invalidation[llamaindex]"
   ```
 - **LightGBM Accelerator**:
   ```bash
-  pip install "predictive-semantic-cache[lightgbm]"
+  pip install "predictive-semantic-cache-invalidation[lightgbm]"
   ```
 - **Full Research & Benchmarking Suite**:
   ```bash
-  pip install "predictive-semantic-cache[all]"
+  pip install "predictive-semantic-cache-invalidation[all]"
   ```
 
 ---

@@ -1,6 +1,6 @@
 # Graph Features & AST Analysis
 
-`predictive-semantic-cache` extracts 47 features combining Abstract Syntax Tree (AST) analysis, graph theory, and Git revision deltas.
+`predictive-semantic-cache-invalidation` extracts 47 features combining Abstract Syntax Tree (AST) analysis, graph theory, and Git revision deltas.
 
 ---
 

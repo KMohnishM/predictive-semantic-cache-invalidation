@@ -1,14 +1,14 @@
-# Predictive Semantic Cache Invalidation (`predictive-semantic-cache`)
+# Predictive Semantic Cache Invalidation (`predictive-semantic-cache-invalidation`)
 
 [![Documentation Status](https://readthedocs.org/projects/predictive-semantic-cache-invalidation/badge/?version=latest)](https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/)
 [![CI Tests](https://github.com/KMohnishM/predictive-semantic-cache-invalidation/actions/workflows/ci.yml/badge.svg)](https://github.com/KMohnishM/predictive-semantic-cache-invalidation/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![PyPI Version](https://img.shields.io/pypi/v/predictive-semantic-cache.svg)](https://pypi.org/project/predictive-semantic-cache/)
-[![Python Versions](https://img.shields.io/pypi/pyversions/predictive-semantic-cache.svg)](https://pypi.org/project/predictive-semantic-cache/)
+[![PyPI Version](https://img.shields.io/pypi/v/predictive-semantic-cache-invalidation.svg)](https://pypi.org/project/predictive-semantic-cache-invalidation/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/predictive-semantic-cache-invalidation.svg)](https://pypi.org/project/predictive-semantic-cache-invalidation/)
 
 **Predictive Semantic Cache Invalidation** is an intelligent caching and re-indexing framework for Retrieval-Augmented Generation (RAG) and semantic code search systems.
 
-When codebases evolve across Git commits, naively re-embedding every entity or file incurs prohibitive LLM and embedding API costs. Conversely, re-embedding only directly touched files ignores ripple effects in dependent call graphs. `predictive-semantic-cache` solves this by using **Tree-Sitter AST call graphs**, **structural drift feature extraction**, and **calibrated machine learning** (LightGBM, Random Forest, HistGradientBoosting) to predict which code entities' semantic representations have drifted enough to require cache invalidation.
+When codebases evolve across Git commits, naively re-embedding every entity or file incurs prohibitive LLM and embedding API costs. Conversely, re-embedding only directly touched files ignores ripple effects in dependent call graphs. `predictive-semantic-cache-invalidation` solves this by using **Tree-Sitter AST call graphs**, **structural drift feature extraction**, and **calibrated machine learning** (LightGBM, Random Forest, HistGradientBoosting) to predict which code entities' semantic representations have drifted enough to require cache invalidation.
 
 ---
 
@@ -49,22 +49,22 @@ The framework operates across three key phases:
 
 ### Core (Lightweight)
 ```bash
-pip install predictive-semantic-cache
+pip install predictive-semantic-cache-invalidation
 ```
 
 ### With LlamaIndex Integration
 ```bash
-pip install "predictive-semantic-cache[llamaindex]"
+pip install "predictive-semantic-cache-invalidation[llamaindex]"
 ```
 
 ### With LightGBM Support
 ```bash
-pip install "predictive-semantic-cache[lightgbm]"
+pip install "predictive-semantic-cache-invalidation[lightgbm]"
 ```
 
 ### All Dependencies (Benchmarking, Evaluation & Embeddings)
 ```bash
-pip install "predictive-semantic-cache[all]"
+pip install "predictive-semantic-cache-invalidation[all]"
 ```
 
 ---

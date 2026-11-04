@@ -107,7 +107,7 @@ class EmbeddingManager:
         if not EMBEDDINGS_AVAILABLE:
             raise ImportError(
                 "EmbeddingManager requires 'torch' and 'sentence-transformers'. "
-                "Install them with: pip install 'predictive-semantic-cache[eval]'"
+                "Install them with: pip install 'predictive-semantic-cache-invalidation[eval]'"
             )
         self.model_name = model_name
         self.clean_mode = clean_mode
