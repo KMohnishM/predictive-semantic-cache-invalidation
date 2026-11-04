@@ -1,6 +1,6 @@
 site_name: Predictive Semantic Cache
 site_description: Intelligent cache invalidation and re-indexing framework for Code RAG and semantic search across Git revisions.
-site_url: https://predictive-semantic-cache.readthedocs.io/
+site_url: https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/
 repo_url: https://github.com/KMohnishM/predictive-semantic-cache-invalidation
 repo_name: KMohnishM/predictive-semantic-cache-invalidation
 

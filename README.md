@@ -1,5 +1,6 @@
 # Predictive Semantic Cache Invalidation (`predictive-semantic-cache`)
 
+[![Documentation Status](https://readthedocs.org/projects/predictive-semantic-cache-invalidation/badge/?version=latest)](https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/)
 [![CI Tests](https://github.com/KMohnishM/predictive-semantic-cache-invalidation/actions/workflows/ci.yml/badge.svg)](https://github.com/KMohnishM/predictive-semantic-cache-invalidation/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![PyPI Version](https://img.shields.io/pypi/v/predictive-semantic-cache.svg)](https://pypi.org/project/predictive-semantic-cache/)
@@ -8,6 +9,18 @@
 **Predictive Semantic Cache Invalidation** is an intelligent caching and re-indexing framework for Retrieval-Augmented Generation (RAG) and semantic code search systems.
 
 When codebases evolve across Git commits, naively re-embedding every entity or file incurs prohibitive LLM and embedding API costs. Conversely, re-embedding only directly touched files ignores ripple effects in dependent call graphs. `predictive-semantic-cache` solves this by using **Tree-Sitter AST call graphs**, **structural drift feature extraction**, and **calibrated machine learning** (LightGBM, Random Forest, HistGradientBoosting) to predict which code entities' semantic representations have drifted enough to require cache invalidation.
+
+---
+
+## Documentation
+
+Comprehensive documentation, full API references, and step-by-step guides are available at **[Predictive Semantic Cache](https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/)**.
+
+- **[Quickstart Guide](https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/quickstart/)**: Get up and running in under 5 minutes.
+- **[Default ML vs Custom Model](https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/guides/default_vs_custom_model/)**: Learn how zero-config bundled prediction works vs. training on your own codebase.
+- **[LlamaIndex Integration](https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/guides/llama_index/)**: Plug directly into LlamaIndex ingestion pipelines with `PredictiveCacheFilter`.
+- **[GitHub Actions CI/CD](https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/guides/github_actions/)**: Automate selective cache invalidation in your CI/CD workflows.
+- **[Python API Reference](https://predictive-semantic-cache-invalidation.readthedocs.io/en/latest/api/client/)**: Auto-generated docstrings and signatures for all core modules.
 
 ---
 
